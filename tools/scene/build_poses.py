@@ -76,7 +76,12 @@ POSES = {
     # upright, arms at the sides: the baseline "stranded but mobile" survivor
     "standing": dict(ARM_DOWN),
     # seated on a roof or slab, knees up: the commonest posture on a flooded roof (SOLUTION_DOC 2.3 row 2)
-    "sitting": {**ARM_LOOSE, **leg(0, -78), **knee(0, 82), "Bip01-Spine1": (0, 6, 0)},
+    # Sitting ON a surface, not on an invisible chair. Hips and knees both at ~80 deg left the pelvis at chair
+    # height with the feet dangling below a roof slab (seen in qa_3_pose_standing, 2026-09-10). Flexing the hips
+    # hard and keeping the knees nearly straight puts the thighs along the surface, so the ground-contact bone
+    # becomes the thigh and `ground_offset_cm` seats the pelvis ON the roof with the legs out in front.
+    "sitting": {**ARM_LOOSE, **leg(0, -88), **knee(0, 16), "Bip01-Spine1": (0, 10, 0),
+                "Bip01-Spine2": (0, 6, 0)},
     # face down, limbs slack: injured/unconscious on the deposit fan
     "prone": {**ARM_LOOSE, "Bip01": (-90, 0, 0), **leg(0, -8)},
     # face up
@@ -216,6 +221,8 @@ def build(character):
             "head_z_cm": round(head.translation.z, 1) if head else None,
             "face_down": (None if not (head and nose) else bool(nose.translation.z < head.translation.z - 1.0)),
             "symmetry_err_cm": round(sym, 2),
+            "pelvis_above_ground_cm": (round(body[prefix + "-pelvis"].translation.z - min(zs), 1)
+                                       if prefix + "-pelvis" in body else None),
         }
     return info
 
@@ -231,7 +238,7 @@ for p in sorted(POSES):
     r = ref[p]
     print(f"  {p:16s} height {r['height_cm']:6.1f} cm  bbox {str(r['bbox_cm']):22s} "
           f"ground_offset {r['ground_offset_cm']:7.2f}  sym_err {r['symmetry_err_cm']:5.2f} cm  "
-          f"face_down={r['face_down']}")
+          f"pelvis {str(r['pelvis_above_ground_cm']):6s} face_down={r['face_down']}")
 
 # --- self-checks: a pose that silently fell back to the bind pose must not pass -----------------------------
 errs = []
@@ -248,6 +255,9 @@ if max(ref["prone"]["bbox_cm"][0], ref["prone"]["bbox_cm"][1]) < 150:
     errs.append("prone footprint too short to be a lying adult")
 if ref["sitting"]["height_cm"] >= ref["standing"]["height_cm"] - 20:
     errs.append("sitting is not shorter than standing")
+if ref["sitting"]["pelvis_above_ground_cm"] > 45:
+    errs.append(f"sitting pelvis is {ref['sitting']['pelvis_above_ground_cm']} cm above the surface - "
+                "the figure is sitting on an invisible chair, not on the roof")
 for _p, _r in ref.items():                       # every pose here is bilaterally symmetric
     if _r["symmetry_err_cm"] > 3.0:
         errs.append(f"{_p} is left/right ASYMMETRIC by {_r['symmetry_err_cm']} cm (mirrored bind axes?)")

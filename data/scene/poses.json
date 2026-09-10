@@ -22,20 +22,22 @@
     "height_cm": 162.5,
     "head_z_cm": 152.2,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 92.1
    },
    "sitting": {
     "asset": "/Game/Sightline/Characters/Poses/A_Female_Adult_04_sitting",
-    "ground_offset_cm": -21.63,
+    "ground_offset_cm": -64.46,
     "bbox_cm": [
-     55.0,
-     56.1,
-     132.4
+     68.0,
+     103.5,
+     89.4
     ],
-    "height_cm": 132.4,
-    "head_z_cm": 151.5,
+    "height_cm": 89.4,
+    "head_z_cm": 149.9,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 18.9
    },
    "prone": {
     "asset": "/Game/Sightline/Characters/Poses/A_Female_Adult_04_prone",
@@ -48,7 +50,8 @@
     "height_cm": 32.2,
     "head_z_cm": 97.9,
     "face_down": true,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 25.0
    },
    "supine": {
     "asset": "/Game/Sightline/Characters/Poses/A_Female_Adult_04_supine",
@@ -61,7 +64,8 @@
     "height_cm": 32.2,
     "head_z_cm": 86.7,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 7.2
    },
    "half_submerged": {
     "asset": "/Game/Sightline/Characters/Poses/A_Female_Adult_04_half_submerged",
@@ -74,7 +78,8 @@
     "height_cm": 161.5,
     "head_z_cm": 152.2,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 91.0
    },
    "trapped": {
     "asset": "/Game/Sightline/Characters/Poses/A_Female_Adult_04_trapped",
@@ -87,7 +92,8 @@
     "height_cm": 66.7,
     "head_z_cm": 117.4,
     "face_down": true,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 40.9
    },
    "waving": {
     "asset": "/Game/Sightline/Characters/Poses/A_Female_Adult_04_waving",
@@ -100,7 +106,8 @@
     "height_cm": 162.5,
     "head_z_cm": 152.2,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 92.1
    }
   },
   "Female_Adult_11": {
@@ -115,20 +122,22 @@
     "height_cm": 162.5,
     "head_z_cm": 152.2,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 92.1
    },
    "sitting": {
     "asset": "/Game/Sightline/Characters/Poses/A_Female_Adult_11_sitting",
-    "ground_offset_cm": -21.63,
+    "ground_offset_cm": -64.46,
     "bbox_cm": [
-     55.0,
-     56.1,
-     132.4
+     68.0,
+     103.5,
+     89.4
     ],
-    "height_cm": 132.4,
-    "head_z_cm": 151.5,
+    "height_cm": 89.4,
+    "head_z_cm": 149.9,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 18.9
    },
    "prone": {
     "asset": "/Game/Sightline/Characters/Poses/A_Female_Adult_11_prone",
@@ -141,7 +150,8 @@
     "height_cm": 32.2,
     "head_z_cm": 97.9,
     "face_down": true,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 25.0
    },
    "supine": {
     "asset": "/Game/Sightline/Characters/Poses/A_Female_Adult_11_supine",
@@ -154,7 +164,8 @@
     "height_cm": 32.2,
     "head_z_cm": 86.7,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 7.2
    },
    "half_submerged": {
     "asset": "/Game/Sightline/Characters/Poses/A_Female_Adult_11_half_submerged",
@@ -167,7 +178,8 @@
     "height_cm": 161.5,
     "head_z_cm": 152.2,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 91.0
    },
    "trapped": {
     "asset": "/Game/Sightline/Characters/Poses/A_Female_Adult_11_trapped",
@@ -180,7 +192,8 @@
     "height_cm": 66.7,
     "head_z_cm": 117.4,
     "face_down": true,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 40.9
    },
    "waving": {
     "asset": "/Game/Sightline/Characters/Poses/A_Female_Adult_11_waving",
@@ -193,7 +206,8 @@
     "height_cm": 162.5,
     "head_z_cm": 152.2,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 92.1
    }
   },
   "Female_Adult_17": {
@@ -208,20 +222,22 @@
     "height_cm": 162.5,
     "head_z_cm": 152.2,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 92.1
    },
    "sitting": {
     "asset": "/Game/Sightline/Characters/Poses/A_Female_Adult_17_sitting",
-    "ground_offset_cm": -21.63,
+    "ground_offset_cm": -64.46,
     "bbox_cm": [
-     55.0,
-     56.1,
-     132.4
+     68.0,
+     103.5,
+     89.4
     ],
-    "height_cm": 132.4,
-    "head_z_cm": 151.5,
+    "height_cm": 89.4,
+    "head_z_cm": 149.9,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 18.9
    },
    "prone": {
     "asset": "/Game/Sightline/Characters/Poses/A_Female_Adult_17_prone",
@@ -234,7 +250,8 @@
     "height_cm": 32.2,
     "head_z_cm": 97.9,
     "face_down": true,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 25.0
    },
    "supine": {
     "asset": "/Game/Sightline/Characters/Poses/A_Female_Adult_17_supine",
@@ -247,7 +264,8 @@
     "height_cm": 32.2,
     "head_z_cm": 86.7,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 7.2
    },
    "half_submerged": {
     "asset": "/Game/Sightline/Characters/Poses/A_Female_Adult_17_half_submerged",
@@ -260,7 +278,8 @@
     "height_cm": 161.5,
     "head_z_cm": 152.2,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 91.0
    },
    "trapped": {
     "asset": "/Game/Sightline/Characters/Poses/A_Female_Adult_17_trapped",
@@ -273,7 +292,8 @@
     "height_cm": 66.7,
     "head_z_cm": 117.4,
     "face_down": true,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 40.9
    },
    "waving": {
     "asset": "/Game/Sightline/Characters/Poses/A_Female_Adult_17_waving",
@@ -286,7 +306,8 @@
     "height_cm": 162.5,
     "head_z_cm": 152.2,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 92.1
    }
   },
   "Female_Child_02": {
@@ -301,20 +322,22 @@
     "height_cm": 134.0,
     "head_z_cm": 124.9,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 75.7
    },
    "sitting": {
     "asset": "/Game/Sightline/Characters/Poses/A_Female_Child_02_sitting",
-    "ground_offset_cm": -16.33,
+    "ground_offset_cm": -51.17,
     "bbox_cm": [
-     43.4,
-     45.3,
-     109.1
+     56.1,
+     84.8,
+     74.1
     ],
-    "height_cm": 109.1,
-    "head_z_cm": 124.3,
+    "height_cm": 74.1,
+    "head_z_cm": 122.9,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 15.6
    },
    "prone": {
     "asset": "/Game/Sightline/Characters/Poses/A_Female_Child_02_prone",
@@ -327,7 +350,8 @@
     "height_cm": 23.7,
     "head_z_cm": 80.3,
     "face_down": true,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 17.1
    },
    "supine": {
     "asset": "/Game/Sightline/Characters/Poses/A_Female_Child_02_supine",
@@ -340,7 +364,8 @@
     "height_cm": 23.7,
     "head_z_cm": 71.1,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 6.7
    },
    "half_submerged": {
     "asset": "/Game/Sightline/Characters/Poses/A_Female_Child_02_half_submerged",
@@ -353,7 +378,8 @@
     "height_cm": 132.9,
     "head_z_cm": 124.9,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 74.6
    },
    "trapped": {
     "asset": "/Game/Sightline/Characters/Poses/A_Female_Child_02_trapped",
@@ -366,7 +392,8 @@
     "height_cm": 54.6,
     "head_z_cm": 96.3,
     "face_down": true,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 33.6
    },
    "waving": {
     "asset": "/Game/Sightline/Characters/Poses/A_Female_Child_02_waving",
@@ -379,7 +406,8 @@
     "height_cm": 134.0,
     "head_z_cm": 124.9,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 75.7
    }
   },
   "Male_Adult_04": {
@@ -394,20 +422,22 @@
     "height_cm": 169.9,
     "head_z_cm": 158.7,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 89.3
    },
    "sitting": {
     "asset": "/Game/Sightline/Characters/Poses/A_Male_Adult_04_sitting",
-    "ground_offset_cm": -24.23,
+    "ground_offset_cm": -66.44,
     "bbox_cm": [
-     58.3,
-     50.2,
-     138.0
+     66.3,
+     96.4,
+     96.7
     ],
-    "height_cm": 138.0,
-    "head_z_cm": 158.7,
+    "height_cm": 96.7,
+    "head_z_cm": 158.0,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 14.1
    },
    "prone": {
     "asset": "/Game/Sightline/Characters/Poses/A_Male_Adult_04_prone",
@@ -420,7 +450,8 @@
     "height_cm": 29.3,
     "head_z_cm": 88.7,
     "face_down": true,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 24.9
    },
    "supine": {
     "asset": "/Game/Sightline/Characters/Poses/A_Male_Adult_04_supine",
@@ -433,7 +464,8 @@
     "height_cm": 29.3,
     "head_z_cm": 90.3,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 4.3
    },
    "half_submerged": {
     "asset": "/Game/Sightline/Characters/Poses/A_Male_Adult_04_half_submerged",
@@ -446,7 +478,8 @@
     "height_cm": 167.2,
     "head_z_cm": 158.7,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 86.6
    },
    "trapped": {
     "asset": "/Game/Sightline/Characters/Poses/A_Male_Adult_04_trapped",
@@ -459,7 +492,8 @@
     "height_cm": 62.8,
     "head_z_cm": 113.3,
     "face_down": true,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 38.2
    },
    "waving": {
     "asset": "/Game/Sightline/Characters/Poses/A_Male_Adult_04_waving",
@@ -472,7 +506,8 @@
     "height_cm": 169.9,
     "head_z_cm": 158.7,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 89.3
    }
   },
   "Male_Adult_08": {
@@ -487,20 +522,22 @@
     "height_cm": 169.9,
     "head_z_cm": 158.7,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 89.3
    },
    "sitting": {
     "asset": "/Game/Sightline/Characters/Poses/A_Male_Adult_08_sitting",
-    "ground_offset_cm": -24.23,
+    "ground_offset_cm": -66.44,
     "bbox_cm": [
-     58.3,
-     50.2,
-     138.0
+     66.3,
+     96.4,
+     96.7
     ],
-    "height_cm": 138.0,
-    "head_z_cm": 158.7,
+    "height_cm": 96.7,
+    "head_z_cm": 158.0,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 14.1
    },
    "prone": {
     "asset": "/Game/Sightline/Characters/Poses/A_Male_Adult_08_prone",
@@ -513,7 +550,8 @@
     "height_cm": 29.3,
     "head_z_cm": 88.7,
     "face_down": true,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 24.9
    },
    "supine": {
     "asset": "/Game/Sightline/Characters/Poses/A_Male_Adult_08_supine",
@@ -526,7 +564,8 @@
     "height_cm": 29.3,
     "head_z_cm": 90.3,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 4.3
    },
    "half_submerged": {
     "asset": "/Game/Sightline/Characters/Poses/A_Male_Adult_08_half_submerged",
@@ -539,7 +578,8 @@
     "height_cm": 167.2,
     "head_z_cm": 158.7,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 86.6
    },
    "trapped": {
     "asset": "/Game/Sightline/Characters/Poses/A_Male_Adult_08_trapped",
@@ -552,7 +592,8 @@
     "height_cm": 62.8,
     "head_z_cm": 113.3,
     "face_down": true,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 38.2
    },
    "waving": {
     "asset": "/Game/Sightline/Characters/Poses/A_Male_Adult_08_waving",
@@ -565,7 +606,8 @@
     "height_cm": 169.9,
     "head_z_cm": 158.7,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 89.3
    }
   },
   "Male_Adult_13": {
@@ -580,20 +622,22 @@
     "height_cm": 169.9,
     "head_z_cm": 158.7,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 89.3
    },
    "sitting": {
     "asset": "/Game/Sightline/Characters/Poses/A_Male_Adult_13_sitting",
-    "ground_offset_cm": -24.23,
+    "ground_offset_cm": -66.44,
     "bbox_cm": [
-     58.3,
-     50.2,
-     138.0
+     66.3,
+     96.4,
+     96.7
     ],
-    "height_cm": 138.0,
-    "head_z_cm": 158.7,
+    "height_cm": 96.7,
+    "head_z_cm": 158.0,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 14.1
    },
    "prone": {
     "asset": "/Game/Sightline/Characters/Poses/A_Male_Adult_13_prone",
@@ -606,7 +650,8 @@
     "height_cm": 29.3,
     "head_z_cm": 88.7,
     "face_down": true,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 24.9
    },
    "supine": {
     "asset": "/Game/Sightline/Characters/Poses/A_Male_Adult_13_supine",
@@ -619,7 +664,8 @@
     "height_cm": 29.3,
     "head_z_cm": 90.3,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 4.3
    },
    "half_submerged": {
     "asset": "/Game/Sightline/Characters/Poses/A_Male_Adult_13_half_submerged",
@@ -632,7 +678,8 @@
     "height_cm": 167.2,
     "head_z_cm": 158.7,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 86.6
    },
    "trapped": {
     "asset": "/Game/Sightline/Characters/Poses/A_Male_Adult_13_trapped",
@@ -645,7 +692,8 @@
     "height_cm": 62.8,
     "head_z_cm": 113.3,
     "face_down": true,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 38.2
    },
    "waving": {
     "asset": "/Game/Sightline/Characters/Poses/A_Male_Adult_13_waving",
@@ -658,7 +706,8 @@
     "height_cm": 169.9,
     "head_z_cm": 158.7,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 89.3
    }
   },
   "Male_Adult_15": {
@@ -673,20 +722,22 @@
     "height_cm": 169.9,
     "head_z_cm": 158.7,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 89.3
    },
    "sitting": {
     "asset": "/Game/Sightline/Characters/Poses/A_Male_Adult_15_sitting",
-    "ground_offset_cm": -24.23,
+    "ground_offset_cm": -66.44,
     "bbox_cm": [
-     58.3,
-     50.2,
-     138.0
+     66.3,
+     96.4,
+     96.7
     ],
-    "height_cm": 138.0,
-    "head_z_cm": 158.7,
+    "height_cm": 96.7,
+    "head_z_cm": 158.0,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 14.1
    },
    "prone": {
     "asset": "/Game/Sightline/Characters/Poses/A_Male_Adult_15_prone",
@@ -699,7 +750,8 @@
     "height_cm": 29.3,
     "head_z_cm": 88.7,
     "face_down": true,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 24.9
    },
    "supine": {
     "asset": "/Game/Sightline/Characters/Poses/A_Male_Adult_15_supine",
@@ -712,7 +764,8 @@
     "height_cm": 29.3,
     "head_z_cm": 90.3,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 4.3
    },
    "half_submerged": {
     "asset": "/Game/Sightline/Characters/Poses/A_Male_Adult_15_half_submerged",
@@ -725,7 +778,8 @@
     "height_cm": 167.2,
     "head_z_cm": 158.7,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 86.6
    },
    "trapped": {
     "asset": "/Game/Sightline/Characters/Poses/A_Male_Adult_15_trapped",
@@ -738,7 +792,8 @@
     "height_cm": 62.8,
     "head_z_cm": 113.3,
     "face_down": true,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 38.2
    },
    "waving": {
     "asset": "/Game/Sightline/Characters/Poses/A_Male_Adult_15_waving",
@@ -751,7 +806,8 @@
     "height_cm": 169.9,
     "head_z_cm": 158.7,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 89.3
    }
   },
   "Male_Child_02": {
@@ -766,20 +822,22 @@
     "height_cm": 134.2,
     "head_z_cm": 125.4,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 70.5
    },
    "sitting": {
     "asset": "/Game/Sightline/Characters/Poses/A_Male_Child_02_sitting",
-    "ground_offset_cm": -17.25,
+    "ground_offset_cm": -50.59,
     "bbox_cm": [
-     46.1,
-     39.6,
-     109.0
+     52.3,
+     76.2,
+     76.4
     ],
-    "height_cm": 109.0,
-    "head_z_cm": 125.3,
+    "height_cm": 76.4,
+    "head_z_cm": 124.8,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 11.1
    },
    "prone": {
     "asset": "/Game/Sightline/Characters/Poses/A_Male_Child_02_prone",
@@ -792,7 +850,8 @@
     "height_cm": 23.1,
     "head_z_cm": 70.1,
     "face_down": true,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 19.7
    },
    "supine": {
     "asset": "/Game/Sightline/Characters/Poses/A_Male_Child_02_supine",
@@ -805,7 +864,8 @@
     "height_cm": 23.1,
     "head_z_cm": 71.4,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 3.4
    },
    "half_submerged": {
     "asset": "/Game/Sightline/Characters/Poses/A_Male_Child_02_half_submerged",
@@ -818,7 +878,8 @@
     "height_cm": 132.1,
     "head_z_cm": 125.4,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 68.4
    },
    "trapped": {
     "asset": "/Game/Sightline/Characters/Poses/A_Male_Child_02_trapped",
@@ -831,7 +892,8 @@
     "height_cm": 49.4,
     "head_z_cm": 89.5,
     "face_down": true,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 30.2
    },
    "waving": {
     "asset": "/Game/Sightline/Characters/Poses/A_Male_Child_02_waving",
@@ -844,7 +906,8 @@
     "height_cm": 134.2,
     "head_z_cm": 125.4,
     "face_down": false,
-    "symmetry_err_cm": 0.0
+    "symmetry_err_cm": 0.0,
+    "pelvis_above_ground_cm": 70.5
    }
   }
  }

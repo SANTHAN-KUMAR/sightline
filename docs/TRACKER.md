@@ -195,3 +195,20 @@ Also: `materials.csv` missing -> Cosys skips material stencil init (installed vi
   Cosys-AirSim 5.8-v3.4.1, scaffolded SightlineSim, wrote the sightline MCP server (smoke test OK), and wrote
   CLAUDE.md/CONTEXT/TRACKER. A network drop interrupted the VS install, which was restarted via the bootstrapper.
   RAM headroom is low (see CONTEXT §7).
+
+## Scene polish backlog (session 3) — what stands between now and a demo-grade disaster scene
+Ordered by how much each changes what the camera sees.
+1. **Debris and wreckage** — nothing floats or piles anywhere yet. A real debris-flow flood is defined by its
+   wrack line: rafted timber, drums, sheeting and vehicles jammed against upstream walls; boulders and trunks
+   dropped high on the fan; light plastics circling in eddies. 79 CC0 props are downloaded and imported
+   (`data/scene/props.json`) but none are placed. Biggest single visual gap.
+2. **Sitting pose sits on an invisible chair** — hips and knees both at ~80 deg, so a survivor on a flat roof
+   has their feet dangling below the slab. On a roof people sit with legs out or crossed: flex the hips ~85 deg
+   and keep the knees near straight so the pelvis rests ON the surface.
+3. **Water reads as flat card at survey altitude** — the albedo is right but there is no large-scale surface
+   variation, so a 45 m nadir frame is a uniform tan field. Needs a low-frequency normal/roughness break-up and
+   some suspended-sediment streaking, plus foam at the waterline (ambientCG Foam001/002 downloaded).
+4. **Roof textures tile visibly** from above; the buildings need the same anti-tiling treatment the terrain got.
+5. **No vegetation** — fern_02 is imported; palms/areca are blocked on a Fab login (see Assets blockers).
+6. **Damage state** — every house is pristine. Flood-damaged walls, missing sheets and collapsed sections would
+   sell the scenario and add the occlusion cases the detector should be tested against.

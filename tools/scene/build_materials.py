@@ -257,8 +257,39 @@ for src, pin in ((vparam("Scattering", (7.0, 5.0, 2.6)), "ScatteringCoefficients
                  (sparam("PhaseG", 0.35), "PhaseG"),
                  (sparam("ColorScaleBehindWater", 0.0), "ColorScaleBehindWater")):
     g.link(src, "", slw, pin)
-mel.connect_material_property(vparam("BaseColor", (0.36, 0.27, 0.17)), "", unreal.MaterialProperty.MP_BASE_COLOR)
-mel.connect_material_property(sparam("Roughness", 0.07), "", unreal.MaterialProperty.MP_ROUGHNESS)
+# A single flat BaseColor made the 45 m nadir frame - the whole point of this scene - read as a sheet of card
+# rather than water (seen 2026-09-10). Real flood water is not one colour: suspended sediment arrives in plumes,
+# so the surface carries large, soft blotches of lighter silt over darker water, plus streaking drawn out along
+# the flow. Two low-frequency world-space fields supply that: ~180 m plumes and ~55 m along-flow streaks. The
+# amplitude is deliberately modest - this is a tint variation, not a pattern.
+_wp0 = g.node(unreal.MaterialExpressionWorldPosition, -1700)
+_wxy0 = g.node(unreal.MaterialExpressionComponentMask, -1600, r=True, g=True, b=False, a=False)
+g.link(_wp0, "", _wxy0, "")
+plume_uv = g.op(unreal.MaterialExpressionMultiply, _wxy0, 1.0 / 18000.0)          # ~180 m blobs
+plume = g.node(unreal.MaterialExpressionTextureSample, -900, texture=textures["mud"]["arm"],
+               sampler_type=unreal.MaterialSamplerType.SAMPLERTYPE_MASKS,
+               sampler_source=unreal.SamplerSourceMode.SSM_WRAP_WORLD_GROUP_SETTINGS,
+               mip_value_mode=unreal.TextureMipValueMode.TMVM_MIP_LEVEL, const_mip_value=6)
+g.link(plume_uv, "", plume, "UVs")
+# streaks: sample the same field squashed along north so it draws out into flow lines
+streak_uv = g.op(unreal.MaterialExpressionMultiply, _wxy0, 1.0 / 5500.0)
+streak_sq = g.op(unreal.MaterialExpressionMultiply, streak_uv,
+                 g.node(unreal.MaterialExpressionConstant2Vector, -1000, r=0.18, g=1.0))
+streak = g.node(unreal.MaterialExpressionTextureSample, -900, texture=textures["silt"]["arm"],
+                sampler_type=unreal.MaterialSamplerType.SAMPLERTYPE_MASKS,
+                sampler_source=unreal.SamplerSourceMode.SSM_WRAP_WORLD_GROUP_SETTINGS,
+                mip_value_mode=unreal.TextureMipValueMode.TMVM_MIP_LEVEL, const_mip_value=4)
+g.link(streak_sq, "", streak, "UVs")
+silt_mix = g.sat(g.op(unreal.MaterialExpressionAdd,
+                      g.op(unreal.MaterialExpressionMultiply, plume, 0.75, "G"),
+                      g.op(unreal.MaterialExpressionMultiply, streak, 0.35, "R")))
+water_deep = vparam("BaseColor", (0.30, 0.215, 0.125))       # darker, less sediment
+water_silt = vparam("BaseColorSilt", (0.46, 0.355, 0.225))   # a fresh silt plume
+mel.connect_material_property(g.lerp(water_deep, water_silt, silt_mix), "",
+                              unreal.MaterialProperty.MP_BASE_COLOR)
+# rougher where the silt load is heaviest: it kills the mirror sheen that made it look like card
+mel.connect_material_property(g.lerp(sparam("Roughness", 0.06), sparam("RoughnessSilt", 0.16), silt_mix), "",
+                              unreal.MaterialProperty.MP_ROUGHNESS)
 mel.connect_material_property(sparam("Specular", 0.5), "", unreal.MaterialProperty.MP_SPECULAR)
 
 wn = unreal.load_asset("/Water/Textures/Normals/T_Water_TilingNormal_Waves_02")
