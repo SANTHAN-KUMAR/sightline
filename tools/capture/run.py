@@ -71,6 +71,23 @@ def boustrophedon(e0, e1, n0, n1, alt_m, hfov_deg, aspect, overlap=0.2):
     return pts, (w, h)
 
 
+def park(c) -> None:
+    """Leave the drone at rest on the pad, disarmed. Always call this, including on failure: an airborne,
+    armed drone with no setpoint tumbles until someone stops PIE."""
+    try:
+        c.enableApiControl(False)
+        c.armDisarm(False)
+        ks = airsim.KinematicsState()
+        ks.position = airsim.Vector3r(0.0, 0.0, 0.0)
+        ks.orientation = airsim.euler_to_quaternion(0.0, 0.0, 0.0)
+        for f in ("linear_velocity", "angular_velocity", "linear_acceleration", "angular_acceleration"):
+            setattr(ks, f, airsim.Vector3r(0.0, 0.0, 0.0))
+        c.simPause(False)
+        c.simSetKinematics(ks, True)
+    except Exception as exc:                      # never mask the real failure with a cleanup error
+        print(f"  (could not park the drone: {exc})")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--alt", type=float, default=45.0, help="metres above the flood surface")
@@ -96,8 +113,11 @@ def main() -> int:
     c = connect()
     names = c.simListInstanceSegmentationObjects()
     cmap = c.simGetSegmentationColorMap()
-    c.enableApiControl(True)
-    c.armDisarm(True)
+    # Capture teleports the camera; SimpleFlight must not also be trying to fly. Armed with API control, its
+    # 60 ms hover watchdog fights every teleport, and a script that exits mid-sweep leaves the drone airborne
+    # with no setpoint - which is what left it tumbling on screen between runs.
+    c.enableApiControl(False)
+    c.armDisarm(False)
 
     # Camera geometry: use the CALIBRATED focal length, not simGetCameraInfo().fov.
     # Measured 2026-09-10: simGetCameraInfo reports 89.904 deg for this camera while the true rendered HFOV is
@@ -116,6 +136,7 @@ def main() -> int:
     with contextlib.redirect_stdout(io.StringIO()):
         c.simGetImages(req)
     time.sleep(0.2)
+    c.simPause(False)
 
     e = [a["east_m"] for a in truth["actors"]]
     n = [a["north_m"] for a in truth["actors"]]
@@ -132,6 +153,12 @@ def main() -> int:
     if args.limit:
         pts = pts[: args.limit]
     gsd = args.alt / f_px * 100.0            # cm per pixel at the flood surface
+    with contextlib.redirect_stdout(io.StringIO()):
+        _ci = c.simGetCameraInfo("survey")
+    _o = _ci.pose.orientation
+    _pitch = math.degrees(math.asin(max(-1.0, min(1.0, 2 * (_o.w_val * _o.y_val - _o.z_val * _o.x_val)))))
+    if abs(_pitch + 90.0) > 3.0:
+        raise SystemExit(f"survey camera is not nadir (pitch {_pitch:.2f} deg): the gimbal has not settled")
     print(f"frame {W}x{H}  calibrated f_px {f_px:.1f} (HFOV {hfov:.2f} deg)  "
           f"footprint {fw:.1f}x{fh:.1f} m  GSD {gsd:.3f} cm/px")
     print(f"area east[{e0:.0f},{e1:.0f}] north[{n0:.0f},{n1:.0f}]  -> {len(pts)} waypoints at {args.alt:.0f} m")
@@ -144,7 +171,8 @@ def main() -> int:
                  "width_px", "height_px", "gsd_cm_px", "mode", "flood_level_asl_m", "n_labels"])
 
     clip_id = f"sim_seed{truth['seed']}_alt{int(args.alt)}"
-    total_labels, seen, empty_skipped, written = 0, set(), 0, 0
+    _parked = False
+    total_labels, seen, empty_skipped, written, skipped_pose = 0, set(), 0, 0, 0
     t0 = time.time()
     for k, (ee, nn) in enumerate(pts):
         # Teleport: NED is relative to the PlayerStart, x=north, y=east, z=down.
@@ -153,10 +181,27 @@ def main() -> int:
         ned_d = -((water + args.alt) - home["ground_asl_m"])
         # a realistic survey attitude rather than a perfectly level one
         roll, pitch = rng.normal(0, 0.8), rng.normal(0, 0.8)
-        # cosysairsim 3.4.1 spells it euler_to_quaternion(roll, pitch, yaw) in RADIANS; `to_quaternion`
-        # (the upstream AirSim name) does not exist here.
+        # cosysairsim 3.4.1 spells it euler_to_quaternion(roll, pitch, yaw) in RADIANS.
         q = airsim.euler_to_quaternion(math.radians(roll), math.radians(pitch), 0.0)
-        c.simSetVehiclePose(airsim.Pose(airsim.Vector3r(ned_n, ned_e, ned_d), q), True)
+        # Measured 2026-09-10, and all three facts matter:
+        #  * a pose set while the sim is PAUSED is ignored entirely - the vehicle never moves, and every frame
+        #    comes out identical (8 frames from 8 different waypoints were byte-alike, taken from the ground
+        #    beside a survivor);
+        #  * a pose set while running applies ASYNCHRONOUSLY, landing one call late, so capturing immediately
+        #    photographs the PREVIOUS waypoint;
+        #  * simSetVehiclePose does not clear the body's motion, so teleporting each frame under a live solver
+        #    spun it up to 2.2e8 rad/s. The airframe then tumbled around the camera (mounted 30 cm below it)
+        #    and filled most frames with propellers - which is what wrecked the first dataset.
+        # So: move while RUNNING with the motion zeroed, wait until the pose has actually taken, then pause to
+        # capture a still frame.
+        ks = airsim.KinematicsState()
+        ks.position = airsim.Vector3r(ned_n, ned_e, ned_d)
+        ks.orientation = q
+        for _f in ("linear_velocity", "angular_velocity", "linear_acceleration", "angular_acceleration"):
+            setattr(ks, _f, airsim.Vector3r(0.0, 0.0, 0.0))
+        if not _settle(c, ks, ned_n, ned_e, ned_d, q):
+            skipped_pose += 1
+            continue
         c.simPause(True)
         try:
             g = _grab(c, names, cmap)
@@ -164,6 +209,11 @@ def main() -> int:
             c.simPause(False)
 
         labs = attach_truth(labels_from_mask(g["seg"], names, cmap), truth)
+        if k < 3 or k % 200 == 0:
+            frac = _airframe_fraction(g["seg"], names, cmap)
+            if frac > 0.02:
+                raise SystemExit(f"waypoint {k}: the drone's own airframe covers {100 * frac:.1f}% of the "
+                                 "frame - the body is tumbling around the camera again")
         # The sweep covers a lot of open flood water. Keep every frame that has a survivor, plus a regular
         # sample of empty ones as true negatives - a detector trained without negatives over-fires on glint
         # and debris, which is exactly the false-positive slice section 5.5 warns about. Skipped frames are
@@ -197,6 +247,8 @@ def main() -> int:
             print(f"  [{k + 1:4d}/{len(pts)}] {stem}  labels={len(labs):3d}  "
                   f"unique so far={len(seen):3d}  {time.time() - t0:5.1f}s")
     tf.close()
+    park(c)
+    _parked = True
 
     detectable = {a["id"] for a in truth["actors"] if a["aerially_detectable"]}
     card = {
@@ -225,6 +277,53 @@ def main() -> int:
     return 0
 
 
+def _airframe_fraction(seg, names, cmap):
+    """Fraction of the frame taken by the drone itself. The camera sits 30 cm below the body, so a tumbling
+    airframe swings into shot and silently ruins a whole dataset."""
+    from tools.capture.labels import palette_rgb
+    pal = palette_rgb(cmap)
+    idx = [i for i, n in enumerate(names) if "Drone" in n or "Propeller" in n]
+    if not idx:
+        return 0.0
+    m = np.zeros(seg.shape[:2], bool)
+    for i in idx:
+        m |= np.all(seg == pal[i], axis=2)
+    return float(m.mean())
+
+
+def _settle(c, ks, n, e, d, q, tol_m=0.30, tol_deg=1.0, tol_w=0.05, tries=40):
+    """Hold the vehicle at the commanded pose until it is ACTUALLY there and level.
+
+    Two separate traps, both measured 2026-09-10:
+      * the teleport applies asynchronously, so capturing straight away photographs the previous waypoint;
+      * the solver treats each teleport as an impulse, so the body lurches - commanding +-0.8 deg of survey
+        attitude produced rolls of up to 25.4 deg and 2.4 rad/s of spin between waypoints. That is the
+        "aggressive flipping" seen on screen, and at 25 deg the airframe can swing into the camera's view.
+    Re-applying the zeroed kinematics each iteration makes the correction win, and the exit condition checks
+    position, attitude AND angular rate rather than position alone.
+    """
+    want_roll, want_pitch = _rp_deg(q)
+    for _ in range(tries):
+        c.simSetKinematics(ks, True)
+        k = c.simGetGroundTruthKinematics()
+        p, o, w = k.position, k.orientation, k.angular_velocity
+        if (abs(p.x_val - n) < tol_m and abs(p.y_val - e) < tol_m and abs(p.z_val - d) < tol_m):
+            roll, pitch = _rp_deg(o)
+            spin = math.sqrt(w.x_val ** 2 + w.y_val ** 2 + w.z_val ** 2)
+            if abs(roll - want_roll) < tol_deg and abs(pitch - want_pitch) < tol_deg and spin < tol_w:
+                return True
+        time.sleep(0.02)
+    return False
+
+
+def _rp_deg(o):
+    """(roll, pitch) in degrees from a quaternion-like with w/x/y/z members."""
+    w, x, y, z = o.w_val, o.x_val, o.y_val, o.z_val
+    roll = math.degrees(math.atan2(2 * (w * x + y * z), 1 - 2 * (x * x + y * y)))
+    s = max(-1.0, min(1.0, 2 * (w * y - z * x)))
+    return roll, math.degrees(math.asin(s))
+
+
 def _grab(c, names, cmap) -> dict:
     req = [airsim.ImageRequest("survey", airsim.ImageType.Scene, False, False),
            airsim.ImageRequest("survey", airsim.ImageType.Segmentation, False, False)]
@@ -238,4 +337,14 @@ def _grab(c, names, cmap) -> dict:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    try:
+        raise SystemExit(main())
+    except SystemExit:
+        raise
+    except BaseException:
+        # A crash or Ctrl-C mid-sweep must not leave an armed drone airborne.
+        try:
+            park(connect())
+        except Exception:
+            pass
+        raise

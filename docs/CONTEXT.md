@@ -199,3 +199,68 @@ already-open terminals/apps (including Claude Code itself) must be restarted to 
   placeholders, saves return False). Build with PIE off.
 - The survey camera sits at NED (0, 0, 0.30) below the body: at (0.30, 0, 0.15) part of the airframe showed as a
   blurred dark blob in a nadir frame corner.
+
+**Cosys-AirSim capture facts (measured 2026-09-10, session 3). Each of these fails SILENTLY.**
+- **`simGetImages(...).image_data_uint8` is RGB, not BGR.** Proven two ways: the silt-brown flood surface gives
+  channel means 199/182/154, and reversing the segmentation palette attributes the centre of a 45 m frame to a
+  survivor 283 m away while not reversing attributes it to a house 2 m away. OpenCV is BGR, so a raw buffer
+  handed to `cv2.imwrite` saves with red and blue swapped, and a PNG read with `cv2.imread` must be reversed
+  before being matched against the palette. `tools/capture/labels.mask_to_rgb(source=...)` is the one place
+  that conversion is expressed.
+- **`simGetCameraInfo(cam).fov` is NOT the rendered FOV.** It reported 89.904 deg for the survey camera whose
+  true HFOV is **73.98 deg** (f_px 2548.7). Trusting it puts a 21 % error into every GSD, footprint and
+  geolocation number. Calibrate instead: `tools/capture/calibrate_camera.py` least-squares fits f_px against
+  known survivor positions, residual RMS 5.6 px over 48 observations - which doubles as a validation of the
+  whole nadir projection chain. Result is `data/scene/camera_survey.json`; the capture runner refuses to start
+  without it.
+- **`simListInstanceSegmentationObjects()` does not return actor names.** It returns `<Actor>_<uid>` for
+  skeletal actors and `<Mesh>_<n>_<Actor>_<uid>` for static ones, so an exact match on "Human_007" finds
+  nothing. Recover the actor by regex. The palette from `simGetSegmentationColorMap()` is indexed by position
+  in that list.
+- **A pose set while the sim is PAUSED is ignored entirely** - neither `simSetVehiclePose` nor
+  `simSetKinematics` moves the vehicle, and every frame comes out identical (8 waypoints produced 8 byte-alike
+  frames taken from the ground). Unpaused, the pose applies **asynchronously, one call late**, so capturing
+  immediately photographs the previous waypoint. Poll `simGetVehiclePose()` until it matches before capturing.
+- **`simSetVehiclePose` does not clear the body's motion.** Teleporting every frame under a live solver spun the
+  airframe to **2.2e8 rad/s** and a 17 m/s descent. The survey camera is mounted 30 cm BELOW the body, so a
+  tumbling airframe swings into shot and fills frames with propellers - it silently destroyed a 731-frame
+  dataset (42 boxes recovered of ~110 expected) while every JSON check passed. Use `simSetKinematics` with all
+  four motion fields zeroed, disarm SimpleFlight (`enableApiControl(False)` + `armDisarm(False)`) so its 60 ms
+  hover watchdog stops fighting the teleport, and **park the drone on exit** or it tumbles until PIE stops.
+- Always render a contact sheet (`tools/capture/contact_sheet.py`) and LOOK at a dataset before using it.
+
+**Unreal Python facts for posed skeletal actors (measured 2026-09-10, session 3):**
+- **`SkeletalMeshComponent.set_animation()` does not serialise.** It sets transient state only;
+  `animation_data.anim_to_play` stays None, so the pose is lost on level save and every character reverts to
+  its bind (A/T) pose at runtime while the editor still looks right. Set the `SingleAnimationPlayData` struct.
+- **`AnimationDataController.add_bone_track` is deprecated AND silently no-ops.** A pose built with it reads
+  back byte-identical to the bind pose. `add_bone_curve` works.
+- **`AnimationLibrary.get_animation_track_names()` returns names LOWERCASED** while `get_bone_name()` returns
+  them cased, so matching bone names with Python `==`/`in` silently applies no deltas.
+- **Arm bones have mirrored bind orientations, leg bones do not.** The same local delta swings the left arm down
+  and the right arm up (measured: identical delta puts the right hand 52.5 cm from its shoulder, negated pitch
+  1.19 cm). Legs take the same delta on both sides; negating kicks the right leg backwards.
+- **Root pitch -90 is face-down, +90 face-up.** A roll of 180 does NOT flip the face: at pitch 90 the rotator is
+  gimbal-locked, so it spins the body about the vertical and only swaps which end the head is at.
+- **`Bip01` and `Bip01-Footsteps` are helper bones pinned at z = 0**, so including them in pose geometry makes
+  min(z) always 0 and every upright pose reports a ground offset of 0.
+- The two Rocketbox children are rigged with a **`Bip02-` prefix**; detect it rather than hard-coding.
+- **The Rocketbox FBX import binds NO textures.** It creates `FBXLegacyPhongSurfaceMaterial` instances that
+  compile cleanly (418 instructions) and report no error, yet every character renders as a white mannequin. Bind
+  the TGAs to `DiffuseColorMap`/`NormalMap`/`SpecularColorMap` **and set the matching `*MapWeight` scalars** - a
+  bound texture with weight 0 still renders flat.
+- **Renaming an actor onto a name another actor still holds is a FATAL engine error**, not an exception:
+  `Renaming an object (...) on top of an existing object`, Obj.cpp:383. Destroying an actor does not free its
+  name until garbage collection, so a destroy-then-respawn rebuild crashes the editor; renaming the doomed actor
+  to `DEAD_*` first just moves the collision (a crashed run saves those names into the level). **Update actors
+  in place** and only ever rename a genuinely new one (`tools/scene/build_actors.py`), or avoid renaming
+  entirely and clear by outliner folder (`tools/scene/build_props.py`).
+- **A material parameter's DEFAULT texture must match its sampler type** or the whole material fails to compile
+  and renders as the grey WorldGridMaterial checker: the engine's sRGB `DefaultDiffuse` under
+  `SAMPLERTYPE_MASKS` did exactly that to every building. Assert compilation with
+  `MaterialEditingLibrary.get_statistics()` - a failed compile reports zero instructions and nothing else.
+- **Pick a material mask channel by MEASURING it.** The terrain's leaf-litter mask sampled a roughness channel
+  whose 10th percentile was already 0.878, so `saturate((G-0.55)*4)` was 1.0 everywhere and litter replaced
+  100 % of the grass layer; the grass tint provably had no effect. Measure mean/std on the host first.
+- **A generated terrain OBJ needs vertex normals.** Without `vn` and smoothing groups UE flat-shades a regular
+  grid, which reads as a corduroy ridge pattern at survey altitude.
