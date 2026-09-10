@@ -34,6 +34,9 @@ Read this first in every session. It is the entry point for continuing work in a
   asset, a passing schema check and a plausible-looking JSON all coexist happily with a broken scene.
   `tools/scene/qa_shots.py` (scene), `tools/capture/contact_sheet.py` (dataset) and
   `tools/capture/validate.py` (dataset, exits non-zero) exist for exactly this.
+  For scene work this is **enforced**: `qa_shots.py` stamps a manifest and
+  `uv run python tools/scene/assert_qa_fresh.py` exits non-zero if the scene changed after the last render.
+  It must be green before any environment work is called done.
 - **Fab cannot add assets to this project** - its content has no UE 5.8.2 build, so the compatible-project list
   is empty even with "Show all projects" ticked. Use Poly Haven (CC0, no login, HTTP API), ambientCG, or
   generate the geometry, which is how the 73 houses, 63 pose assets and the rubble field were built.

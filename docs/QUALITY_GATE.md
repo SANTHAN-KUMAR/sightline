@@ -17,6 +17,17 @@ Every one of those was found by looking at a picture, and none by reading a retu
 
 ## The gate
 
+**0. For ANY environment / scene / simulator work, the eyeball check is MANDATORY and is CHECKED.**
+`tools/scene/qa_shots.py` renders the standard views and stamps `_artifacts/editor_shots/qa_manifest.json` with
+the time of the render and what was in the level. `tools/scene/assert_qa_fresh.py` then **exits non-zero if any
+scene script or scene data file is newer than that stamp** — i.e. if the scene changed after anyone last looked.
+
+    ue_python exec tools/scene/qa_shots.py          # render, then OPEN the images
+    uv run python tools/scene/assert_qa_fresh.py    # must exit 0 before you claim the work is done
+
+No environment lane may report work complete while that check is red. Cite the manifest timestamp and say what
+you saw in the images. "The script returned success" is not an answer to "did you look at it?".
+
 **1. Produce a visual artifact, and actually look at it.**
 No change to the scene, the simulator, the dataset, or any UI is done until you have rendered it and inspected
 the image. Not the log, not the JSON, not the return value — the image.

@@ -86,4 +86,34 @@ try:
     shot("qa_4_nadir45", ue(bn, be, truth["water_level_m"] + 45.0), (0, -90, 0), fov=74.0)
 finally:
     eas.destroy_actor(cap)
-print(f"\nQA shots written. OPEN THEM - do not infer the scene is correct from API return values.")
+
+# Write a manifest so "I looked at it" becomes an auditable fact rather than a claim. It records WHEN the
+# render happened and WHAT was in the level at that moment; tools/scene/assert_qa_fresh.py then fails if any
+# scene script or scene data file is NEWER than this, i.e. if the scene changed after anyone last looked.
+import hashlib
+import time as _time
+
+shots = sorted(f for f in os.listdir(OUT) if f.startswith("qa_") and f.endswith(".png"))
+_all = eas.get_all_level_actors()
+manifest = {
+    "rendered_utc": _time.time(),
+    "rendered_local": _time.strftime("%Y-%m-%d %H:%M:%S"),
+    "level": world.get_name(),
+    "actor_count": len(_all),
+    "survivors": sum(1 for a in _all if a.get_name().startswith("Human_")),
+    "houses": sum(1 for a in _all if str(a.get_folder_path()) == "Settlement"),
+    "debris": sum(1 for a in _all if str(a.get_folder_path()) == "Debris"),
+    "images": [],
+}
+for f in shots:
+    fp = os.path.join(OUT, f)
+    with open(fp, "rb") as fh:
+        manifest["images"].append({"file": f, "bytes": os.path.getsize(fp),
+                                   "sha1": hashlib.sha1(fh.read()).hexdigest()[:16]})
+with open(os.path.join(OUT, "qa_manifest.json"), "w") as fh:
+    json.dump(manifest, fh, indent=1)
+
+print(f"\n{len(shots)} QA shots + qa_manifest.json written to {OUT}")
+print(f"  level {manifest['level']}: {manifest['actor_count']} actors "
+      f"({manifest['survivors']} survivors, {manifest['houses']} houses, {manifest['debris']} debris)")
+print("OPEN THE IMAGES. Do not infer the scene is correct from API return values.")
