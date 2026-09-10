@@ -150,11 +150,11 @@ editing and to use small unique-string edits - several agents edit `server.py`.
 
 | Item | State | Who can close it |
 |---|---|---|
-| Gamepad handover latency (F3, day-1 #4) | AirSim sees the pad; sticks read neutral in two 180 s windows | run `tools/day1/gamepad_airsim.py` (~4 min) with the user holding the controller |
+| ~~Gamepad handover (F3, day-1 #4)~~ | **CLOSED**: 13 PASS / 0 FAIL; API→RC 394 ms, RC→API 2.96 s | — (re-run `tools/day1/gamepad_airsim.py` after changes to `sim_fly`) |
 | Cesium for Unreal | staged in `_staging/plugins`, BuildId matches | integration steps in `external_tools.md`; needs the user's Cesium ion sign-in |
 | X-AnyLabeling on GPU | runs on CPU; cuDNN 9 missing | unpack cuDNN 9 into `D:\Tools\cudnn` |
 | Human/animal assets | none acquired | Mixamo needs an Adobe login (user); UE mannequin is the fallback |
-| GPU latency table (day-1 #8) | benchmark written, run pending | `tools/day1/latency_benchmark.py` with nothing else on the GPU |
+| ~~GPU latency table (day-1 #8)~~ | **CLOSED**: all six configs < 300 ms; design pass C2/yolo26s = 65 ms (`gpu_latency.md`) | INT8 and the Orin table (F20) remain open |
 | Real datasets (§6.1) | none downloaded | licences differ per set; record each in the data card |
 | PX4 SITL / QGC (F4, stretch) | not installed; WSL has no distro | steps in `external_tools.md` |
 

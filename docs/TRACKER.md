@@ -48,13 +48,13 @@ Reports land in `docs/verification/`. A tool is not "ready" until its report say
 |---|---|---|---|
 | V1 engine MCP | sightline engine/build/editor/log/job tools + Epic `unreal` MCP live (toolset inventory) | `engine_tools.md` | [x] all sightline engine tools PASS; Epic: 31 toolsets / 392 tools, 17 real calls incl. CaptureViewport PNG. Fixed: `ue_generate_project_files` (batch file absent in installed engine), missing user env -> editor DDC would go to C:, UBA store -> D:, double-execution after a timed-out editor command |
 | V9 dev workflow | AirSim inside the editor (PIE), gamepad via AirSim + takeover, full 27-tool matrix, CLI spot-checks | `dev_workflow.md` | [x] PIE loop PASS (launch 49 s cold, StopPIE -> tools error in 0.31 s, editor closes cleanly 4/4); AirSim **39/39 in-editor**; tool matrix **33/33 up / 12/12 down, all 27 tools**; CLI drove a real flight + capture (image survived MCP as valid JPEG). Fixed D1: first `simGetImages` per engine process returned **unconverted** depth/normals (silently wrong) -> warm-up frame discarded + implausible-depth warning |
-| V7 GPU latency | day-1 test #8: C1/C2/C3 strategies, TensorRT FP16, RTX 4060 | `gpu_latency.md` | [~] running (`tools/day1/latency_benchmark.py`, yolo26 n+s) |
+| V7 GPU latency | day-1 test #8: C1/C2/C3 strategies, TensorRT FP16, RTX 4060 | `gpu_latency.md` | [x] all six configs **inside 300 ms**. Design pass (C2, yolo26s, 6×1280×1088 batched) = **65.0 ms median / 68.3 p90** vs the doc's ~60 ms estimate; C1-s 16.7 ms, C3-s 29.2 ms. FP16 only; INT8 and Orin (F20) still open |
 | V2 MCP protocol | sightline server schemas, errors, concurrency, cancellation, lifecycle (`tests/test_mcp_protocol.py`) | `mcp_protocol.md` | [x] 20 pass / 2 skip (no-editor cases skip while an editor runs; passed with it down). 9 defects fixed |
 | V3 Claude Code integration | CLI loads `.mcp.json`, real tool calls via `claude -p`, timeouts, reconnect | `claude_code_integration.md` | [!] servers load + tools discovered (27) + unreal connects; real `claude -p` calls BLOCKED: CLI not logged in (user: `claude auth login`). Project `.claude/settings.json` sets MCP timeouts |
 | V4 AirSim tools | every sim_* tool through MCP (`tools/sightline_mcp/test_sim.py`) | results JSON in `_artifacts/verification/` | [x] **39/39** vs packaged Blocks (2026-09-10 19:19). Defects found+fixed: broken `landAsync` (own position-held landing + disarm; RTL lands 0.2 mm from home), velocity-only descent drifting into obstacles, static-actor pose silently "succeeding", `to_eularian_angles`/`to_quaternion`/`simGetImages(external=)` wrong API names, 60 s RPC timeout on long flights, falling-after-reset breaking takeoff, over-strict Ground collision rule |
 | V5 Python stack | all Python libs in doc: install pinned + functional tests (`tests/test_stack.py`) | `python_stack.md` | [~] |
 | V6 external tools | Cesium, X-AnyLabeling, PMTiles+MapLibre offline, Fields2Cover, PX4/QGC, DroneModels, TAK, gamepad | `external_tools.md` | [x] X-AnyLabeling, PMTiles, MapLibre offline, DroneModels PASS; Cesium STAGED (`_staging/plugins`, BuildId match); Fields2Cover REJECT on Windows (own boustrophedon); PX4/QGC/TAK documented |
-| V8 gamepad | XInput + pygame detection, live input, AirSim `rc_data`, API release/re-acquire handover | (this file) | [~] detected (XInput slot 0, pygame "Xbox 360 Controller", 6 axes/11 buttons); live input NOT yet observed (all-zero for 55 s) - re-test with `tools/day1/gamepad_check.py --wait-for-input 120` |
+| V8 gamepad | XInput + pygame detection, live input, AirSim `rc_data`, API release/re-acquire handover | `_artifacts/verification/gamepad_airsim_*.json` | [x] **13 PASS / 0 FAIL** (2026-09-10 20:31). AirSim sees the pad (VID_045E, is_valid); axes full travel; under API control a held stick moves the drone 0.01 m in 4 s; `release` -> API off in 23 ms, vehicle follows the stick after **394 ms**; `arm` -> authority back, stabilised in **2.96 s**, then `move_to` obeyed to 0.22 m with the stick still held; rtl landed. F3's takeover semantics are proven |
 | V7 GPU performance | day-1 test #8: C1/C2/C3 latency on the 4060 (after V5) | `gpu_latency.md` | [ ] |
 
 MCP defects already found and fixed (2026-09-10): stdout pollution by cosysairsim prints; Windows stdio deadlock on lazy
@@ -63,10 +63,10 @@ numpy import (now eager imports); blocking tools moved off the event loop (`@thr
 Also: `materials.csv` missing -> Cosys skips material stencil init (installed via `tools/setup/install_materials.ps1`).
 
 ## Open items carried into development
-- **Gamepad handover unmeasured** (day-1 #4 / F3): AirSim sees the pad (`is_initialized/is_valid` true, VID_045E,
-  resting throttle 0.5) but sticks read neutral through two 180 s windows. Run `tools/day1/gamepad_airsim.py`
-  (~4 min) with someone holding the controller; the Unreal window does NOT need focus (DirectInput uses
-  `DISCL_BACKGROUND`). With `AllowAPIAlways:true`, `AllowAPIWhenDisconnected` is a no-op.
+- ~~Gamepad handover unmeasured~~ **CLOSED 2026-09-10**: 13 PASS / 0 FAIL, latencies API->RC 394 ms and
+  RC->API 2.96 s (`tools/day1/gamepad_airsim.py`). The Unreal window does NOT need focus (DirectInput uses
+  `DISCL_BACKGROUND`); with `AllowAPIAlways:true`, `AllowAPIWhenDisconnected` is a no-op. F3 must log every
+  mode switch into the telemetry CSV (§5.2) so coverage can be attributed to AUTO vs MANUAL.
 - **Epic `unreal` MCP drops idle HTTP sockets after 15 s** (`HttpConnection.h:266 ConnectionKeepAliveTimeout`,
   hard-coded, no cvar). Symptom: "The socket connection was closed unexpectedly". **Retry the call once.**
 - **Cosys 3.4.1 logs nothing to the UE log** (`UAirBlueprintLib::LogMessage` has every `UE_LOG` commented out), so
