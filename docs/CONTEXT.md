@@ -97,7 +97,9 @@ already-open terminals/apps (including Claude Code itself) must be restarted to 
 | 2026-09-10 | AirSim settings passed with `-settings=<repo path>`, never `Documents\AirSim` | reproducible, versioned per scenario (doc §5.1 "a settings.json per scenario") |
 | 2026-09-10 | Python 3.11 single env; `opencv-python` only | cosysairsim classifiers stop at 3.11; `opencv-contrib-python` (listed in Cosys requirements.txt, not in the wheel's deps) collides with Ultralytics' opencv-python |
 | 2026-09-10 | Epic's MCP plugin plus our own server, instead of third-party UE MCP plugins | first-party, ships prebuilt with 5.8.2, no extra C++ to maintain; ours covers lifecycle, builds and AirSim |
-| 2026-09-10 | `OriginGeopoint` 11.4870 N, 76.1450 E, **1060 m** (approximate Chooralmala/Mundakkai valley) | doc §5.1 "set OriginGeopoint to the Wayanad valley". Altitude corrected from the guessed 900 m to the Copernicus GLO-30 value at that point, measured with dem-stitcher (docs/verification/python_stack.md §7). Latitude/longitude still to be pinned to the real deposit fan when the scene is built |
+| 2026-09-10 | `OriginGeopoint` 11.4870 N, 76.1450 E, **1060 m** (approximate Chooralmala/Mundakkai valley) | doc §5.1 "set OriginGeopoint to the Wayanad valley". Altitude corrected from the guessed 900 m to the Copernicus GLO-30 value at that point, measured with dem-stitcher (docs/verification/python_stack.md §7). **Superseded below** |
+| 2026-09-10 | **`OriginGeopoint` = 11.4870 N, 76.1450 E, 1046.007 m** (map centre at the ASL height of UE world Z = 0) | **Cosys anchors OriginGeopoint at the UE world origin, not the PlayerStart** (measured: vehicle GPS = OriginGeopoint + PlayerStart offset, to 0.3 m). The FloodValley terrain is synthetic; its lowest point (`base_z_m` in `data/scene/flood_valley.json`) is world Z = 0. Verified: drone on the pad reads 11.4883295 N / 76.1495101 E = the pad's computed geopoint |
+| 2026-09-10 | Simulation-first (doc §5.5c, new in the updated SOLUTION_DOC): the renderer is the deployment domain; demo model F8b trained on sim frames only, randomisation OFF by default, nominal slice 40-60 m / daylight / occlusion < 50 %, splits by scenario seed; every number carries a `sim`/`real` domain column | user's updated build document (root `PS2-Survivor-Vision-Research-and-Build-Document.md`, copied to `docs/SOLUTION_DOC.md`) |
 
 ## 6. Verified facts about Cosys-AirSim 5.8-v3.4.1 (from repo docs, 2026-09-10)
 - Settings search order: `-settings="abs path"` or `-settings={json}` > exe dir > launch dir > `Documents\AirSim`.
@@ -143,3 +145,22 @@ already-open terminals/apps (including Claude Code itself) must be restarted to 
   spawn movable objects with `simSpawnObject` (asset names from `simListAssets`).
 - SimpleFlight braking from 6 m/s overshoots ~2 m and settles in ~7-8 s. Allow settling before precise captures.
 - winget may treat a failed VS install as installed; re-run the VS bootstrapper directly (see `docs/SETUP.md`).
+
+**FloodValley scene facts (measured 2026-09-10, session 2):**
+- **UE's OBJ importer flips handedness**: an OBJ with x = east, y = north lands as UE +X = east, UE -Y = north
+  (checked with line traces against the height grid at three asymmetric points). The terrain actor carries
+  **yaw +90 deg**, which gives AirSim's NED convention exactly: UE X = north, UE Y = east. Spawners must use
+  `UE (X, Y, Z) cm = (north*100, east*100, (asl - base_z)*100)` (also in `data/scene/flood_valley.json` `ue_import`).
+- **The OBJ must be written in centimetres**: UE does not rescale OBJ units (a metre OBJ imported 100x too small).
+- **Imported meshes come in with Nanite ON**; `get_num_triangles` then reports the fallback mesh (347 tris for a
+  524k-tri terrain). Turn Nanite off on import (doc §4) and set `CTF_USE_COMPLEX_AS_SIMPLE` for terrain collision.
+- **The terrain actor's object name is `Ground`**: `sim_fly` treats contact with "Ground" as normal (pad, takeoff,
+  touchdown). Any other name makes every takeoff from the terrain fail as a collision. From the next sightline
+  server start, a `Ground` contact with a normal > ~45 deg off vertical (a hillside strike) fails as well.
+- **Cosys uses the actor object name** (`GetName()`), not the editor label, for `simListSceneObjects` / poses /
+  collision reports. Rename actors (`actor.rename(label)`) when a stable API name matters (`Ground`, `FloodWater`).
+- **Editor Python has no numpy.** Do grid maths on the host (`uv run`) and pass numbers in.
+- `LevelEditorSubsystem.editor_request_end_play()` is asynchronous: in the same script, `get_all_level_actors()`
+  still returns the PIE world and `save_current_level()` returns False. End PIE in one call, edit in the next.
+- AirSim settings files are re-read on every PIE start (a changed OriginGeopoint took effect without an editor
+  restart).

@@ -3,13 +3,15 @@
 **Problem statement:** PS 2, AI for Disaster Response & Public Safety — *Real-Time Vision System for Identifying Survivors in Flood, Landslide and Tsunami Zones*.
 **Prepared:** 10 September 2026. **Target dev machine:** Windows 11, NVIDIA RTX 4060 (8 GB VRAM), 16 GB RAM. **Deployment target named by the PS:** NVIDIA Jetson Orin, < 300 ms per frame.
 
-**Contents:** 0. How to read · 1. The problem, re-framed · 2. The disaster we simulate (scenario choice, causal attribute model, correlated priors, sensor numbers, the burial boundary) · 3. Solution overview · 4. Hardware envelope · 5. The stack (5.1 simulation, 5.2 flight control and takeover, 5.3 search planning, search-quality map, decision planner and per-presentation coverage, 5.4 ingest, 5.5 detection and fusion, 5.5a posture and submersion head, 5.5b radiometric thermal, 5.6 tracking and dedup, 5.7 geolocation, 5.8 triage output, 5.9 map and C2, 5.10 offline and cloud, 5.11 edge latency, 5.12 evaluation) · 6. Data plan and annotation guideline · 7. Full user flow · 8. Feature list · 9. Build plan and demo script · 10. Risks and day-1 tests · Appendices A–E (reuse ledger, formulas, FMCW radar paper, gods-eye-view, papers).
+**Contents:** 0. How to read · 1. The problem, re-framed · 2. The disaster we simulate (scenario choice, causal attribute model, correlated priors, sensor numbers, the burial boundary) · 3. Solution overview · 4. Hardware envelope · 5. The stack (5.1 simulation, 5.2 flight control and takeover, 5.3 search planning, search-quality map, decision planner and per-presentation coverage, 5.4 ingest, 5.5 detection and fusion, 5.5a posture and submersion head, 5.5b radiometric thermal, 5.5c simulation-first training, 5.6 tracking and dedup, 5.7 geolocation, 5.8 triage output, 5.9 map and C2, 5.10 offline and cloud, 5.11 edge latency, 5.12 evaluation) · 6. Data plan and annotation guideline · 7. Full user flow · 8. Feature list · 9. Build plan and demo script · 10. Risks and day-1 tests · Appendices A–E (reuse ledger, formulas, FMCW radar paper, gods-eye-view, papers).
 
 ---
 
 ## 0. How to read this document
 
 This document is linear. Each section is built on the one before it: the problem is re-framed (§1), one disaster scenario is chosen and decomposed into the physical attributes that make detection hard (§2), the solution is stated (§3), the hardware envelope is fixed (§4), the stack is chosen component by component with verified reuse candidates (§5), the data plan follows from the stack (§6), the user flow and feature list follow from the data plan (§7–8), and the build plan and risks close it (§9–10). Appendices hold the reuse ledger, formulas and notes on the two references you gave that needed identification.
+
+**One framing decision governs everything below: this is a simulation-first project.** The drone, sensors, scene and disaster are rendered, the demo runs on rendered frames, and the acceptance thresholds are demonstrated on rendered frames. The renderer is the deployment domain, not a training aid. §5.5c states what that means for training, for the recall target and for how every number must be reported; read it before acting on the data plan in §6, which is written for the optional real-world variant.
 
 Three conventions are used throughout:
 
@@ -630,7 +632,7 @@ else:
 
 The ProbEn rule keeps a box seen by only one modality at that modality's posterior (marginalisation), which is what lets a thermal-only hot spot survive at night and an RGB-only detection survive over midday water. The thermal weight is lowered at midday and during the crossover windows (§2.3 rows 20 and 23) and raised at night.
 
-**Training recipe for 8 GB VRAM (Windows 11).** Verified facts: Ultralytics `batch=-1` auto-sizes to ~60 % of GPU memory; AMP is on by default; use `cache='disk'` not RAM with 16 GB; set `workers ≤ 4` and wrap training in `if __name__ == "__main__":` on Windows.
+**Training recipe for 8 GB VRAM (Windows 11).** *This three-stage recipe builds the transferable model that generalises to real footage. For the demo model that runs in the simulator and produces the acceptance figures, use the single-run recipe in §5.5c instead.* Verified facts: Ultralytics `batch=-1` auto-sizes to ~60 % of GPU memory; AMP is on by default; use `cache='disk'` not RAM with 16 GB; set `workers ≤ 4` and wrap training in `if __name__ == "__main__":` on Windows.
 
 | Stage | Data | Setting | Fits 8 GB? |
 |---|---|---|---|
@@ -711,6 +713,47 @@ Architecture: a frozen DINOv2 or DINOv3 ViT-S feature extractor with four small 
 - The filter must never be allowed to reject a record outright on its own. It adjusts the thermal weight and can demote a *distractor*; a record supported by RGB survives regardless. This mirrors the standing rule that a thermal negative is never a clearance.
 
 **Factors.** Technical: emissivity assumptions, ±2 °C accuracy, stills-only on real hardware. Operational: the temperature reading is shown on the record card as evidence a commander can read. Environmental: this is the direct countermeasure to the midday solar-loading false positives of §2.3 row 23, which are the dominant precision failure. Integration: one extra parser on the stills path, one extra channel in the simulator, one term in the fusion weight. Feasibility: the parser is an afternoon; the simulator channel is nearly free.
+
+### 5.5c Simulation-first: the primary target is the simulator, and how ≥ 90 % recall is reached cheaply there
+
+**Read this before §6's data plan, because it changes what that plan is for.** Sections 5.5 and 6 are written for a model that generalises to real disaster footage, and they are correct for that goal. But **the deliverable of this project is a simulated system.** The drone flies in Unreal, the cameras are rendered, the demo runs on rendered frames, and the acceptance thresholds will be demonstrated on rendered frames. The renderer is therefore not a training aid, it is the **deployment domain**, and a model must have seen its deployment domain during training. A model tuned only for real photographs and evaluated on renders is optimised for a target nobody in this project will ever run.
+
+This subsection states the simulation-first objective explicitly, gives the recipe that reaches the ≥ 90 % recall threshold with a single short training run, and sets the reporting rule that keeps the claim defensible.
+
+**Why ≥ 90 % is cheap in simulation and expensive in reality.** Detector recall is dominated by three quantities, and in a simulator you own all three.
+
+| Quantity | In the real world | In simulation |
+|---|---|---|
+| Pixels on target | Set by the drone, weather and altitude you happen to get | You choose the altitude and therefore the pixel count |
+| Domain gap between training and test data | Large and unavoidable: different cameras, sensors, lighting, seasons | **Zero.** Both sets come from the same renderer, actors, materials and lighting rig |
+| Scene difficulty | Whatever the disaster produced | You choose the occlusion, submersion and posture distribution |
+
+The middle row is the whole story. Almost all of the difficulty in the real recipe — the three-stage pipeline, the six real datasets, the sixty-forty mixing rule, the two to three days of curation — exists to survive a domain gap that does not exist when you train and test on the same renderer. Remove that gap and the problem becomes an ordinary, easy detection task.
+
+**The simulation-first recipe. One training run, no dataset curation.**
+
+1. **Fly for the number.** This is the single largest lever and it is not machine learning. Fly the evaluation passes at **40–50 m** and tile the 4K frame at native resolution. That puts an upright person at 25–30 px and a prone body well over 60 px, comfortably above the 20 px floor of §2.5. Flying at 100 m and downscaling the frame will defeat any model you can train.
+2. **Fine-tune from COCO on simulator frames only.** Skip stage 1 of §5.5 entirely. Take stock YOLO26s weights, fine-tune for 30–50 epochs on 10–20k rendered tiles, at 1024. That is one overnight run on the RTX 4060, or two to four hours on a rented GPU. No real datasets are downloaded, no formats are converted, no licences are read.
+3. **Split by scenario seed, never by frame.** Train and test scenes must use different seeds, different actor placements and different weather draws. Same renderer, different scenes. Splitting by frame would be leakage and the resulting number would be worthless even as a simulation claim.
+4. **Run a low confidence threshold and recover precision downstream.** Pick the lowest threshold that keeps false positives per minute tolerable, not the highest that keeps recall up. The verifier of §5.5a, the three-hits-in-two-seconds confirmation of §5.6 and geographic deduplication all exist to make the resulting false positives cheap.
+5. **Define the nominal slice before you measure it.** The headline claim is recall on a stated slice: 40–60 m, daylight, occlusion below 50 %, non-submerged presentations. Report that number as the acceptance figure. Report the hard slices — head-only, limb-only, crossover-window thermal, above 90 m — as separate numbers in the same table. §5.3b already defines these classes.
+
+Expect the nominal slice to clear 90 % comfortably with the recipe above, because the model is being tested on the distribution it was trained on. **Measure it rather than assuming it**, and if it does not clear, the cause will be flight geometry or scene difficulty, not the model, in which case lower the altitude before touching the training.
+
+**The domain-randomisation trade, stated so it is a choice and not an accident.** §5.1 lists runtime texture swapping and camera noise, chromatic aberration, lens distortion and motion blur as features. They are in fact the two levers that control which way this project points, and they pull against the number you are trying to demonstrate.
+
+| Setting | In-simulation recall | Real-footage capability |
+|---|---|---|
+| Randomisation off, fixed materials and clean renders | **Highest.** Train and test are nearly identical | Near zero. The model has learned this renderer |
+| Randomisation on: texture swapping, sensor noise, aberration, blur | Lower, by an amount you should measure | Meaningfully better. Texture randomisation alone is worth double-digit mean average precision in the drone literature |
+
+For a demonstration built and judged in simulation, **randomisation off is the correct default** and gives the acceptance number. Turning it on is the stretch that buys a claim about the real world. Do not switch it on midway through and then compare numbers across the switch.
+
+**Two models, or one model and two numbers.** The primary artefact is the **demo model**: simulator-only training, evaluated on held-out simulator scenes, and this is what runs in the demo and produces the acceptance figures. The optional secondary artefact is the **transferable model** from §5.5 and §6: real data plus simulator data at roughly sixty-forty, evaluated on a real clip. Build the first; build the second only if time remains. They come from the same scripts and differ by a dataset path.
+
+**The reporting rule, which is a competitive advantage rather than a formality.** Every recall figure carries the domain it was measured in, in the same sentence as the number: "94 % recall at IoU 0.5, in simulation, on the nominal slice." A judge or reviewer will ask whether it works on real footage. A team that answers "we measured 94 % in simulation, we measured the real-footage gap on one clip, and here is what closes it" is in a far stronger position than one that quotes a single unqualified figure and cannot say how it was obtained. Never average a simulation number with a real number, and never present a simulation number without the word.
+
+**What this changes elsewhere in the document.** §5.5's three-stage recipe becomes the *transferable-model* path rather than the default. §6's dataset table becomes optional for the demo and required only for the transferable model. §6.5's sixty-forty rule applies to the transferable model only; the demo model is one hundred percent simulator data by design. §5.12's evaluation harness is unchanged, but every table gains a domain column.
 
 ### 5.6 Tracking and deduplication (R4)
 
@@ -866,6 +909,8 @@ Caveat that decides the day-1 test: users have measured 2–3.5× the published 
 - **Geolocation error:** median and 90th-percentile distance from ground-truth survivor positions vs the §5.7 prediction.
 - **Search-quality map calibration:** for cells with a ground-truth survivor, the fraction detected, binned by the cell's predicted probability of detection (a reliability diagram; the map is honest if the bins lie near the diagonal).
 
+**Every table in this report carries a domain column** (`sim` or `real`), and no figure is quoted without it (§5.5c). The acceptance figures come from the simulator; any real-footage figure is reported beside them, never averaged with them.
+
 **Held-out clip protocol.** One simulator clip (noise-injected telemetry, known survivor IDs and positions, all three zones, at least one buried actor and one crossover-window segment) plus one real DJI clip with boxes hand-labelled every 10th frame. Publish every number above with its slice grid (zone × altitude × band × time of day × occlusion × posture), and the missed-detection analysis: recall vs pixel-height histogram to find the operating floor, and the top failure clusters from FiftyOne (expected: head-only in turbid water at > 60 m, midday roofing-sheet false positives, crossover-window thermal misses).
 
 **What the numbers are expected to look like** (so the team knows what "good" is before running anything): HERIDAL-class imagery at 2 cm GSD gives 86.1 % recall at IoU 0.5 (92.9 % relaxed); the POP thermal set gives 0.78 recall for YOLOv8s; VisDrone all-classes at 640 gives 0.36–0.41. **The ≥ 90 % target is expected to be met only on tiled high-resolution RGB at ≤ 60 m AGL with in-domain fine-tuning, and the report must say so slice by slice.**
@@ -945,7 +990,7 @@ Loop: sample 1–2 FPS per flight and drop near-duplicates → tile 4K frames to
 
 ### 6.5 Mixing and splits
 
-Real:synthetic ≈ 60:40 in the fine-tune stage, synthetic never above 40 % of the mix; pose-diverse synthetic first (Archangel finding). Splits are **by flight or by scenario seed, never by frame**, to avoid leakage between near-identical frames. Held-out: one simulator clip (all three zones, noise-injected telemetry, buried actors, a crossover-window segment) and one real DJI clip labelled every 10th frame. Every reported number carries its slice.
+*This mixing rule applies to the transferable model only. The demo model is trained on 100 % simulator frames by design — see §5.5c.* Real:synthetic ≈ 60:40 in the fine-tune stage, synthetic never above 40 % of the mix; pose-diverse synthetic first (Archangel finding). Splits are **by flight or by scenario seed, never by frame**, to avoid leakage between near-identical frames. Held-out: one simulator clip (all three zones, noise-injected telemetry, buried actors, a crossover-window segment) and one real DJI clip labelled every 10th frame. Every reported number carries its slice.
 
 ---
 
@@ -984,6 +1029,8 @@ Three roles use the system: the **incident commander** (owns segments, prioritie
 | F6 | Annotation guideline and X-AnyLabeling review loop for real footage | R11 | MVP |
 | F7 | Ingest from simulator export, DJI SRT, MAVLink, ULog; time alignment; NVDEC decode; decimation | R1 | MVP (SRT + sim); MAVLink/ULog stretch |
 | F8 | Tiled YOLO26 RGB detector at native 4K resolution; TensorRT export; operating threshold frozen for recall ≥ 0.92 | R2, R9 | MVP |
+| F8b | **Demo model**: single fine-tune on simulator frames only, evaluated on held-out simulator scenes, randomisation off; produces the acceptance figures (§5.5c) | R2, A13 | **MVP** |
+| F8c | Transferable model: three-stage recipe on real + synthetic, evaluated on a real clip; measures the domain gap | R2 | Stretch |
 | F9 | Thermal YOLO26n + WBF/ProbEn late fusion with structural RGB-only fallback; per-altitude homography for real payloads | R3 | MVP (fusion); registration stretch |
 | F9b | Radiometric thermal on the stills/dwell path and throughout the simulator: absolute-temperature filter for sun-heated distractors, and a measured fusion weight (§5.5b) | R3 | MVP in sim; stretch on real hardware (video is AGC-only) |
 | F10 | Crop verifier, multi-output: `is_real` + posture + submersion + occlusion per candidate. Doubles as the triage-attribute predictor (§5.5a) | R2, R6 | **MVP** (promoted: it feeds the triage ranking, not just precision) |
@@ -1016,7 +1063,7 @@ The order is chosen so that a demonstrable slice exists at the end of every day 
 | 6 | Fine-tune on synthetic + real; threshold selection; FP/min; missed-detection analysis; real DJI clip through the replay harness; Jetson build if hardware exists | Report v2; README; dataset card and annotation guideline |
 | 7 | Demo rehearsal, packaging, buffer for the unverified items in §10 | Demo runs twice from a clean start |
 
-**Demo script (8 minutes).** (1) Map with the Wayanad-type scenario, burial polygons hatched, prior and segments drawn. (2) Launch; AUTO pattern over the flooded settlement; first records appear with thumbnails; the POD raster fills. (3) Operator takes over on the gamepad, flies under an eave, finds a prone person the pattern missed; hands back; the mission resumes. (4) Switch time of day to pre-dawn; thermal-positive records rank up; pull the thermal feed: the RGB-only fallback keeps working. (5) Second pass over the same roof: still one record, count updated. (6) Disconnect the network: outbox depth rises; reconnect: it drains; export KML and open it. (7) Show the evaluation dashboard for the held-out clip: recall, FP/min, dedup, geolocation error, and the slice where recall drops (head-only at 90 m), stated honestly. (8) Close on the guardrail: the commander dismisses a record with a reason; nothing is deleted; no segment is ever "closed".
+**Demo script (8 minutes).** (1) Map with the Wayanad-type scenario, burial polygons hatched, prior and segments drawn. (2) Launch; AUTO pattern over the flooded settlement; first records appear with thumbnails; the POD raster fills. (3) Operator takes over on the gamepad, flies under an eave, finds a prone person the pattern missed; hands back; the mission resumes. (4) Switch time of day to pre-dawn; thermal-positive records rank up; pull the thermal feed: the RGB-only fallback keeps working. (5) Second pass over the same roof: still one record, count updated. (6) Disconnect the network: outbox depth rises; reconnect: it drains; export KML and open it. (7) Show the evaluation dashboard for the held-out clip, saying the domain out loud: "94 % recall at IoU 0.5, in simulation, on the nominal slice", then the slices where it drops (head-only at 90 m), stated honestly. (8) Close on the guardrail: the commander dismisses a record with a reason; nothing is deleted; no segment is ever "closed".
 
 ---
 

@@ -8,11 +8,14 @@ of work and append to the Session log.
 The environment and both MCP servers are validated (see the verification table below); feature work starts now.
 Read `docs/HANDBOOK.md` §6 before touching the scene — it lists the traps that would silently corrupt the dataset.
 
-1. **F1 flood-valley scene.** Author `/Game/Sightline/Maps/FloodValley`: static-mesh terrain (NOT Landscape — it
-   breaks instance segmentation), three zones (deposit fan, flooded settlement, channel+banks), water surface with
-   a `FloodLevel` Z settable from Python, GI = None. `tools/scene/gen_terrain.py` is an **unvalidated draft**: its
-   outputs were deleted because its parameters changed after the only run; regenerate, inspect the preview, then
-   import. Verify submerged pixels are hidden in the label passes with a real capture (day-1 test #2).
+1. **F1 flood-valley scene — FOUNDATION DONE (2026-09-10, session 2), dressing in progress.**
+   `/Game/Sightline/Maps/FloodValley` exists and is the project's startup + game map. Rebuild it any time with
+   `tools/scene/gen_terrain.py` then `ue_python code="exec(open(r'D:\Sightline\tools\scene\build_flood_valley.py').read())"`
+   (idempotent; self-checks the terrain transform with a line trace). FloodLevel at runtime:
+   `uv run python tools/scene/flood_level.py <asl_m>`. **Remaining for F1:** terrain material (zone mask
+   `T_FloodValley_Zones` + CC0 PBR textures), water normals/foam, settlement buildings, debris, vegetation,
+   then day-1 #2 with a real half-submerged actor (water already writes depth and has its own instance colour).
+   The generator also needs zone polygons/spawn masks for the spawners (next item).
 2. **Actor + debris spawners** (seeded, reproducible): pose/submersion classes per §2.3 row 2-3 and §6.2, tagged
    `Human_<id>` / `Animal_<id>`, movable actors only (static ones cannot be posed at runtime).
 3. **Thermal**: object-ID temperature table first (day-1 test #3), then the §5.1 step 7 post-process material.

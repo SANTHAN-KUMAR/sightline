@@ -1,4 +1,4 @@
-{
+﻿{
   "SettingsVersion": 2.0,
   "SimMode": "Multirotor",
   "ClockType": "SteppableClock",
@@ -10,7 +10,7 @@
   "InitialInstanceSegmentation": true,
   "EngineSound": false,
   "ViewMode": "NoDisplay",
-  "OriginGeopoint": { "Latitude": 11.4870, "Longitude": 76.1450, "Altitude": 1060 },
+  "OriginGeopoint": { "Latitude": 11.4870, "Longitude": 76.1450, "Altitude": 1046.007 },
   "Vehicles": {
     "Drone": {
       "VehicleType": "SimpleFlight",

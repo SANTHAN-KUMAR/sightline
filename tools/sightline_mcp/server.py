@@ -827,10 +827,15 @@ def sim_fly(action: str, x: float = 0.0, y: float = 0.0, z: float = -10.0, veloc
             out = f(c)
         ci = c.simGetCollisionInfo(vehicle_name=vehicle)
         hit = None
-        # "Ground" is the world floor: contact with it is normal on the pad, during a climb and at touchdown, so only
-        # collisions with real objects (buildings, debris, level geometry) are reported as failures.
-        if ci.has_collided and ci.time_stamp != t_before and ci.object_name and ci.object_name != "Ground":
-            hit = {"object": ci.object_name, "penetration_m": round(ci.penetration_depth, 3)}
+        # "Ground" is the world floor (the flat Blocks floor, or the FloodValley terrain mesh, which is named
+        # "Ground" for this reason): contact with it is normal on the pad, during a climb and at touchdown. Other
+        # objects (buildings, debris, level geometry) always fail. On terrain a valley wall is also "Ground", so a
+        # contact whose normal is more than ~45 deg off vertical is a hillside strike and fails too.
+        if ci.has_collided and ci.time_stamp != t_before and ci.object_name:
+            steep = abs(ci.normal.z_val) < 0.7
+            if ci.object_name != "Ground" or steep:
+                hit = {"object": ci.object_name + (" (steep terrain)" if ci.object_name == "Ground" else ""),
+                       "penetration_m": round(ci.penetration_depth, 3)}
         return out, hit
 
     res, hit = _sim(g)
