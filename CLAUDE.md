@@ -4,8 +4,10 @@ Read this first in every session. It is the entry point for continuing work in a
 
 ## Read order for a fresh session
 1. `CLAUDE.md` (this file): rules, commands, tooling.
-2. `docs/TRACKER.md`: what is done, in progress and next. **Start from its "Next actions" list.**
-3. `docs/CONTEXT.md`: environment facts, decisions, deviations from the solution doc, known pitfalls.
+2. `docs/HANDBOOK.md`: current state, hard rules, machine limits, simulator behaviour that costs hours to
+   rediscover, and the traps in the work that comes next. **Read §5 and §6 before touching the sim or the scene.**
+3. `docs/TRACKER.md`: what is done, in progress and next. **Start from its "Next actions" list.**
+4. `docs/CONTEXT.md`: environment facts, decisions, deviations from the solution doc, known pitfalls.
 4. `docs/SOLUTION_DOC.md`: the full research/build document (source of truth for *what* to build). Read by
    section on demand; it is long (~77k tokens).
 

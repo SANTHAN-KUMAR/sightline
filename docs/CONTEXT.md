@@ -3,6 +3,11 @@
 What a new session needs to know that is **not** obvious from the code. Keep it factual; date every change.
 The build plan itself lives in `SOLUTION_DOC.md`; progress lives in `TRACKER.md`.
 
+**Phase status (2026-09-10):** environment and both MCP servers are validated end to end (see §4a and
+`docs/verification/`); the development phase has **not** started. The only development artefact is
+`tools/scene/gen_terrain.py`, an unvalidated draft whose generated outputs were deleted because its parameters
+changed after the single run — regenerate and inspect before using it. New sessions: read `docs/HANDBOOK.md`.
+
 ## 1. The project in one paragraph
 PS2 "Real-time vision system for identifying survivors in flood, landslide and tsunami zones". We simulate a
 debris-flow-fed monsoon flash flood in a hill-valley settlement (Wayanad/Chaliyar type, three zones: deposit

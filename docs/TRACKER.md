@@ -4,33 +4,43 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done and verified · `[!
 "Verified" means it was run and observed working, not just written. Update this file at the end of every chunk
 of work and append to the Session log.
 
-## Next actions (start here)
-1. Wait for or verify the VS 2022 install (`D:\VS\2022\Community\VC\Tools\MSVC\14.44.*`). If it is missing, re-run the
-   bootstrapper (docs/SETUP.md §2).
-2. Build `SightlineSimEditor` (sightline MCP `ue_build`), then launch the editor (`editor_launch(wait_ready_s=2400)`;
-   the first launch compiles shaders).
-3. Verify both MCP servers live: `unreal` (list_toolsets, CaptureViewport, StartPIE) and `sightline`
-   (`ue_python`, `sim_ping`, `sim_fly`, `sim_capture`).
-4. Day-1 tests from SOLUTION_DOC §10 (the table below).
+## Next actions (start here) — DEVELOPMENT PHASE
+The environment and both MCP servers are validated (see the verification table below); feature work starts now.
+Read `docs/HANDBOOK.md` §6 before touching the scene — it lists the traps that would silently corrupt the dataset.
+
+1. **F1 flood-valley scene.** Author `/Game/Sightline/Maps/FloodValley`: static-mesh terrain (NOT Landscape — it
+   breaks instance segmentation), three zones (deposit fan, flooded settlement, channel+banks), water surface with
+   a `FloodLevel` Z settable from Python, GI = None. `tools/scene/gen_terrain.py` is an **unvalidated draft**: its
+   outputs were deleted because its parameters changed after the only run; regenerate, inspect the preview, then
+   import. Verify submerged pixels are hidden in the label passes with a real capture (day-1 test #2).
+2. **Actor + debris spawners** (seeded, reproducible): pose/submersion classes per §2.3 row 2-3 and §6.2, tagged
+   `Human_<id>` / `Animal_<id>`, movable actors only (static ones cannot be posed at runtime).
+3. **Thermal**: object-ID temperature table first (day-1 test #3), then the §5.1 step 7 post-process material.
+4. **Capture pipeline (F5)**: waypoint capture with `simPause` + `simGetImages` (SteppableClock profile), auto-labels
+   from instance masks, per-frame telemetry CSV/JSON; then the day-1 unknowns below.
+5. Assets: Mixamo needs an Adobe login (ask the user) — UE mannequin is the fallback for pose variety.
 
 ## Phase 0: environment and MCP (day 1 morning)
 - [x] Located UE 5.8.2 at `D:\UE_5.8`; confirmed Epic's ModelContextProtocol plugin ships in 5.8.2
 - [x] uv 0.12.12 on D:, caches redirected to D: (see CONTEXT §3)
 - [x] Python 3.11 env + `uv.lock` (cosysairsim 3.4.1, mcp 1.30.0, numpy 2.2.6, opencv 4.14)
 - [x] Cosys-AirSim 5.8-v3.4.1 plugin + Blocks editor project downloaded (size-verified); plugin installed in project
-- [~] Blocks packaged build download (optional reference)
-- [~] Visual Studio 2022 17.14 on D: (first attempt killed by a network drop; re-running)
+- [x] Blocks packaged build (reference sim, used for AirSim verification without the editor)
+- [x] Visual Studio 2022 17.14 on D: (MSVC 14.44.35228 — accepted by UE 5.8; the folder name 14.44.35207 is
+  irrelevant, UBT reads cl.exe's file version)
 - [x] `SightlineSim` project scaffolded (module, targets, low-memory renderer, Python remote exec, MCP auto-start)
 - [x] sightline MCP server written; stdio smoke test passes (24 tools)
 - [x] `SightlineSimEditor` compiles: Result Succeeded in 869 s (2026-09-10 18:47), MSVC 14.44.35228 (VS 2022 on D:),
   Windows SDK 10.0.22621, via UBA (cache redirected to D:\UE_Cache\UBA). Log: `_logs/jobs/build-SightlineSimEditor-*.log`
 - [x] Editor opened the project (FlyingExampleMap, AirSim plugin loaded) at 18:52; engine-tools agent verifying MCP live
 - [ ] Editor opens the project with AirSim loaded; editor RAM measured
-- [ ] `unreal` MCP (HTTP :8000) reachable from Claude Code, toolsets listed
-- [ ] `ue_python` remote execution verified against the live editor
-- [ ] PIE + `sim_ping` + takeoff + `sim_capture` (scene/seg/IR/depth) verified
-- [ ] `tools/doctor.py` passes end to end
-- [ ] Blocks packaged exe runs; the Python client connects (API cross-check)
+- [x] `unreal` MCP (HTTP :8000) reachable from Claude Code; 31 toolsets / 392 tools listed and called
+- [x] `ue_python` remote execution verified against the live editor (file/statement/eval, 20k-line output intact)
+- [x] PIE + `sim_ping` + takeoff + `sim_capture` verified in-editor (39/39, same as the packaged build)
+- [x] `tools/doctor.py --live` passes (0 FAIL)
+- [x] Blocks packaged exe runs; the Python client connects (API cross-check)
+- [x] **Phase 0 complete (2026-09-10).** Environment, both MCP servers and all 27 tools validated; see the
+  verification table below and `docs/verification/`.
 
 ## Verification workstreams (2026-09-10): every tool in the doc, end to end
 Reports land in `docs/verification/`. A tool is not "ready" until its report says PASS with evidence.
@@ -111,7 +121,15 @@ Also: `materials.csv` missing -> Cosys skips material stencil init (installed vi
 | F21 | Guardrails (no auto-close, no delete, dismiss-with-reason) | MVP | [ ] |
 
 ## Session log
-- **2026-09-10 (session 1)**: Environment setup. Found UE 5.8.2 plus the built-in Epic MCP plugin. Chose VS 2022 17.14
+- **2026-09-10 (session 1, part 2)**: Validation phase closed. Six verification streams run in parallel by
+  subagents (engine MCP, protocol, Claude Code integration, external tools, Python stack, dev workflow) plus the
+  AirSim suite by the main session. Results: 27/27 sightline tools, Epic 31 toolsets/392 tools, AirSim 39/39
+  (packaged and in-editor), protocol 22/22, stack 37/0, doctor 0 FAIL. Defects found and fixed are listed per
+  stream above; the most dangerous were the Windows stdio deadlock, the broken `landAsync`, and the unconverted
+  first capture. Gamepad verified at the Windows level; AirSim-side handover still unmeasured. Docs finalised
+  (HANDBOOK/CONTEXT/TRACKER), two commits, memory files written. **Development phase not started**; the only
+  dev artefact is the unvalidated `tools/scene/gen_terrain.py` draft.
+- **2026-09-10 (session 1, part 1)**: Environment setup. Found UE 5.8.2 plus the built-in Epic MCP plugin. Chose VS 2022 17.14
   (Cosys build toolchain). Installed uv and the Python 3.11 env on D:, redirected all caches to D:, downloaded
   Cosys-AirSim 5.8-v3.4.1, scaffolded SightlineSim, wrote the sightline MCP server (smoke test OK), and wrote
   CLAUDE.md/CONTEXT/TRACKER. A network drop interrupted the VS install, which was restarted via the bootstrapper.
