@@ -255,9 +255,19 @@ class PrCurve:
     n_gt: int
 
     def at(self, conf: float) -> tuple[float, float, float]:
-        """(recall, precision, fp_per_min) at the highest swept confidence <= `conf`."""
-        idx = int(np.searchsorted(self.conf, conf, side="right")) - 1
-        idx = max(0, min(idx, len(self.conf) - 1))
+        """(recall, precision, fp_per_min) for the threshold `conf`, exactly as `MatchResult.counts_at` scores it.
+
+        Keeping predictions with `score >= conf` is the same set as keeping `score >= s`, where `s` is the
+        SMALLEST swept confidence that is still >= `conf`; so that is the row to read. Reading the largest swept
+        confidence <= `conf` instead (the obvious bisection) silently credits the predictions scoring between the
+        two, which over-reports recall for any threshold that is not itself one of the swept scores — and
+        `harness.run_detection_eval` calls this with a caller-supplied threshold.
+
+        Above every swept confidence nothing is kept, so the honest answer is (0, 0, 0), not the top row.
+        """
+        idx = int(np.searchsorted(self.conf, conf, side="left"))
+        if idx >= len(self.conf):
+            return 0.0, 0.0, 0.0
         return float(self.recall[idx]), float(self.precision[idx]), float(self.fp_per_min[idx])
 
     def max_f1_conf(self) -> float:

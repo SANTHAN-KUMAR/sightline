@@ -42,36 +42,52 @@ POSE_DIR = "/Game/Sightline/Characters/Poses"
 REPO = r"D:\Sightline"
 
 # --- the pose library -------------------------------------------------------------------------------------
-# {bone: (d_pitch, d_yaw, d_roll)} degrees, applied in the bone's LOCAL space on top of the bind pose.
-ARM_DOWN = {"Bip01-L-UpperArm": (-44, 0, 0), "Bip01-R-UpperArm": (-44, 0, 0),
-            "Bip01-L-Forearm": (0, 14, 0), "Bip01-R-Forearm": (0, 14, 0)}
-ARM_LOOSE = {"Bip01-L-UpperArm": (-34, 0, 0), "Bip01-R-UpperArm": (-34, 0, 0),
-             "Bip01-L-Forearm": (0, 26, 0), "Bip01-R-Forearm": (0, 26, 0)}
+# Deltas are (d_pitch, d_yaw, d_roll) degrees applied in the bone's LOCAL space on top of the bind pose.
+#
+# The left and right ARM bones have MIRRORED bind orientations (L-UpperArm bind pitch -31.16 / roll +10.56 vs
+# R-UpperArm +31.16 / -10.56), so an identical delta swings one arm down and the other one UP. That is exactly
+# what went wrong first time: every survivor stood with one arm at its side and one stuck straight out, and no
+# API call reported anything (measured by FK: same delta puts the right hand 52 cm from its shoulder, negated
+# pitch puts it 1.19 cm from it, mirroring the left exactly). LEG bones are NOT mirrored - the same delta gives
+# an identical foot position on both sides, and negating it kicks the right leg backwards.
+# `arm()` and `leg()` encode that asymmetry once so a pose definition cannot get it wrong.
+
+def arm(dp, dy=0.0, dr=0.0):
+    """Same articulation on both arms, with the right side's mirrored bind axes accounted for."""
+    return {"Bip01-L-UpperArm": (dp, dy, dr), "Bip01-R-UpperArm": (-dp, dy, -dr)}
+
+
+def forearm(dp, dy=0.0, dr=0.0):
+    return {"Bip01-L-Forearm": (dp, dy, dr), "Bip01-R-Forearm": (-dp, dy, -dr)}
+
+
+def leg(dp, dy=0.0, dr=0.0):
+    return {"Bip01-L-Thigh": (dp, dy, dr), "Bip01-R-Thigh": (dp, dy, dr)}
+
+
+def knee(dp, dy=0.0, dr=0.0):
+    return {"Bip01-L-Calf": (dp, dy, dr), "Bip01-R-Calf": (dp, dy, dr)}
+
+
+ARM_DOWN = {**arm(-44), **forearm(0, 14)}          # hands at the sides
+ARM_LOOSE = {**arm(-34), **forearm(0, 26)}         # slack, slightly away from the body
 
 POSES = {
     # upright, arms at the sides: the baseline "stranded but mobile" survivor
     "standing": dict(ARM_DOWN),
     # seated on a roof or slab, knees up: the commonest posture on a flooded roof (SOLUTION_DOC 2.3 row 2)
-    "sitting": {**ARM_LOOSE, "Bip01-L-Thigh": (0, -78, 0), "Bip01-R-Thigh": (0, -78, 0),
-                "Bip01-L-Calf": (0, 82, 0), "Bip01-R-Calf": (0, 82, 0), "Bip01-Spine1": (0, 6, 0)},
+    "sitting": {**ARM_LOOSE, **leg(0, -78), **knee(0, 82), "Bip01-Spine1": (0, 6, 0)},
     # face down, limbs slack: injured/unconscious on the deposit fan
-    "prone": {**ARM_LOOSE, "Bip01": (-90, 0, 0), "Bip01-L-Thigh": (0, -8, 0), "Bip01-R-Thigh": (0, 8, 0)},
+    "prone": {**ARM_LOOSE, "Bip01": (-90, 0, 0), **leg(0, -8)},
     # face up
-    "supine": {**ARM_LOOSE, "Bip01": (90, 0, 0), "Bip01-L-Thigh": (0, -8, 0), "Bip01-R-Thigh": (0, 8, 0)},
+    "supine": {**ARM_LOOSE, "Bip01": (90, 0, 0), **leg(0, -8)},
     # treading water / wading: arms out from the body, legs slightly flexed
-    "half_submerged": {"Bip01-L-UpperArm": (-14, 0, 0), "Bip01-R-UpperArm": (-14, 0, 0),
-                       "Bip01-L-Forearm": (0, 48, 0), "Bip01-R-Forearm": (0, 48, 0),
-                       "Bip01-L-Thigh": (0, -22, 0), "Bip01-R-Thigh": (0, -22, 0),
-                       "Bip01-L-Calf": (0, 30, 0), "Bip01-R-Calf": (0, 30, 0)},
+    "half_submerged": {**arm(-14), **forearm(0, 48), **leg(0, -22), **knee(0, 30)},
     # curled under debris: the hard case for the detector, and R10's "cannot clear" evidence
     "trapped": {"Bip01": (-90, 0, 0), "Bip01-Spine1": (0, 24, 0), "Bip01-Spine2": (0, 18, 0),
-                "Bip01-L-Thigh": (0, -92, 0), "Bip01-R-Thigh": (0, -92, 0),
-                "Bip01-L-Calf": (0, 108, 0), "Bip01-R-Calf": (0, 108, 0),
-                "Bip01-L-UpperArm": (-30, 0, 0), "Bip01-R-UpperArm": (-30, 0, 0),
-                "Bip01-L-Forearm": (0, 78, 0), "Bip01-R-Forearm": (0, 78, 0)},
+                **leg(0, -92), **knee(0, 108), **arm(-30), **forearm(0, 78)},
     # both arms raised: signalling. A distinctive silhouette from above, and the demo's "found me" case.
-    "waving": {"Bip01-L-UpperArm": (58, 0, 0), "Bip01-R-UpperArm": (58, 0, 0),
-               "Bip01-L-Forearm": (0, 34, 0), "Bip01-R-Forearm": (0, 34, 0)},
+    "waving": {**arm(58), **forearm(0, 34)},
 }
 
 FLESH_CM = 9.0   # half-thickness of a torso: keeps a lying body ON the surface, not sunk into it
@@ -181,6 +197,15 @@ def build(character):
         xs = [w.translation.x for w in body.values()]
         ys = [w.translation.y for w in body.values()]
         head, nose = body.get(prefix + "-head"), body.get(prefix + "-mnose")
+        # Left/right symmetry: every pose here is bilaterally symmetric, so the hands and feet must land at
+        # mirrored x. The first pose library got this wrong (mirrored bind axes on the arms) and produced
+        # one-arm-out survivors that nothing flagged. Component +X is the character's left.
+        sym = 0.0
+        for lb, rb in ((prefix + "-l-hand", prefix + "-r-hand"), (prefix + "-l-foot", prefix + "-r-foot")):
+            lw, rw = body.get(lb), body.get(rb)
+            if lw and rw:
+                sym = max(sym, abs(lw.translation.x + rw.translation.x),
+                          abs(lw.translation.y - rw.translation.y), abs(lw.translation.z - rw.translation.z))
         info[pose] = {
             "asset": path,
             # Bones run through the middle of the body, so drop by the lowest bone less a flesh
@@ -190,6 +215,7 @@ def build(character):
             "height_cm": round(max(zs) - min(zs), 1),
             "head_z_cm": round(head.translation.z, 1) if head else None,
             "face_down": (None if not (head and nose) else bool(nose.translation.z < head.translation.z - 1.0)),
+            "symmetry_err_cm": round(sym, 2),
         }
     return info
 
@@ -204,7 +230,8 @@ ref = out["characters"]["Male_Adult_04"]
 for p in sorted(POSES):
     r = ref[p]
     print(f"  {p:16s} height {r['height_cm']:6.1f} cm  bbox {str(r['bbox_cm']):22s} "
-          f"ground_offset {r['ground_offset_cm']:7.2f}  head_z {str(r['head_z_cm']):7s} face_down={r['face_down']}")
+          f"ground_offset {r['ground_offset_cm']:7.2f}  sym_err {r['symmetry_err_cm']:5.2f} cm  "
+          f"face_down={r['face_down']}")
 
 # --- self-checks: a pose that silently fell back to the bind pose must not pass -----------------------------
 errs = []
@@ -221,6 +248,9 @@ if max(ref["prone"]["bbox_cm"][0], ref["prone"]["bbox_cm"][1]) < 150:
     errs.append("prone footprint too short to be a lying adult")
 if ref["sitting"]["height_cm"] >= ref["standing"]["height_cm"] - 20:
     errs.append("sitting is not shorter than standing")
+for _p, _r in ref.items():                       # every pose here is bilaterally symmetric
+    if _r["symmetry_err_cm"] > 3.0:
+        errs.append(f"{_p} is left/right ASYMMETRIC by {_r['symmetry_err_cm']} cm (mirrored bind axes?)")
 if errs:
     raise RuntimeError("pose self-check FAILED: " + "; ".join(errs))
 

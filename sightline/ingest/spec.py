@@ -178,12 +178,35 @@ def gimbal_quat_from_euler(roll_deg: float, pitch_deg: float, yaw_deg: float) ->
     return gimbal_quat_from_frd_quat(euler_to_quat(roll_deg, pitch_deg, yaw_deg))
 
 
+#: |sin(pitch)| above which the 3-2-1 decomposition is treated as gimbal-locked: pitch within 8e-5 deg of
+#: straight down. Deliberately tight — the naive `atan2` pair carries a factor `cos(pitch)` in BOTH arguments,
+#: so it stays well conditioned until `cos(pitch)` (1.4e-6 here) approaches the float64 noise floor of ~1e-16.
+#: A wider band would quantise genuine near-nadir angles onto exactly -90 and lose real gimbal pitch.
+_GIMBAL_LOCK_SIN = 1.0 - 1.0e-12
+
+
 def gimbal_euler_from_quat(q_gimbal: Sequence[float]) -> tuple[float, float, float]:
-    """Inverse of `gimbal_quat_from_euler`: returns (roll_deg, pitch_deg, yaw_deg) with -90 = nadir."""
+    """Inverse of `gimbal_quat_from_euler`: returns (roll_deg, pitch_deg, yaw_deg) with -90 = nadir.
+
+    **Gimbal lock is handled explicitly, and a nadir camera is exactly the locked case.** At pitch = -90 the
+    naive 3-2-1 formulas evaluate `atan2(0, 0)` for both roll and yaw, and floating-point signs then decide the
+    answer: the previous version of this function returned `(180, -90, 180)` for *every* yaw, so
+    `gimbal_quat_from_euler(gimbal_euler_from_quat(q))` silently rotated the camera's azimuth by up to 180 deg.
+    That round trip is exactly what `sim.inject_noise` performs on every frame, and the simulator's default
+    camera is nadir (`sim/settings/capture_4k.json` Pitch = -90), so the bug hit the primary path.
+
+    At lock the roll and the yaw are the same degree of freedom, so all of it is reported as **yaw with zero
+    roll** — the convention that keeps `q -> euler -> q` an identity and keeps "yaw" meaning "the direction
+    north points in the image", which is what a nadir camera's azimuth actually is.
+    """
     w, x, y, z = quat_mul(q_gimbal, (Q_FRD_FROM_CAM[0], -Q_FRD_FROM_CAM[1], -Q_FRD_FROM_CAM[2],
                                      -Q_FRD_FROM_CAM[3]))
+    sin_pitch = max(-1.0, min(1.0, 2 * (w * y - z * x)))
+    if abs(sin_pitch) >= _GIMBAL_LOCK_SIN:
+        pitch = math.copysign(math.pi / 2.0, sin_pitch)
+        return 0.0, math.degrees(pitch), math.degrees(2.0 * math.atan2(z, w))
     roll = math.atan2(2 * (w * x + y * z), 1 - 2 * (x * x + y * y))
-    pitch = math.asin(max(-1.0, min(1.0, 2 * (w * y - z * x))))
+    pitch = math.asin(sin_pitch)
     yaw = math.atan2(2 * (w * z + x * y), 1 - 2 * (y * y + z * z))
     return math.degrees(roll), math.degrees(pitch), math.degrees(yaw)
 

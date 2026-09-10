@@ -123,10 +123,20 @@ def euler_to_quat(roll_deg: float, pitch_deg: float, yaw_deg: float) -> tuple[fl
 
 
 def quat_to_euler(q: tuple[float, float, float, float]) -> tuple[float, float, float]:
-    """Inverse of `euler_to_quat`; returns (roll_deg, pitch_deg, yaw_deg)."""
+    """Inverse of `euler_to_quat`; returns (roll_deg, pitch_deg, yaw_deg).
+
+    At |pitch| = 90 deg roll and yaw are degenerate and the naive atan2 form returns an arbitrary split of the
+    two, so a quat -> euler -> quat round trip can rotate the camera's azimuth by up to 180 deg. That is not a
+    corner case here: a nadir survey camera sits at exactly pitch -90. Resolve the lock explicitly by putting
+    all the rotation into yaw.
+    """
     w, x, y, z = q
+    s = 2 * (w * y - z * x)
+    if abs(s) >= 0.999999:                      # gimbal lock: straight up or straight down
+        pitch = math.copysign(math.pi / 2, s)
+        return 0.0, math.degrees(pitch), math.degrees(2 * math.atan2(z, w))
     roll = math.atan2(2 * (w * x + y * z), 1 - 2 * (x * x + y * y))
-    pitch = math.asin(max(-1.0, min(1.0, 2 * (w * y - z * x))))
+    pitch = math.asin(s)
     yaw = math.atan2(2 * (w * z + x * y), 1 - 2 * (y * y + z * z))
     return math.degrees(roll), math.degrees(pitch), math.degrees(yaw)
 

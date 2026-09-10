@@ -147,6 +147,14 @@ class Constraints:
             out.notes.append(f"{dropped_fence} waypoints dropped: outside the geofence")
         if dropped_nogo:
             out.notes.append(f"{dropped_nogo} waypoints dropped: inside an operator no-go area")
+        if (dropped_fence or dropped_nogo) and not out.waypoints and not out.aborted:
+            # Every waypoint was pruned by the geofence or a no-go area. Returning an empty route with
+            # `aborted = False` would read as "flown, nothing to do"; the caller has to see that the pattern
+            # could not be flown at all. (Clip the survey polygon with `clip_polygon()` first to keep a route.)
+            out.aborted = True
+            out.abort_reason = (
+                f"nothing left to fly: all {dropped_fence + dropped_nogo} waypoints were outside the geofence "
+                f"or inside an operator no-go area")
         if clamped:
             out.notes.append(f"{clamped} waypoints clamped into [{self.min_agl_m:.0f}, {self.ceiling_m:.0f}] m AGL")
         if append_rtl and (out.waypoints or out.aborted):

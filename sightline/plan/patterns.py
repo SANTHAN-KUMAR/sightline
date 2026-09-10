@@ -105,11 +105,73 @@ class PatternGeometry:
     speed_limit_ms: float
     gsd_m: float
     covers_polygon: bool = True
+    #: Measured, not assumed: the share of the polygon further than sweep_width/2 from every flown line
+    #: (`uncovered_fraction`). `covers_polygon` is this being zero, so the field cannot claim a coverage the
+    #: geometry does not deliver — a concave segment can leave a gap even at the requested side overlap.
+    uncovered_fraction: float = 0.0
+    gap_sample_step_m: float = 0.0
+    #: Worst distance, in metres, by which an uncovered sample exceeds sweep_width/2 — the size of the gap, not
+    #: just its area. A corner sliver and a missed strip both show as a fraction; only this separates them.
+    worst_gap_m: float = 0.0
 
     def as_dict(self) -> dict[str, Any]:
         from dataclasses import asdict
 
         return asdict(self)
+
+
+def _point_segment_distance(pts: np.ndarray, a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    """Distance from each of `pts` (N, 2) to each segment a[k]->b[k] (K, 2). Returns (N, K)."""
+    d = b - a  # (K, 2)
+    ll = (d * d).sum(axis=1)  # (K,)
+    ap = pts[:, None, :] - a[None, :, :]  # (N, K, 2)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        t = np.where(ll > 0, (ap * d[None, :, :]).sum(axis=2) / np.where(ll > 0, ll, 1.0), 0.0)
+    t = np.clip(t, 0.0, 1.0)
+    proj = a[None, :, :] + t[:, :, None] * d[None, :, :]
+    return np.linalg.norm(pts[:, None, :] - proj, axis=2)
+
+
+def uncovered_fraction(poly_ne: np.ndarray, lines: Sequence[tuple[tuple[float, float], tuple[float, float]]],
+                       sweep_width: float, max_samples: int = 4096) -> tuple[float, float, float]:
+    """Share of the polygon further than `sweep_width / 2` from EVERY flown line, by area sampling.
+
+    This is the honest form of "no gaps": it measures against the flown line *segments*, so a line that had to
+    be clipped short gets no credit for ground it never overflew. Returns (fraction, sample step m, worst
+    excess distance beyond sweep_width/2 in m).
+
+    **The known residual, stated rather than hidden.** Lines are clipped to the polygon, so the swath stops at
+    the polygon edge. For a polygon flown along a heading that is not one of its own edges, the strip nearest a
+    corner can therefore miss a sliver *beyond the end of the last line* — bounded by the corner's reach past
+    that endpoint, typically well under a metre on a rectangular segment. Real coverage planners close this with
+    a headland overrun (flying past the boundary before turning); that is deliberately NOT done here because the
+    geofence check in `constraints.Constraints.apply` drops waypoints outside the permitted area, and an overrun
+    would put every line end outside a geofence-clipped segment. The sliver is reported instead of being
+    designed away, and the coverage raster (F16) never claims it, because that raster is built from real
+    footprints rather than from this pattern.
+    """
+    poly = np.asarray(poly_ne, dtype=float).reshape(-1, 2)
+    if not lines or sweep_width <= 0.0:
+        return 1.0, 0.0, float("inf")
+    n0, n1 = float(poly[:, 0].min()), float(poly[:, 0].max())
+    e0, e1 = float(poly[:, 1].min()), float(poly[:, 1].max())
+    area = max((n1 - n0) * (e1 - e0), 1e-9)
+    step = max(math.sqrt(area / max(max_samples, 16)), sweep_width / 16.0, 1e-3)
+    ns = np.arange(n0 + step / 2.0, n1, step)
+    es = np.arange(e0 + step / 2.0, e1, step)
+    if ns.size == 0 or es.size == 0:
+        return 0.0, float(step), 0.0
+    pts = np.column_stack([np.repeat(ns, es.size), np.tile(es, ns.size)])
+    from sightline.coverage.grid import points_in_polygon
+
+    inside = points_in_polygon(poly, pts)
+    if not inside.any():
+        return 0.0, float(step), 0.0
+    pts = pts[inside]
+    a = np.asarray([ln[0] for ln in lines], dtype=float)
+    b = np.asarray([ln[1] for ln in lines], dtype=float)
+    excess = _point_segment_distance(pts, a, b).min(axis=1) - sweep_width / 2.0
+    return float((excess > 0.0).mean()), float(step), float(max(excess.max(), 0.0))
 
 
 def _rotate(pts: np.ndarray, theta: float, inverse: bool = False) -> np.ndarray:
@@ -180,6 +242,7 @@ def boustrophedon_lines(poly_ne: np.ndarray, sweep_width: float, side_overlap: f
         for p, q in parts_pr:
             back = _rotate(np.array([p, q]), theta, inverse=True)
             lines.append(((float(back[0][0]), float(back[0][1])), (float(back[1][0]), float(back[1][1]))))
+    uncovered, step, worst = uncovered_fraction(poly, lines, sweep_width)
     geom = PatternGeometry(
         sweep_width_m=float(sweep_width),
         nominal_spacing_m=float(nominal),
@@ -190,7 +253,10 @@ def boustrophedon_lines(poly_ne: np.ndarray, sweep_width: float, side_overlap: f
         heading_deg=float(heading_deg % 360.0),
         speed_limit_ms=float("nan"),
         gsd_m=float("nan"),
-        covers_polygon=True,
+        covers_polygon=uncovered <= 0.0,
+        uncovered_fraction=uncovered,
+        gap_sample_step_m=step,
+        worst_gap_m=worst,
     )
     return lines, geom
 
@@ -231,6 +297,11 @@ def boustrophedon_route(poly_ne: np.ndarray, camera: CameraModel, agl_m: float, 
         f"{geom.n_lines} lines at {geom.actual_spacing_m:.1f} m ({geom.side_overlap_actual * 100:.0f} % overlap, "
         f"requested {side_overlap * 100:.0f} %), sweep width {width:.1f} m for '{presentation}' at {agl_m:.0f} m, "
         f"speed {v:.1f} m/s (blur limit {geom.speed_limit_ms:.1f} m/s)")
+    if not geom.covers_polygon:
+        route.notes.append(
+            f"measured gap: {geom.uncovered_fraction * 100:.2f} % of this polygon lies more than half a sweep "
+            f"from any flown line (worst {geom.worst_gap_m:.1f} m past the swath edge). Flying the polygon's "
+            f"long axis, or a tighter overlap, closes it; the coverage map will show it either way.")
     return route
 
 

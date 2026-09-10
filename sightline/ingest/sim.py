@@ -28,7 +28,7 @@ import os
 import re
 from dataclasses import dataclass, field, replace
 from pathlib import Path
-from typing import Iterator
+from typing import Any, Iterator
 
 import numpy as np
 
@@ -46,16 +46,21 @@ from sightline.ingest.spec import (
     SimFrameRow,
     gimbal_quat_from_frd_quat,
 )
-from sightline.schemas import Intrinsics, Telemetry
+from sightline.schemas import POSTURES, SUBMERSIONS, Detection, Intrinsics, Telemetry
 
 __all__ = [
     "SimExportReader",
     "AirSimRecReader",
     "AirSimRecRow",
+    "CaptureRunReader",
+    "CaptureRunRow",
+    "CAPTURE_RUN_COLUMNS",
+    "CAPTURE_RUN_TELEMETRY",
     "NoiseModel",
     "inject_noise",
     "is_sim_export",
     "is_airsim_rec",
+    "is_capture_run",
 ]
 
 _AIRSIM_HEADER = ("VehicleName", "TimeStamp", "POS_X", "POS_Y", "POS_Z", "Q_W", "Q_X", "Q_Y", "Q_Z", "ImageFile")
@@ -81,6 +86,18 @@ def is_airsim_rec(path: str | os.PathLike[str]) -> bool:
         return False
     with open(p, "r", encoding="utf-8-sig", errors="replace") as fh:
         return fh.readline().strip().split("\t")[:3] == list(_AIRSIM_HEADER[:3])
+
+
+def is_capture_run(path: str | os.PathLike[str]) -> bool:
+    """True for a `tools/capture/run.py` dataset directory (a `telemetry.csv` with that script's header)."""
+    p = Path(path)
+    if p.is_dir():
+        p = p / CAPTURE_RUN_TELEMETRY
+    if not p.is_file() or p.name != CAPTURE_RUN_TELEMETRY:
+        return False
+    with open(p, "r", encoding="utf-8-sig", errors="replace") as fh:
+        header = {h.strip() for h in fh.readline().strip().split(",")}
+    return not [c for c in CAPTURE_RUN_REQUIRED if c not in header]
 
 
 # --- 1. the project's own export ---------------------------------------------------------------------------
@@ -293,6 +310,7 @@ class AirSimRecReader:
         self.gimbal_pitch_deg = gimbal_pitch_deg
         self.gimbal_stabilised = gimbal_stabilised
         self.ground_alt_msl_m = ground_alt_msl_m
+        self._rows: list[AirSimRecRow] | None = None
         self.assumptions: list[str] = [
             "airsim_rec.txt carries no camera orientation: the gimbal is assumed to be at "
             f"{gimbal_pitch_deg:.1f} deg pitch"
@@ -309,6 +327,10 @@ class AirSimRecReader:
             self.assumptions.append("no ground altitude supplied: agl_m is measured against the OriginGeopoint")
 
     def rows(self) -> list[AirSimRecRow]:
+        """Parsed lines, cached. `telemetry()` needs `_t0_sim()` per row, so re-reading here was O(n^2) file
+        reads on a long clip: a 10 000-frame recording re-parsed the whole file 10 000 times."""
+        if self._rows is not None:
+            return self._rows
         out: list[AirSimRecRow] = []
         with open(self.path, "r", encoding="utf-8-sig", errors="replace") as fh:
             header = fh.readline().rstrip("\n").split("\t")
@@ -339,6 +361,7 @@ class AirSimRecReader:
                 ))
         if self.vehicle:
             out = [r for r in out if r.vehicle == self.vehicle]
+        self._rows = out
         return out
 
     def telemetry(self, row: AirSimRecRow) -> Telemetry:
@@ -383,6 +406,307 @@ class AirSimRecReader:
                 aux={k: str(self.image_dir / v) for k, v in row.images.items() if k not in ("scene", "infrared")},
             ))
         return index
+
+
+# --- 2b. the F5 dataset run (`tools/capture/run.py`) --------------------------------------------------------
+#: The columns `tools/capture/run.py` writes into `<clip_dir>/telemetry.csv`, in the order it writes them.
+#: This is a SEPARATE, simpler format from `sightline-sim-capture` (`spec.py`): it is what the F5 dataset
+#: generator actually produces, so ingest reads it directly rather than asking the sim lane to re-write it.
+CAPTURE_RUN_COLUMNS: tuple[str, ...] = (
+    "frame_idx", "t_utc", "clip_id", "east_m", "north_m", "alt_msl_m", "agl_m", "lat", "lon",
+    "q_w", "q_x", "q_y", "q_z", "gimbal_pitch_deg", "hfov_deg", "width_px", "height_px",
+    "gsd_cm_px", "mode", "flood_level_asl_m", "n_labels",
+)
+#: The subset without which a row cannot become a `Telemetry` + `Intrinsics`.
+CAPTURE_RUN_REQUIRED: tuple[str, ...] = (
+    "frame_idx", "t_utc", "east_m", "north_m", "alt_msl_m", "agl_m", "lat", "lon",
+    "q_w", "q_x", "q_y", "q_z", "gimbal_pitch_deg", "hfov_deg", "width_px", "height_px",
+)
+CAPTURE_RUN_TELEMETRY = "telemetry.csv"
+CAPTURE_RUN_CARD = "data_card.json"
+_CAPTURE_RUN_INT = frozenset({"frame_idx", "width_px", "height_px", "n_labels"})
+_CAPTURE_RUN_STR = frozenset({"clip_id", "mode"})
+
+
+@dataclass(slots=True)
+class CaptureRunRow:
+    """One `telemetry.csv` line after type coercion. Blank cells are `None`, never 0.0."""
+
+    values: dict[str, Any]
+    line_no: int = -1
+
+    def __getitem__(self, key: str) -> Any:
+        return self.values[key]
+
+    def get(self, key: str, default: Any = None) -> Any:
+        v = self.values.get(key, default)
+        return default if v is None else v
+
+    def has(self, *keys: str) -> bool:
+        return all(self.values.get(k) is not None for k in keys)
+
+
+class CaptureRunReader:
+    """Read an F5 dataset run written by `tools/capture/run.py`.
+
+        <clip_dir>/
+            telemetry.csv                 one row per WRITTEN frame (skipped empty frames leave index gaps)
+            data_card.json                the run's provenance (clip_id, seed, altitude, domain)
+            images/<clip_id>_<idx:05d>.png     RGB, BGR-ordered on disk (OpenCV wrote it)
+            masks/<clip_id>_<idx:05d>.png      instance-segmentation mask
+            labels/<clip_id>_<idx:05d>.json    ground-truth boxes (visible extent, §6.3)
+            labels/<clip_id>_<idx:05d>.txt     the same boxes in YOLO form
+
+    Three things this format leaves implicit, all of them read here as ASSUMPTIONS and listed in
+    `self.assumptions` rather than being hidden:
+
+    1. **The gimbal is a pitch angle, not a quaternion.** `gimbal_pitch_deg` (-90 = nadir) is combined with the
+       vehicle's yaw, because `sim/settings/dataset.json` stabilises the gimbal and lets its yaw follow the
+       airframe. Pass `gimbal_yaw_follows_vehicle=False` for a gimbal locked to north.
+    2. **`east_m` / `north_m` are SCENE coordinates**, metres from the scenario origin, not from the launch
+       site (`run.py` subtracts the launch site only when it commands the pose). `Telemetry.ned_m` is built
+       from them with a down datum of `origin_alt_msl_m`, which defaults to the flood surface so that
+       `ned_d ~= -agl_m`. Only differences of `ned_m` are ever used downstream, so the datum is free — but it
+       has to be stated, because a reader that assumed MSL would disagree by ~1 km in this scenario.
+    3. **`t_utc` is wall-clock** (`time.time()` at capture), not the AirSim `SteppableClock`. That is what the
+       pipeline wants, and it is why this format needs no `capture_start_utc` fix-up.
+    """
+
+    def __init__(self, clip_dir: str | os.PathLike[str], *, clip_id: str = "",
+                 origin_alt_msl_m: float | None = None, gimbal_yaw_follows_vehicle: bool = True) -> None:
+        p = Path(clip_dir)
+        self.root = p.parent if p.is_file() else p
+        self.path = self.root / CAPTURE_RUN_TELEMETRY
+        if not self.path.is_file():
+            raise CaptureFormatError(f"{self.root}: no {CAPTURE_RUN_TELEMETRY} (not a tools/capture/run.py clip)")
+        self.card: dict[str, Any] = {}
+        card_path = self.root / CAPTURE_RUN_CARD
+        if card_path.is_file():
+            try:
+                self.card = json.loads(card_path.read_text(encoding="utf-8"))
+            except json.JSONDecodeError as exc:
+                raise CaptureFormatError(f"{card_path}: {exc}") from exc
+        self._clip_id = clip_id
+        self._rows: list[CaptureRunRow] | None = None
+        self.gimbal_yaw_follows_vehicle = gimbal_yaw_follows_vehicle
+        self._origin_alt_msl_m = origin_alt_msl_m
+        self.assumptions: list[str] = [
+            "gimbal attitude is a single pitch angle: yaw is taken from the vehicle"
+            if gimbal_yaw_follows_vehicle else "gimbal attitude is a single pitch angle: yaw is held at north",
+            "east_m/north_m are scenario-origin ENU metres; Telemetry.ned_m uses them with a down datum of "
+            "the flood surface, so ned_d ~= -agl_m",
+            "telemetry.csv carries no GNSS accuracy: h_acc_m/v_acc_m are 0 (clean simulator truth). Apply "
+            "inject_noise() before quoting any geolocation error.",
+        ]
+
+    # -- raw rows ----------------------------------------------------------------------------------------
+    @property
+    def rows(self) -> list[CaptureRunRow]:
+        if self._rows is None:
+            self._rows = list(self._iter_raw())
+            if not self._rows:
+                raise CaptureFormatError(f"{self.path}: no data rows")
+            missing = [c for c in CAPTURE_RUN_REQUIRED if c not in self._rows[0].values]
+            if missing:
+                raise CaptureFormatError(f"{self.path}: missing required column(s): {', '.join(missing)}")
+        return self._rows
+
+    def _iter_raw(self) -> Iterator[CaptureRunRow]:
+        import csv
+
+        with open(self.path, "r", encoding="utf-8-sig", newline="") as fh:
+            for line_no, raw in enumerate(csv.DictReader(fh), start=2):
+                if not any((v or "").strip() for v in raw.values() if isinstance(v, str)):
+                    continue  # a killed capture can leave a blank line
+                values: dict[str, Any] = {}
+                for key, text in raw.items():
+                    if key is None:
+                        continue
+                    key = key.strip()
+                    if text is None or str(text).strip() == "":
+                        values[key] = None
+                    elif key in _CAPTURE_RUN_STR:
+                        values[key] = str(text).strip()
+                    elif key in _CAPTURE_RUN_INT:
+                        values[key] = int(float(str(text).strip()))
+                    else:
+                        try:
+                            values[key] = float(str(text).strip())
+                        except ValueError as exc:
+                            raise CaptureFormatError(
+                                f"{self.path} line {line_no}: column {key!r} is not a number: {text!r}"
+                            ) from exc
+                yield CaptureRunRow(values=values, line_no=line_no)
+
+    @property
+    def clip_id(self) -> str:
+        if self._clip_id:
+            return self._clip_id
+        card = str(self.card.get("clip_id", "") or "")
+        if card:
+            return card
+        first = self.rows[0].values.get("clip_id")
+        return str(first) if first else self.root.name
+
+    @property
+    def domain(self) -> str:
+        return str(self.card.get("domain", "sim") or "sim")
+
+    def origin_alt_msl_m(self) -> float:
+        """Down datum for `ned_m`: the flood surface when the capture wrote one, else `alt_msl_m - agl_m`."""
+        if self._origin_alt_msl_m is not None:
+            return float(self._origin_alt_msl_m)
+        first = self.rows[0]
+        flood = first.values.get("flood_level_asl_m")
+        if flood is not None:
+            return float(flood)
+        return float(first["alt_msl_m"]) - float(first["agl_m"])
+
+    # -- intrinsics --------------------------------------------------------------------------------------
+    def intrinsics(self, row: CaptureRunRow | None = None) -> Intrinsics:
+        """§5.7 step 1: `f_px = (W/2) / tan(HFOV/2)`. `run.py` reads the HFOV out of the sim, never assumes it."""
+        r = row if row is not None else self.rows[0]
+        return Intrinsics.from_hfov(int(r["width_px"]), int(r["height_px"]), float(r["hfov_deg"]), source="sim")
+
+    def gsd_cm_px(self, row: CaptureRunRow | None = None) -> float:
+        r = row if row is not None else self.rows[0]
+        return float(r.get("gsd_cm_px", 0.0))
+
+    # -- telemetry ---------------------------------------------------------------------------------------
+    def telemetry(self, row: CaptureRunRow) -> Telemetry:
+        q_body = tuple(float(row[f"q_{a}"]) for a in "wxyz")
+        n = math.sqrt(sum(v * v for v in q_body))
+        q_body = tuple(v / n for v in q_body) if n else (1.0, 0.0, 0.0, 0.0)
+        yaw = quat_to_euler(q_body)[2] if self.gimbal_yaw_follows_vehicle else 0.0
+        q_gimbal = spec.gimbal_quat_from_euler(0.0, float(row["gimbal_pitch_deg"]), yaw)
+        flood = row.values.get("flood_level_asl_m")
+        alt = float(row["alt_msl_m"])
+        return Telemetry(
+            t_utc=float(row["t_utc"]),
+            lat=float(row["lat"]),
+            lon=float(row["lon"]),
+            alt_msl_m=alt,
+            agl_m=float(row["agl_m"]),
+            q_body=q_body,  # type: ignore[arg-type]
+            q_gimbal=q_gimbal,
+            gimbal_is_earth_referenced=True,   # the simulator's camera pose is exact (schema docstring)
+            ned_m=(float(row["north_m"]), float(row["east_m"]), -(alt - self.origin_alt_msl_m())),
+            h_acc_m=0.0,   # clean sim truth; inject_noise() writes the §5.7 numbers
+            v_acc_m=0.0,
+            mode=str(row.get("mode", "AUTO")),  # type: ignore[arg-type]
+            clip_id=self.clip_id,
+            frame_idx=int(row["frame_idx"]),
+            flood_level_asl_m=(None if flood is None else float(flood)),
+        )
+
+    def telemetry_series(self) -> TelemetrySeries:
+        return TelemetrySeries.from_telemetry([self.telemetry(r) for r in self.rows], clip_id=self.clip_id)
+
+    # -- frames and labels -------------------------------------------------------------------------------
+    def stem(self, frame_idx: int) -> str:
+        """`run.py` names every artefact `<clip_id>_<frame_idx:05d>`."""
+        return f"{self.clip_id}_{int(frame_idx):05d}"
+
+    def _resolve(self, subdir: str, frame_idx: int, suffix: str) -> str:
+        """Path of one artefact. Falls back to a suffix match so a renamed clip directory still resolves."""
+        direct = self.root / subdir / f"{self.stem(frame_idx)}{suffix}"
+        if direct.is_file():
+            return str(direct)
+        d = self.root / subdir
+        if d.is_dir():
+            for cand in sorted(d.glob(f"*_{int(frame_idx):05d}{suffix}")):
+                return str(cand)
+        return ""
+
+    def frame_index(self) -> FrameIndex:
+        """Index EVERY written frame (§5.4: skipped frames stay reachable for evidence thumbnails)."""
+        index = FrameIndex(self.clip_id)
+        for row in self.rows:
+            idx = int(row["frame_idx"])
+            aux = {}
+            for name, sub, suffix in (("seg", "masks", ".png"), ("labels", "labels", ".json")):
+                path = self._resolve(sub, idx, suffix)
+                if path:
+                    aux[name] = path
+            index.add(FrameRef(
+                frame_idx=idx,
+                t_utc=float(row["t_utc"]),
+                pts_s=0.0,
+                path=self._resolve("images", idx, ".png"),
+                aux=aux,
+            ))
+        return index
+
+    def truth_labels(self, frame_idx: int) -> list[dict[str, Any]]:
+        """The raw `labels/<stem>.json` list — every field `tools/capture/labels.py` wrote, untouched."""
+        path = self._resolve("labels", frame_idx, ".json")
+        if not path:
+            return []
+        return list(json.loads(Path(path).read_text(encoding="utf-8")))
+
+    def truth_detections(self, frame_idx: int) -> list[Detection]:
+        """Ground-truth boxes as `Detection`s (score 1.0) — the evaluation lane's reference boxes.
+
+        Two conversions matter and both are silent-error traps:
+
+        * `labels_from_mask` writes an **inclusive** integer box (`width = x2 - x1 + 1`), while
+          `Detection.bbox_px` is the usual half-open xyxy (`width = x2 - x1`). One pixel is added to the far
+          corners so `Detection.size_px` equals `MaskLabel.size_px`.
+        * the scene generator's `pose` vocabulary is wider than the frozen `POSTURES` (it emits `waving`).
+          Anything outside the contract becomes `"unknown"` here rather than being coerced into a neighbouring
+          posture; the raw string stays available through `truth_labels()`.
+        """
+        out: list[Detection] = []
+        for m in self.truth_labels(frame_idx):
+            x1, y1, x2, y2 = (float(v) for v in m["bbox_px"])
+            cls = str(m.get("cls", "human"))
+            pose = str(m.get("pose", "unknown"))
+            subm = str(m.get("submersion", "unknown"))
+            out.append(Detection(
+                bbox_px=(x1, y1, x2 + 1.0, y2 + 1.0),
+                score=1.0,
+                cls=cls if cls in ("human", "animal") else "human",  # type: ignore[arg-type]
+                modality="rgb",
+                frame_idx=int(frame_idx),
+                is_real=1.0,
+                posture=pose if pose in POSTURES else "unknown",  # type: ignore[arg-type]
+                posture_conf=1.0 if pose in POSTURES else 0.0,
+                submersion=subm if subm in SUBMERSIONS else "unknown",  # type: ignore[arg-type]
+                submersion_conf=1.0 if subm in SUBMERSIONS else 0.0,
+                occlusion=(None if m.get("occlusion") is None else int(m["occlusion"])),
+                visible_fraction=(None if m.get("visible_fraction") is None else float(m["visible_fraction"])),
+            ))
+        return out
+
+    # -- validation --------------------------------------------------------------------------------------
+    def validate(self, *, check_files: bool = True) -> list[str]:
+        """Problems with this clip ([] = valid). Mirrors `spec.validate_capture` for the run.py format."""
+        problems: list[str] = []
+        header = set(self.rows[0].values)
+        problems += [f"missing required column {c!r}" for c in CAPTURE_RUN_REQUIRED if c not in header]
+        last_idx, last_t = None, None
+        for row in self.rows:
+            for col in CAPTURE_RUN_REQUIRED:
+                if row.values.get(col) is None:
+                    problems.append(f"line {row.line_no}: required column {col!r} is empty")
+            idx, t = row.values.get("frame_idx"), row.values.get("t_utc")
+            if last_idx is not None and idx is not None and idx <= last_idx:
+                problems.append(f"line {row.line_no}: frame_idx {idx} is not increasing (previous {last_idx})")
+            if last_t is not None and t is not None and t < last_t:
+                problems.append(f"line {row.line_no}: t_utc {t} goes backwards (previous {last_t})")
+            last_idx = idx if idx is not None else last_idx
+            last_t = t if t is not None else last_t
+            lat, lon = row.values.get("lat"), row.values.get("lon")
+            if lat is not None and not (-90.0 <= float(lat) <= 90.0):
+                problems.append(f"line {row.line_no}: lat {lat} out of range")
+            if lon is not None and not (-180.0 <= float(lon) <= 180.0):
+                problems.append(f"line {row.line_no}: lon {lon} out of range")
+            hfov = row.values.get("hfov_deg")
+            if hfov is not None and not (1.0 < float(hfov) < 179.0):
+                problems.append(f"line {row.line_no}: hfov_deg {hfov} out of range")
+            if check_files and idx is not None and not self._resolve("images", int(idx), ".png"):
+                problems.append(f"line {row.line_no}: no images/{self.stem(int(idx))}.png")
+        return problems
 
 
 # --- 3. the §5.7 noise model -------------------------------------------------------------------------------

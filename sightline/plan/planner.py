@@ -106,6 +106,36 @@ def allocate_segment_minutes(prior: np.ndarray, segments: Sequence[Segment], cma
 
 
 # --- Layer 2: candidates ----------------------------------------------------------------------------------
+_DROP = object()  # sentinel: a candidate parameter that has no place in a serialised decision log
+
+
+def _jsonable(v: Any) -> Any:
+    """Reduce one candidate parameter to something `json.dumps` accepts, or `_DROP`."""
+    if isinstance(v, np.ndarray):
+        return _DROP
+    if isinstance(v, (np.floating, np.integer)):
+        return v.item()
+    if isinstance(v, (str, bool, int, float)) or v is None:
+        return v
+    if isinstance(v, Segment):
+        return v.seg_id
+    if isinstance(v, PatternSpec):
+        return {"camera": v.camera.name, "agl_m": v.agl_m, "presentation": v.presentation,
+                "side_overlap": v.side_overlap, "sweep_width_m": round(v.sweep_width(), 2),
+                "spacing_m": round(v.spacing(), 2), "speed_ms": round(v.speed(), 2), "band": v.band}
+    if isinstance(v, Route):
+        return {"pattern": v.pattern, "n_waypoints": len(v)}
+    if isinstance(v, Candidate):
+        return v.label
+    if isinstance(v, PendingRecord):
+        return {"record_id": v.record_id, "ne": list(v.ne), "score": v.score, "radius_m": v.radius_m}
+    if isinstance(v, dict):
+        return {str(k): x for k, x in ((k, _jsonable(x)) for k, x in v.items()) if x is not _DROP}
+    if isinstance(v, (list, tuple)):
+        return [x for x in (_jsonable(x) for x in v) if x is not _DROP]
+    return str(v)
+
+
 @dataclass(slots=True)
 class Candidate:
     """One scored action. `value` is expected finds per MINUTE (the doc's formula is per second; stated here)."""
@@ -122,11 +152,15 @@ class Candidate:
     infeasible_reason: str = ""
 
     def as_dict(self) -> dict[str, Any]:
+        """JSON-safe. The decision timeline is a logged, serialised product, so nothing here may be an object
+        `json.dumps` cannot write: segments, pattern specs and routes are reduced to the identifier that names
+        them, arrays are dropped, and numpy scalars become Python floats."""
         return {"kind": self.kind, "label": self.label, "value": round(self.value, 6),
                 "gain": round(self.gain, 6), "t_transit_s": round(self.t_transit_s, 1),
                 "t_execute_s": round(self.t_execute_s, 1), "reason": self.reason,
                 "feasible": self.feasible, "infeasible_reason": self.infeasible_reason,
-                "params": {k: v for k, v in self.params.items() if not isinstance(v, np.ndarray)}}
+                "params": {k: v for k, v in ((k, _jsonable(v)) for k, v in self.params.items())
+                           if v is not _DROP}}
 
 
 @dataclass(slots=True)

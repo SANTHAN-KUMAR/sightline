@@ -187,7 +187,12 @@ def recommend(seg: Segment, pod: dict[str, float], cannot_clear_fraction: float,
                          f"conditions would add little; a different band or altitude adds more")
     if not thermal_flown:
         window = CROSSOVER_WINDOWS_LOCAL_H[0]
-        if local_hour is None or local_hour < window[0] or local_hour > CROSSOVER_WINDOWS_LOCAL_H[1][1]:
+        # Suppressed only while the clock is actually inside a crossover window, where "fly before 06.40" is
+        # already stale advice. It is emitted through the working day on purpose: that is when a commander
+        # schedules the pre-dawn pass (§2.7 "pre-dawn is thermal's strongest window").
+        in_crossover = local_hour is not None and any(lo <= local_hour <= hi
+                                                      for lo, hi in CROSSOVER_WINDOWS_LOCAL_H)
+        if not in_crossover:
             parts.append(f"a pre-dawn thermal pass before {window[0]:.2f} local beats the thermal crossover window "
                          f"{window[0]:.2f}-{window[1]:.2f}")
     if cannot_clear_fraction > 0.01:

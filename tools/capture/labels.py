@@ -9,9 +9,16 @@ return the actor name. It returns, per rendered component:
     static actor   : `<MeshName>_<n>_<ActorName>_<uid>`      e.g. SM_FloodValley_0_Ground_72567
 so an exact match on "Human_007" finds nothing. Actors are recovered by regex on the id instead.
 
-`simGetSegmentationColorMap()` returns an RGB palette indexed by the position of the object in
-`simListInstanceSegmentationObjects()`. OpenCV reads PNGs as BGR, so the palette is reversed once on load
-rather than per pixel.
+Channel order, measured 2026-09-10 and the source of a bug that silently mislabelled everything:
+`simGetImages(..., compress=False).image_data_uint8` is **RGB**, not BGR (verified two ways: the silt-brown
+flood surface gives channel means 199/182/154, and reversing the segmentation palette attributes the centre of
+a 45 m frame to a survivor 283 m away, while not reversing attributes it to a house 2 m away). The palette from
+`simGetSegmentationColorMap()` is RGB too, indexed by position in `simListInstanceSegmentationObjects()`, so
+raw buffer and palette are compared **directly, with no channel swap**.
+
+The trap: OpenCV works in BGR. A raw buffer handed straight to `cv2.imwrite` is saved with red and blue
+swapped, and a PNG loaded with `cv2.imread` is BGR and must be swapped before being matched against the
+palette. `mask_to_rgb()` below is the single place that conversion is expressed.
 """
 
 from __future__ import annotations
@@ -76,15 +83,29 @@ def actor_index(names: Iterable[str]) -> dict[int, tuple[int, str, str]]:
     return out
 
 
-def palette_bgr(colour_map) -> np.ndarray:
-    """Palette as BGR uint8 so it can be compared directly against an OpenCV-loaded PNG."""
+def palette_rgb(colour_map) -> np.ndarray:
+    """The instance palette as RGB uint8 — the same order as the raw AirSim image buffer, so no swap."""
     p = np.asarray(colour_map, dtype=np.uint8)
     if p.ndim != 2 or p.shape[1] != 3:
         raise ValueError(f"unexpected colour map shape {p.shape}")
-    return p[:, ::-1].copy()
+    return p
 
 
-def labels_from_mask(mask_bgr: np.ndarray, names: list[str], colour_map, *,
+def mask_to_rgb(mask: np.ndarray, *, source: str) -> np.ndarray:
+    """Normalise a segmentation frame to RGB.
+
+    `source="airsim"` for a raw `image_data_uint8` buffer (already RGB); `source="cv2"` for an image loaded
+    with `cv2.imread`, which is BGR and must be reversed. Getting this wrong does not raise - it silently
+    attributes every pixel to the wrong instance - so the caller must say which it has.
+    """
+    if source == "airsim":
+        return mask
+    if source == "cv2":
+        return mask[:, :, ::-1]
+    raise ValueError(f"source must be 'airsim' or 'cv2', got {source!r}")
+
+
+def labels_from_mask(mask_rgb: np.ndarray, names: list[str], colour_map, *,
                      min_px: int = 4) -> list[MaskLabel]:
     """Exact visible-extent boxes for every survivor present in the mask.
 
@@ -92,34 +113,34 @@ def labels_from_mask(mask_bgr: np.ndarray, names: list[str], colour_map, *,
     unresolvable target is not a usable training box. Anything dropped is still counted by the caller against
     the ground truth, so a missed survivor shows up as a miss rather than silently disappearing.
     """
-    if mask_bgr.ndim != 3 or mask_bgr.shape[2] != 3:
-        raise ValueError(f"expected an HxWx3 BGR mask, got {mask_bgr.shape}")
-    pal = palette_bgr(colour_map)
+    if mask_rgb.ndim != 3 or mask_rgb.shape[2] != 3:
+        raise ValueError(f"expected an HxWx3 RGB mask, got {mask_rgb.shape}")
+    pal = palette_rgb(colour_map)
     idx = actor_index(names)
     if not idx:
         raise ValueError("no Human_/Animal_ instances in the segmentation object list")
 
-    # One pass over the frame: pack BGR into a single int32 key and bucket by colour.
-    flat = mask_bgr.reshape(-1, 3).astype(np.int32)
+    # One pass over the frame: pack RGB into a single int32 key and bucket by colour.
+    flat = mask_rgb.reshape(-1, 3).astype(np.int32)
     key = (flat[:, 0] << 16) | (flat[:, 1] << 8) | flat[:, 2]
     present, first, counts = np.unique(key, return_index=True, return_counts=True)
     want = {}
     for i, (aid, name, cls) in idx.items():
-        b, g, r = int(pal[i, 0]), int(pal[i, 1]), int(pal[i, 2])
-        want[(b << 16) | (g << 8) | r] = (i, aid, name, cls)
+        r, g, b = int(pal[i, 0]), int(pal[i, 1]), int(pal[i, 2])
+        want[(r << 16) | (g << 8) | b] = (i, aid, name, cls)
 
-    h, w = mask_bgr.shape[:2]
+    h, w = mask_rgb.shape[:2]
     out: list[MaskLabel] = []
     for k, n_px in zip(present, counts):
         hit = want.get(int(k))
         if hit is None or n_px < min_px:
             continue
         i, aid, name, cls = hit
-        ys, xs = np.where(np.all(mask_bgr == pal[i], axis=2))
+        ys, xs = np.where(np.all(mask_rgb == pal[i], axis=2))
         out.append(MaskLabel(
             actor_id=aid, name=name, cls=cls,
             bbox_px=(int(xs.min()), int(ys.min()), int(xs.max()), int(ys.max())),
-            visible_px=int(n_px), rgb=(int(pal[i, 2]), int(pal[i, 1]), int(pal[i, 0])),
+            visible_px=int(n_px), rgb=(int(pal[i, 0]), int(pal[i, 1]), int(pal[i, 2])),
         ))
     out.sort(key=lambda m: m.actor_id)
     del h, w

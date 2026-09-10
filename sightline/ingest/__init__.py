@@ -22,6 +22,7 @@ Sources, in the order `detect_source()` tries them:
 | detected | trigger | reader |
 |---|---|---|
 | `sim`        | a directory (or file) containing `capture.json` | `sim.SimExportReader` — the primary path |
+| `capture_run`| a directory containing `telemetry.csv` with `tools/capture/run.py`'s header | `sim.CaptureRunReader` |
 | `airsim_rec` | a directory (or file) containing `airsim_rec.txt` | `sim.AirSimRecReader` |
 | `dji_srt`    | a `.srt` file, or a video with a sibling `.srt` | `dji_srt.parse_srt` |
 | `mavlink`    | a `.tlog` / `.bin` file | `mavlink.read_mavlink` (stretch) |
@@ -41,6 +42,7 @@ from typing import Any, Iterator, Sequence
 
 import numpy as np
 
+from sightline.ingest import sim as sim_mod
 from sightline.ingest import spec
 from sightline.ingest.align import BootClock, TelemetrySeries, cross_correlate_lag, estimate_t_offset
 from sightline.ingest.decimate import FrameIndex, FrameRef, decimate, decimation_for_fps, K_5FPS, K_10FPS
@@ -48,10 +50,12 @@ from sightline.ingest.decode import DecodedFrame, VideoReader, open_video, read_
 from sightline.ingest.dji_srt import SrtEntry, SrtParseReport, parse_srt, srt_to_telemetry
 from sightline.ingest.sim import (
     AirSimRecReader,
+    CaptureRunReader,
     NoiseModel,
     SimExportReader,
     inject_noise,
     is_airsim_rec,
+    is_capture_run,
     is_sim_export,
 )
 from sightline.ingest.spec import CaptureFormatError, CaptureManifest, SimCaptureWriter
@@ -65,6 +69,9 @@ __all__ = [
     # re-exported so callers need one import
     "TelemetrySeries",
     "BootClock",
+    "CaptureRunReader",
+    "SimExportReader",
+    "AirSimRecReader",
     "FrameIndex",
     "FrameRef",
     "DecodedFrame",
@@ -90,7 +97,7 @@ __all__ = [
     "spec",
 ]
 
-SOURCE_TYPES = ("sim", "airsim_rec", "dji_srt", "mavlink", "ulog", "video")
+SOURCE_TYPES = ("sim", "capture_run", "airsim_rec", "dji_srt", "mavlink", "ulog", "video")
 _VIDEO_SUFFIXES = (".mp4", ".mov", ".mkv", ".avi", ".ts", ".m4v", ".lrf")
 
 
@@ -101,6 +108,8 @@ def detect_source(path: str | os.PathLike[str]) -> str:
         raise FileNotFoundError(p)
     if is_sim_export(p):
         return "sim"
+    if is_capture_run(p):
+        return "capture_run"
     if is_airsim_rec(p):
         return "airsim_rec"
     if p.is_dir():
@@ -108,7 +117,8 @@ def detect_source(path: str | os.PathLike[str]) -> str:
             if child.suffix.lower() == ".srt":
                 return "dji_srt"
         raise CaptureFormatError(
-            f"{p} is a directory but holds no {spec.MANIFEST_NAME}, {spec.AIRSIM_REC} or .srt file"
+            f"{p} is a directory but holds no {spec.MANIFEST_NAME}, {sim_mod.CAPTURE_RUN_TELEMETRY}, "
+            f"{spec.AIRSIM_REC} or .srt file"
         )
     suffix = p.suffix.lower()
     if suffix == ".srt":
@@ -315,6 +325,7 @@ def open_clip(path: str | os.PathLike[str], *, decimate_k: int | None = None, ta
     source_type = detect_source(p)
     builder = {
         "sim": _open_sim,
+        "capture_run": _open_capture_run,
         "airsim_rec": _open_airsim_rec,
         "dji_srt": _open_dji_srt,
         "mavlink": _open_mavlink,
@@ -397,6 +408,27 @@ def _open_sim(p: Path, *, clip_id: str, load_images: bool, load_thermal: bool, m
     )
 
 
+def _open_capture_run(p: Path, *, clip_id: str, load_images: bool, load_thermal: bool, max_frames: int,
+                      **_: Any) -> Clip:
+    """The F5 dataset run written by `tools/capture/run.py` (`telemetry.csv` + images/labels/masks)."""
+    reader = CaptureRunReader(p, clip_id=clip_id)
+    first = reader.rows[0]
+    return Clip(
+        source_type="capture_run",
+        clip_id=reader.clip_id,
+        telemetry=reader.telemetry_series(),
+        intrinsics=reader.intrinsics(first),
+        frame_index=reader.frame_index(),
+        source_path=str(reader.root),
+        load_images=load_images,
+        load_thermal=load_thermal,
+        max_frames=max_frames,
+        domain=reader.domain,
+        reports={"data_card": reader.card, "assumptions": reader.assumptions,
+                 "gsd_cm_px": reader.gsd_cm_px(first)},
+    )
+
+
 def _open_airsim_rec(p: Path, *, clip_id: str, load_images: bool, load_thermal: bool, max_frames: int,
                      origin: tuple[float, float, float] | None, hfov_deg: float | None,
                      frame_size: tuple[int, int] | None, **_: Any) -> Clip:
@@ -439,7 +471,7 @@ def _open_dji_srt(p: Path, *, clip_id: str, load_images: bool, load_thermal: boo
         raise CaptureFormatError(f"{srt_path}: parsed zero entries")
     name = clip_id or srt_path.stem
     samples, report = srt_to_telemetry(entries, clip_id=name, takeoff_alt_msl_m=takeoff_alt_msl_m,
-                                       assume_nadir=assume_nadir)
+                                       assume_nadir=assume_nadir, tz_offset_h=tz_offset_h)
     if not samples:
         raise CaptureFormatError(f"{srt_path}: no entry carried both a position and a time")
     series = TelemetrySeries.from_telemetry(samples, clip_id=name)
@@ -455,8 +487,12 @@ def _open_dji_srt(p: Path, *, clip_id: str, load_images: bool, load_thermal: boo
                                video_path=str(video_path), video_index=i))
     else:
         start_utc = video_start_utc if video_start_utc is not None else 0.0
-        for e, s in zip(entries, samples, strict=False):
-            index.add(FrameRef(frame_idx=e.frame_idx, t_utc=s.t_utc, pts_s=e.start_s))
+        # Index from the SAMPLES, not by zipping them against the entries: `srt_to_telemetry` drops any entry
+        # with no position or no time, so a positional zip would pair sample i with entry i+1 from the first
+        # gap onwards and stamp every later frame with the wrong index and PTS.
+        pts_by_frame = {e.frame_idx: e.start_s for e in entries}
+        for s in samples:
+            index.add(FrameRef(frame_idx=s.frame_idx, t_utc=s.t_utc, pts_s=pts_by_frame.get(s.frame_idx, 0.0)))
     intr = intrinsics or _srt_intrinsics(entries, reader)
     return Clip(
         source_type="dji_srt",

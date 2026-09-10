@@ -1,0 +1,14 @@
+{
+ "camera": "survey",
+ "width": 3840,
+ "height": 2160,
+ "f_px": 2548.723,
+ "cx": 1920.0,
+ "cy": 1080.0,
+ "hfov_deg": 73.9828,
+ "vfov_deg": 45.9288,
+ "residual_rms_px": 5.584,
+ "observations": 48,
+ "method": "least squares against data/scene/actors.json ground truth, nadir pinhole",
+ "note": "simGetCameraInfo().fov is NOT the rendered FOV for this camera; use f_px from this file. Residual RMS is also the validation of the projection chain."
+}

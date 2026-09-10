@@ -64,3 +64,5 @@ will route it. `pyproject.toml` / `uv.lock` are orchestrator-only: if a package 
 | Date | Lane | Change |
 |---|---|---|
 | 2026-09-10 | orchestrator | Initial freeze at `SCHEMA_VERSION = 1.0.0`. |
+| 2026-09-10 | orchestrator | **1.1.0**: added `"waving"` to `Posture` / `POSTURES`. It is a real authored posture (`tools/scene/build_poses.py`), 12 of the 71 survivors use it, and it has a distinctive silhouette from above (measured 26x25 px where standing is 17x30). Additive only: nothing was renamed or repurposed. |
+| 2026-09-10 | orchestrator | `common/geodesy.quat_to_euler` gained an explicit gimbal-lock branch. At \|pitch\| = 90 - exactly where a nadir survey camera sits - the naive atan2 form split the rotation arbitrarily between roll and yaw, so a quat->euler->quat round trip could rotate the azimuth by up to 180 deg. Worst round-trip error over a pitch/yaw grid: 180 deg -> 2.4e-06 deg. Found by the ingest lane in its own copy of the same formula. |

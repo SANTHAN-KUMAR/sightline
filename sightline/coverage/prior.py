@@ -26,7 +26,13 @@ import numpy as np
 from sightline.coverage.accumulate import ZONE_CODE, CoverageMap
 from sightline.coverage.grid import SceneFrame, cell_centres_m, latlon_to_grid_ne
 
-#: Base weight per zone before any feature is added (§2.4: three zones, three survivor populations).
+#: Base weight per zone before any feature is added (§2.4: three zones, three survivor populations), expressed
+#: **per cell of `ZONE_WEIGHT_REFERENCE_CELL_M`**. Everything else in this module is a Gaussian bump of a fixed
+#: total mass, which is resolution-invariant by construction; a flat per-cell weight is not, so without this
+#: reference the zone layer's share of the prior would quadruple when the raster went from 10 m to 5 m cells
+#: (§5.3 allows both) and every piece of evidence — buildings, channel bends, last-known positions — would be
+#: silently diluted by the choice of raster resolution.
+ZONE_WEIGHT_REFERENCE_CELL_M = 10.0
 ZONE_BASE_WEIGHT: dict[str, float] = {
     "settlement": 1.0,   # roofs and upper floors: Kerala 2018, people waited days on roofs
     "channel": 0.8,      # where bodies and clinging survivors accumulate (Wayanad, 40 km of Chaliyar)
@@ -106,8 +112,9 @@ def build_prior(cmap: CoverageMap, settlement_json: str | Path | None = None,
     notes: list[str] = []
 
     zone = np.zeros(shape, dtype=np.float32)
+    zone_scale = (cell / ZONE_WEIGHT_REFERENCE_CELL_M) ** 2  # a weight per unit AREA, not per cell
     for name, code in ZONE_CODE.items():
-        zone[cmap.zone_codes == code] = ZONE_BASE_WEIGHT.get(name, 0.1)
+        zone[cmap.zone_codes == code] = ZONE_BASE_WEIGHT.get(name, 0.1) * zone_scale
 
     buildings = np.zeros(shape, dtype=np.float32)
     high_ground = np.zeros(shape, dtype=np.float32)

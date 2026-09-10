@@ -22,19 +22,20 @@ from typing import Any, Literal
 
 import numpy as np
 
-SCHEMA_VERSION = "1.0.0"
+SCHEMA_VERSION = "1.1.0"
 
 # --- vocabularies (closed sets; the evaluation harness slices on these) ------------------------------------
 ClassName = Literal["human", "animal"]
 Modality = Literal["rgb", "thermal", "fused"]
-Posture = Literal["standing", "sitting", "prone", "supine", "half_submerged", "trapped", "unknown"]
+Posture = Literal["standing", "sitting", "prone", "supine", "half_submerged", "trapped", "waving", "unknown"]
 Submersion = Literal["dry", "wet", "partial", "half", "head_only", "unknown"]
 UrgencyClass = Literal["immersed", "trapped", "stranded", "animal", "unknown"]
 RecordStatus = Literal["candidate", "confirmed", "stale", "dismissed"]
 FlightMode = Literal["AUTO", "MANUAL", "HOLD", "RTL"]
 Zone = Literal["fan", "settlement", "channel", "hillslope", "unknown"]
 
-POSTURES: tuple[str, ...] = ("standing", "sitting", "prone", "supine", "half_submerged", "trapped", "unknown")
+POSTURES: tuple[str, ...] = ("standing", "sitting", "prone", "supine", "half_submerged", "trapped",
+                            "waving", "unknown")
 SUBMERSIONS: tuple[str, ...] = ("dry", "wet", "partial", "half", "head_only", "unknown")
 OCCLUSION_BINS: tuple[int, ...] = (0, 1, 2)  # 0 = <25 %, 1 = 25-75 %, 2 = >75 % (§6.3)
 

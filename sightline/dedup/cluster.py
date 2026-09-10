@@ -160,23 +160,31 @@ def _max_displacement(
 
     §5.6 measures motion over a window rather than between consecutive frames because per-frame geolocation
     noise (metres) dwarfs a survivor's per-frame movement (centimetres).
+
+    The returned window is the separation that produced the largest displacement — **except** when nothing
+    moved at all, where it is the longest separation that was actually examined. Without that exception a
+    perfectly stationary subject returns a window of 0 s, `Deduplicator._motion` concludes it never observed
+    a long enough window, and the record reads `motion_state = "unknown"` instead of `"still"`. Survivors
+    being stationary is the normal case here (§5.6), so the degenerate branch is the one that matters.
     """
     n = len(times)
     if n < 2:
         return 0.0, 0.0
     order = np.argsort(times)
     lats, lons, times = lats[order], lons[order], times[order]
-    best_d, best_w = 0.0, 0.0
+    best_d, best_w, longest = 0.0, 0.0, 0.0
     j = 0
     for i in range(n):
         # first index whose time is at least min_window_s after times[i]
         while j < n and times[j] - times[i] < min_window_s:
             j += 1
         for k in range(j, n):
+            window = float(times[k] - times[i])
+            longest = max(longest, window)
             d = geodesy.haversine_m(lats[i], lons[i], lats[k], lons[k])
             if d > best_d:
-                best_d, best_w = d, float(times[k] - times[i])
-    return best_d, best_w
+                best_d, best_w = d, window
+    return best_d, (best_w if best_d > 0.0 else longest)
 
 
 def _cluster(summaries: Sequence[TrackSummary], eps_m: float) -> np.ndarray:
@@ -410,16 +418,21 @@ class Deduplicator:
 
     def _motion(self, members: list[TrackSummary]) -> tuple[str, float, float]:
         """§5.6: "moving" if any member track's geo-displacement over >= 5 s exceeds 3 x CE90, else "still"."""
-        best_d, best_w = 0.0, 0.0
+        best_d, best_w, longest = 0.0, 0.0, 0.0
         moving = False
         observed_window = False
         for s in members:
+            longest = max(longest, s.displacement_window_s)
             if s.displacement_window_s >= self.cfg.motion_window_s:
                 observed_window = True
                 if s.max_displacement_m > self.cfg.motion_ce90_multiple * s.ce90_m:
                     moving = True
             if s.max_displacement_m > best_d:
                 best_d, best_w = s.max_displacement_m, s.displacement_window_s
+        if best_d <= 0.0:
+            # nothing moved at all: report the longest window that was examined, not 0 s. A "still" verdict
+            # measured over "no time" is not a verdict, and stationary is the normal case here (§5.6).
+            best_w = longest
         if moving:
             return "moving", best_d, best_w
         if observed_window or self.cfg.still_when_window_short:

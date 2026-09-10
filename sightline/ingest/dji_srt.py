@@ -397,7 +397,7 @@ def _order_gps(a: float, b: float, gps_order: str, srt_format: str) -> tuple[flo
 def srt_to_telemetry(entries: Sequence[SrtEntry], *, clip_id: str = "", clip_start_utc: float | None = None,
                      takeoff_alt_msl_m: float | None = None, assume_nadir: bool = True,
                      h_acc_m: float = 2.5, v_acc_m: float = 1.0,
-                     mode: str = "AUTO") -> tuple[list[Telemetry], SrtParseReport]:
+                     mode: str = "AUTO", tz_offset_h: float = 0.0) -> tuple[list[Telemetry], SrtParseReport]:
     """Turn parsed SRT entries into `Telemetry` samples plus a report of every assumption that was made.
 
     Altitude (§5.7 "Factors"): DJI `abs_alt` is not reliably ellipsoidal or orthometric across models, so when
@@ -409,7 +409,9 @@ def srt_to_telemetry(entries: Sequence[SrtEntry], *, clip_id: str = "", clip_sta
     with the simulator export, and is earth-referenced. Consumer Mavic-class SRT has no gimbal at all: with
     `assume_nadir=True` the −90° nadir assumption is applied and recorded in the report.
     """
-    report = SrtParseReport(n_entries=len(entries), tz_offset_h=0.0)
+    # `tz_offset_h` was already applied by `parse_srt_text`; it is echoed here so the clip's provenance says
+    # which offset produced these timestamps. Reporting a hardcoded 0.0 made the report lie for any real clip.
+    report = SrtParseReport(n_entries=len(entries), tz_offset_h=float(tz_offset_h))
     out: list[Telemetry] = []
     for e in entries:
         report.formats[e.srt_format] = report.formats.get(e.srt_format, 0) + 1
