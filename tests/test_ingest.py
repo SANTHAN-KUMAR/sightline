@@ -800,7 +800,10 @@ def test_capture_run_truth_labels_become_schema_detections(tmp_path):
     assert det.occlusion == 1
     assert det.submersion == "half" and det.submersion_conf == 1.0
     # "waving" is not in the frozen POSTURES vocabulary: it must become "unknown", never a neighbour
-    assert det.posture == "unknown" and det.posture_conf == 0.0
+    # "waving" is a real authored posture, added to the frozen POSTURES vocabulary in SCHEMA_VERSION
+    # 1.1.0 (docs/CONTRACTS.md section 5). The converter used to coerce it to "unknown"; it now passes
+    # through with full confidence like any other known posture.
+    assert det.posture == "waving" and det.posture_conf == 1.0
 
 
 def test_capture_run_opens_as_a_clip_and_indexes_every_frame(tmp_path):

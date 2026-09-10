@@ -389,7 +389,9 @@ def test_rule_2_no_posture_prediction_can_push_a_record_below_its_base():
                 assert rec.components.urgency >= URGENCY_BASE[BASE_SITUATION] - 1e-12
                 assert rec.components.w_class >= SURVIVAL_FLOOR
                 checked += 1
-    assert checked == len(POSTURES) * len(SUBMERSIONS) * 5 == 210
+    # 8 postures x 6 submersions x 5 confidences. The literal moved from 210 to 240 when "waving" joined
+    # POSTURES in SCHEMA_VERSION 1.1.0; the assertion's point is that EVERY combination was exercised.
+    assert checked == len(POSTURES) * len(SUBMERSIONS) * 5 == 240
 
 
 def test_rule_2_holds_against_adversarial_head_output():

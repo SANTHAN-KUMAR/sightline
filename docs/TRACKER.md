@@ -36,6 +36,60 @@ of work and append to the Session log.
 - `PS2-Survivor-Vision-Research-and-Build-Document.md` in the repo root is the user's copy of the updated doc; it is
   identical to `docs/SOLUTION_DOC.md` and deliberately left untracked.
 
+## Handoff state (session 3, 2026-09-10 23:40) — READ THIS FIRST, it supersedes session 2's handoff
+
+**Read `docs/QUALITY_GATE.md` before touching anything.** Seven separate pieces of work this session passed every
+programmatic check and were still wrong; all seven were caught by looking at a picture. Eyeball verification is a
+hard rule now, not a nicety. `docs/SCENE_REFERENCE.md` holds the user's two reference photographs and is the
+visual target.
+
+### Verified working (seen in a render, not inferred)
+- **Scene**: 1072 actors — terrain (Ground, vertex normals, no corduroy), FloodWater, 73 Kerala houses,
+  919 debris items placed by flood transport physics, 71 posed survivors, full lighting rig (GI off).
+- **Survivor poses (F1)**: 7 postures authored as real one-key AnimSequences on all 9 Rocketbox skeletons
+  (63 assets), left/right symmetric to 0.00 cm, characters fully textured. Standing 44.5 cm wide with arms down,
+  waving 141.8, prone 167.2 long — the silhouettes actually differ, which is the point at 20-95 px.
+- **Ground truth**: survivor positions match the sim to **0.00 m**. Two "buried" survivors are now genuinely
+  buried under a debris cap — verified 0 visible pixels, 0 labels emitted.
+- **Camera**: calibrated `f_px = 2548.72`, HFOV 73.98 deg, residual RMS 5.6 px over 48 observations (which is
+  also a validation of the nadir projection chain). `simGetCameraInfo().fov` reports 89.9 and is WRONG.
+- **Capture (F5) by FLYING (F2)**: `sightline/mission/survey.py` flies a boustrophedon and shoots on the move,
+  terrain-following, with a tilt gate. A 60-frame test validated clean; survivors measured 51-93 px.
+- **Pipeline lanes**: ~20k lines across ingest/geo/track/dedup/triage/export/coverage/plan/store/api/eval.
+  **541 tests pass** (144 geo/triage/export/store + 298 ingest/track/dedup + 101 coverage/plan/eval).
+  10 real bugs found and fixed by those tests, listed in `docs/lanes/*.md`.
+
+### NOT done / not verified
+- **No usable training dataset yet.** Two runs were discarded (teleport artefacts). The full flown run is the
+  next thing to finish and validate.
+- **No model trained.** F8b is minimal by decision (see CONTEXT decisions) but has not run.
+- **Thermal (F9b)**: `tools/capture/thermal_ids.py` written (object-ID temperature table, decodable to
+  absolute C), **never run**.
+- **Weather scripting** never exercised in this scene; **time of day** not re-verified since the sky rebuild.
+- **Scene vs `docs/SCENE_REFERENCE.md`**: no trees (the single biggest visual gap), no rubble field on the fan,
+  no poles/wires, no boats, houses all pristine, water reads tan rather than green-teal.
+
+### Run order for the scene (all idempotent, PIE OFF)
+```
+uv run python tools/scene/gen_terrain.py            # host: OBJ + zone masks (now writes vertex normals)
+ue_python exec build_flood_valley.py                # level, lighting, water
+ue_python exec build_materials.py                   # terrain + water materials
+ue_python exec build_buildings.py                   # 73 houses (asserts every material compiles)
+uv run python tools/scene/gen_actors.py             # host: 71 survivors, seeded
+ue_python exec build_poses.py                       # 63 pose assets (asserts symmetry + face direction)
+ue_python exec build_characters.py                  # binds the Rocketbox textures (the FBX import binds none)
+ue_python exec build_actors.py                      # spawns/updates survivors IN PLACE (never renames)
+uv run python tools/scene/gen_props.py              # host: 919 debris + burial caps
+ue_python exec build_props.py                       # places debris
+ue_python exec qa_shots.py                          # ALWAYS: render and LOOK
+```
+Capture, validate, then look:
+```
+uv run python -m sightline.mission.survey --alt 45 --speed 11 --out _artifacts/dataset/<name>
+uv run python tools/capture/validate.py _artifacts/dataset/<name>      # exits non-zero if unclean
+uv run python tools/capture/contact_sheet.py _artifacts/dataset/<name> # then OPEN the sheet
+```
+
 ## Next actions (start here) — DEVELOPMENT PHASE
 Read `docs/HANDBOOK.md` §5-§6 before touching the sim or the scene. The doc is now **simulation-first** (§5.5c):
 the renderer is the deployment domain, randomisation OFF by default, every number carries a `sim`/`real` column.

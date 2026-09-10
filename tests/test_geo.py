@@ -707,7 +707,12 @@ def test_noise_does_not_hit_gimbal_lock_on_a_nadir_camera():
     q = euler_to_quat(0.0, -90.0, 30.0)
     roll, pitch, yaw = quat_to_euler(q)
     assert pitch == pytest.approx(-90.0, abs=1e-6)
-    assert (yaw + roll) % 360.0 != pytest.approx(30.0, abs=1.0)  # the trap: the round-trip loses the azimuth
+    # `common/geodesy.quat_to_euler` used to split the rotation arbitrarily between roll and yaw here and lose
+    # the heading (it returned roll=180 / yaw=180 for a 30 deg azimuth). It now resolves the lock explicitly -
+    # roll = 0, all the rotation into yaw - so the azimuth survives the round trip. The injector still perturbs
+    # by quaternion multiplication rather than through euler, which is what the rest of this test checks.
+    assert roll == pytest.approx(0.0, abs=1e-6)
+    assert yaw % 360.0 == pytest.approx(30.0, abs=1e-6)
 
     intr = cam()
     truth = poses(1)[0]  # gimbal yaw 30 deg, nadir
