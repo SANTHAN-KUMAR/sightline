@@ -42,3 +42,11 @@ models/rfdetr/
 
 # FiftyOne MongoDB and scratch images (envs/fiftyone)
 data/fiftyone/
+
+# Generated scene geometry: reproducible from the seeded generators, large, and noisy in diffs.
+# The layout JSON that describes placement IS tracked; the meshes are rebuilt by gen_*.py.
+data/scene/rubble/*.obj
+data/scene/damage/*.obj
+data/scene/utilities/*.obj
+data/scene/utilities/*.png
+data/scene/buildings/*.obj

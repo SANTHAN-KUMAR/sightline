@@ -138,7 +138,7 @@ class Mesh:
         for (quad, ) in f:
             self.poly([crn[i] for i in quad], mat)
 
-    def merge(self, other: "Mesh", R=None, t=None, scale: float = 1.0) -> None:
+    def merge(self, other: Mesh, R=None, t=None, scale: float = 1.0) -> None:
         base = len(self.v)
         V = np.asarray(other.v, dtype=float) * scale
         if R is not None:
@@ -1200,7 +1200,7 @@ def render_variants(lib: dict, out_dir: Path) -> list[Path]:
 
 
 def render_scene(plan: dict, lib: dict, out_dir: Path, max_tris: int = 2_600_000) -> list[Path]:
-    from PIL import Image, ImageDraw
+    from PIL import ImageDraw
 
     meta = json.loads((OUT / "flood_valley.json").read_text())
     s = gt.build(meta["size_m"], meta["cell_m"], meta["seed"])
