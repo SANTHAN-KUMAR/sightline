@@ -21,6 +21,7 @@ renders as the grey WorldGridMaterial checker and reports nothing at all through
 """
 
 import json
+import math
 
 import unreal
 
@@ -117,17 +118,35 @@ def import_mesh(path, name, expect_tris):
         sm.set_material(i, SLOT[key])
         slots.append(key)
     eal.save_asset(sm.get_path_name())
+    # The point of this check is the Nanite trap: an imported mesh arrives with Nanite ON and get_num_triangles
+    # then reports the FALLBACK mesh (347 triangles for the 524k-triangle terrain). A 2 % tolerance still catches
+    # that by three orders of magnitude while allowing the importer to weld away a degenerate or two.
     got = sm.get_num_triangles(0)
-    if got != expect_tris:
+    if abs(got - expect_tris) > max(4, 0.02 * expect_tris):
         raise RuntimeError(f"{name} has {got} triangles, generator says {expect_tris} (Nanite fallback?)")
     return sm, slots
 
 
 # --- import the damaged variants -------------------------------------------------------------------------
-meshes, slot_index = {}, {}
+# The pristine archetypes are symmetric in u and v, so nothing in this project has ever proved whether UE's OBJ
+# importer keeps the file's origin or re-pivots to the bounding-box centre. These meshes are NOT symmetric
+# (rubble spills outside the footprint by up to 3 m), so a re-pivot would slide the house sideways. Measure it
+# per mesh and hand back a LOCAL correction, which apply() rotates into world by the actor's own yaw.
+meshes, slot_index, fix_local = {}, {}, {}
 for vname, v in sorted(plan["variants"].items()):
     sm, slots = import_mesh(fr"{REPO}\data\scene\{v['obj']}".replace("/", "\\"), f"SM_{vname}", v["triangles"])
     meshes[vname], slot_index[vname] = sm, slots
+    cx, cy, cz = v["bbox_centre_obj_cm"]
+    want = unreal.Vector(cx, -cy, cz)               # UE's importer flips y: UE local X = obj x, Y = -obj y
+    try:
+        got = sm.get_bounds().origin
+        d = unreal.Vector(want.x - got.x, want.y - got.y, want.z - got.z)
+    except Exception as exc:                        # noqa: BLE001 - if the API is unavailable, assume no shift
+        print(f"  ! {vname}: get_bounds() unavailable ({exc}); assuming the importer keeps the OBJ origin")
+        d = unreal.Vector(0, 0, 0)
+    fix_local[vname] = d
+    if max(abs(d.x), abs(d.y), abs(d.z)) > 1.0:
+        print(f"  {vname}: importer re-pivoted, correcting by local ({d.x:.1f}, {d.y:.1f}, {d.z:.1f}) cm")
 _sample = {k: (meshes[k].get_num_triangles(0), slot_index[k]) for k in sorted(meshes)[:2]}
 print("imported", len(meshes), "damaged variants; sample:", _sample)
 
@@ -148,12 +167,20 @@ for aname in town["archetypes"]:
     pristine_slots[aname] = keys
 
 
-def apply(act, sm, slots, wall_tint):
+def apply(act, hs, sm, slots, fix=None):
+    """Swap the mesh, re-assign EVERY slot (a stale override at an index would survive the swap), and re-assert
+    the actor's location from settlement.json plus any pivot correction, so the script is self-repairing."""
     comp = act.static_mesh_component
     comp.set_static_mesh(sm)
     comp.set_mobility(unreal.ComponentMobility.STATIC)
     for i, key in enumerate(slots):
-        comp.set_material(i, WALLS[wall_tint] if key == "wall" else SLOT[key])
+        comp.set_material(i, WALLS[hs["wall_tint"]] if key == "wall" else SLOT[key])
+    loc = unreal.Vector(hs["north_m"] * 100.0, hs["east_m"] * 100.0, (hs["base_asl_m"] - BASE_Z) * 100.0)
+    if fix is not None and max(abs(fix.x), abs(fix.y), abs(fix.z)) > 1.0:
+        yaw = math.radians(90.0 - hs["yaw_deg"])          # the actor rotation build_buildings.py used
+        loc = unreal.Vector(loc.x + fix.x * math.cos(yaw) - fix.y * math.sin(yaw),
+                            loc.y + fix.x * math.sin(yaw) + fix.y * math.cos(yaw), loc.z + fix.z)
+    act.set_actor_location(loc, False, False)
 
 
 houses = {a.get_actor_label(): a for a in eas.get_all_level_actors()
@@ -161,12 +188,14 @@ houses = {a.get_actor_label(): a for a in eas.get_all_level_actors()
 if not houses:
     raise RuntimeError("no House_### actors in the level - run tools/scene/build_buildings.py first")
 
+by_id = {b["id"]: b for b in town["houses"]}
+
 # 1. reset every house to pristine (so a plan that no longer damages a house really un-damages it)
 for hs in town["houses"]:
     act = houses.get(f"House_{hs['id']:03d}")
     if act is None:
         continue
-    apply(act, pristine[hs["archetype"]], pristine_slots[hs["archetype"]], hs["wall_tint"])
+    apply(act, hs, pristine[hs["archetype"]], pristine_slots[hs["archetype"]])
     act.tags = [str(t) for t in act.tags if str(t) != "Damaged" and not str(t).startswith("dmg:")]
 
 # 2. swap in the damaged variants
@@ -176,7 +205,8 @@ for h in plan["houses"]:
     if act is None:
         missing_actors.append(h["id"])
         continue
-    apply(act, meshes[h["variant"]], slot_index[h["variant"]], h["wall_tint"])
+    hs = by_id[h["id"]]
+    apply(act, hs, meshes[h["variant"]], slot_index[h["variant"]], fix_local[h["variant"]])
     act.tags = [str(t) for t in act.tags] + ["Damaged", f"dmg:{h['variant']}"]
     damaged += 1
 if missing_actors:

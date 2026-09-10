@@ -190,6 +190,26 @@ def build(seed: int, max_tris: int = 6_500_000) -> dict:
                 add(kind, "vehicle", asset, e, nn, water - 0.55, b["yaw_deg"] + rng.uniform(-40, 40), 1.0,
                     f"vehicle swept against house {b['id']}", mt)
 
+    # --- 4b. actually BURY the buried survivors ------------------------------------------------------------
+    # data/scene/actors.json marks two survivors `aerially_detectable: false` on the strength of section 2.7's
+    # burial boundary, but nothing was ever placed over them: the dataset validator caught actor 62 appearing
+    # in the instance mask, i.e. the ground truth claimed something the renderer contradicted. Bury them for
+    # real with a cap of debris so the mask genuinely hides them, which is also what makes the "aerial search
+    # cannot clear this cell" polygon on the coverage map honest rather than decorative.
+    buried = [x for x in json.loads((OUT / "actors.json").read_text())["actors"]
+              if not x["aerially_detectable"]]
+    for b in buried:
+        for ring in range(3):
+            for t_ang in (0.0, 2.09, 4.19):
+                ang = t_ang + ring * 0.7
+                r = 0.35 + 0.30 * ring
+                kind, asset, _sz, mt = pick("boulder" if ring < 2 else "woody")
+                lo, hi = ROLE["boulder" if ring < 2 else "woody"]["scale"]
+                add(kind, "boulder" if ring < 2 else "woody", asset,
+                    b["east_m"] + r * math.cos(ang), b["north_m"] + r * math.sin(ang),
+                    b["base_asl_m"] + 0.20 + 0.28 * ring, math.degrees(ang), float(rng.uniform(lo, hi)) * 0.85,
+                    f"burial cap over {b['name']} (2.7: aerial search cannot clear)", mt)
+
     # --- 5. vegetation on the dry hillslopes ---------------------------------------------------------------
     veg = by_role.get("vegetation", [])
     if veg:

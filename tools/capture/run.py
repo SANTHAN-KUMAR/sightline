@@ -36,6 +36,7 @@ import numpy as np
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
+sys.path.insert(0, str(REPO / "tools" / "scene"))
 from tools.capture.labels import attach_truth, labels_from_mask, to_yolo  # noqa: E402
 
 with contextlib.redirect_stdout(io.StringIO()):     # cosysairsim prints on import/connect
@@ -105,6 +106,22 @@ def main() -> int:
     water = truth["water_level_m"]
     rng = np.random.default_rng(args.seed)
 
+    # TERRAIN FOLLOWING. Flying a fixed height above the FLOOD SURFACE puts the camera inside the valley
+    # walls: the terrain over the sweep reaches 1169.9 m ASL while water + 45 m is only 1106.7, so 30.3 % of
+    # the area was above the camera and produced blank frames, and much of the rest was photographed at
+    # 9-23 m AGL instead of 45 (wrong scale, wrong GSD, wrong telemetry). A survey drone holds AGL, so the
+    # camera height is taken above whichever is higher, the ground or the flood surface.
+    import gen_terrain as gt                                    # noqa: PLC0415  (host-side, has numpy)
+    _t = gt.build(scene["size_m"], scene["cell_m"], scene["seed"])
+    _h, _n, _cell, _size = _t["height"], _t["n"], _t["cell_m"], _t["size_m"]
+    _xs0 = -_size / 2.0
+
+    def surface_asl(east_m: float, north_m: float) -> float:
+        i = int(round((east_m - _xs0) / _cell))
+        j = int(round((north_m - _xs0) / _cell))
+        g = float(_h[min(max(j, 0), _n - 1)][min(max(i, 0), _n - 1)])
+        return max(g, water)
+
     out = REPO / args.out
     (out / "images").mkdir(parents=True, exist_ok=True)
     (out / "labels").mkdir(parents=True, exist_ok=True)
@@ -161,7 +178,9 @@ def main() -> int:
         raise SystemExit(f"survey camera is not nadir (pitch {_pitch:.2f} deg): the gimbal has not settled")
     print(f"frame {W}x{H}  calibrated f_px {f_px:.1f} (HFOV {hfov:.2f} deg)  "
           f"footprint {fw:.1f}x{fh:.1f} m  GSD {gsd:.3f} cm/px")
-    print(f"area east[{e0:.0f},{e1:.0f}] north[{n0:.0f},{n1:.0f}]  -> {len(pts)} waypoints at {args.alt:.0f} m")
+    _sample = [surface_asl(x, y) for x, y in pts[::37]]
+    print(f"area east[{e0:.0f},{e1:.0f}] north[{n0:.0f},{n1:.0f}]  -> {len(pts)} waypoints at "
+          f"{args.alt:.0f} m AGL (terrain-following; surface {min(_sample):.0f}-{max(_sample):.0f} m ASL)")
 
     tele_path = out / "telemetry.csv"
     tf = tele_path.open("w", newline="", encoding="utf-8")
@@ -178,7 +197,8 @@ def main() -> int:
         # Teleport: NED is relative to the PlayerStart, x=north, y=east, z=down.
         ned_n = nn - home["north_m"]
         ned_e = ee - home["east_m"]
-        ned_d = -((water + args.alt) - home["ground_asl_m"])
+        cam_asl = surface_asl(ee, nn) + args.alt
+        ned_d = -(cam_asl - home["ground_asl_m"])
         # a realistic survey attitude rather than a perfectly level one
         roll, pitch = rng.normal(0, 0.8), rng.normal(0, 0.8)
         # cosysairsim 3.4.1 spells it euler_to_quaternion(roll, pitch, yaw) in RADIANS.
@@ -235,7 +255,7 @@ def main() -> int:
               "submersion": m.submersion, "occlusion": m.occlusion, "zone": m.zone, "group": m.group,
               "aerially_detectable": m.aerially_detectable} for m in labs], indent=1), encoding="utf-8")
 
-        tw.writerow([k, time.time(), clip_id, round(ee, 2), round(nn, 2), round(water + args.alt, 2),
+        tw.writerow([k, time.time(), clip_id, round(ee, 2), round(nn, 2), round(cam_asl, 2),
                      round(args.alt, 2), gp.latitude, gp.longitude,
                      round(st.orientation.w_val, 6), round(st.orientation.x_val, 6),
                      round(st.orientation.y_val, 6), round(st.orientation.z_val, 6),

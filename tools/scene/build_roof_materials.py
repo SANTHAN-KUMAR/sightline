@@ -109,13 +109,19 @@ if macro_tex is None or silt_tex is None:
 # ---------------------------------------------------------------------------------------------------------
 # 0. capture every instance override BEFORE the graph is cleared, so nothing can be lost by the rebuild
 # ---------------------------------------------------------------------------------------------------------
+def short(asset):
+    """The asset's bare name. Taken from the package path rather than get_name() so that a name like
+    'MI_Concrete.MI_Concrete' can never silently miss the per-instance lookups below."""
+    return asset.get_path_name().rsplit("/", 1)[-1].split(".")[0]
+
+
 def list_instances():
     out = []
     for p in eal.list_assets(MATDIR, recursive=False, include_folder=False):
         a = unreal.load_asset(p)
         if isinstance(a, unreal.MaterialInstanceConstant):
             out.append(a)
-    return sorted(out, key=lambda m: m.get_name())
+    return sorted(out, key=short)
 
 
 def capture(inst):
@@ -146,7 +152,7 @@ def capture(inst):
 INSTANCES = list_instances()
 if not INSTANCES:
     raise RuntimeError(f"no material instances under {MATDIR} - run build_buildings.py first")
-BEFORE = {i.get_name(): capture(i) for i in INSTANCES}
+BEFORE = {short(i): capture(i) for i in INSTANCES}
 for n, g in BEFORE.items():
     if not g["tex"]:
         raise RuntimeError(f"{n} has no texture overrides to preserve; refusing to rebuild the master blind")
@@ -267,8 +273,13 @@ g = G(master)
 # Two TextureSampleParameter2D nodes sharing one parameter name also works, but one TextureObjectParameter fed
 # into two plain samples is unambiguous. The input pin is called "Tex" in UE 5.x; probe it rather than assume,
 # and fall back to duplicate parameter nodes if the probe finds nothing.
+TEX_OBJ_CLS = getattr(unreal, "MaterialExpressionTextureObjectParameter", None)
+
+
 def _probe_tex_pin():
-    tmp = mel.create_material_expression(master, unreal.MaterialExpressionTextureObjectParameter, -3200, -600)
+    if TEX_OBJ_CLS is None:
+        return None
+    tmp = mel.create_material_expression(master, TEX_OBJ_CLS, -3200, -600)
     smp = mel.create_material_expression(master, unreal.MaterialExpressionTextureSample, -3200, -480)
     found = None
     for cand in ("Tex", "TextureObject", "Texture"):
@@ -301,8 +312,7 @@ def tex_param_pair(name, uv_near, uv_far):
     """Sample one texture PARAMETER at two UV sets and return (near_sample, far_sample)."""
     tex, stype = DEFAULTS[name]
     if TEX_PIN:
-        obj = g.node(unreal.MaterialExpressionTextureObjectParameter, -1900, parameter_name=name, texture=tex,
-                     sampler_type=stype)
+        obj = g.node(TEX_OBJ_CLS, -1900, parameter_name=name, texture=tex, sampler_type=stype)
         out = []
         for uv in (uv_near, uv_far):
             s = g.node(unreal.MaterialExpressionTextureSample, -1000, texture=tex, sampler_type=stype,
@@ -433,9 +443,11 @@ STRENGTH = {
     "MI_RoofTile": 1.0, "MI_RoofSheet_Rusty": 0.8,
 }
 
-report = {}
+report, unknown = {}, []
 for inst in INSTANCES:
-    name = inst.get_name()
+    name = short(inst)
+    if name not in STRENGTH:
+        unknown.append(name)
     mel.set_material_instance_parent(inst, master)
     got = BEFORE[name]
     for pname, tex in got["tex"].items():
@@ -452,12 +464,17 @@ for inst in INSTANCES:
     mel.update_material_instance(inst)      # rebuild cached uniform expressions, else the render lags the asset
     eal.save_asset(inst.get_path_name())
 
-    # the instance must still RESOLVE its textures: a lost override renders the dirty-concrete default everywhere
+    # The instance must still resolve to the SAME textures. Checking only for None is not enough: a lost
+    # override falls back to the parent's dirty-concrete default, which is a texture, so every wall and roof
+    # would quietly render as grey concrete. Compare the package paths.
     resolved = {}
-    for pname in got["tex"]:
+    for pname, want_tex in got["tex"].items():
         v = mel.get_material_instance_texture_parameter_value(inst, pname)
         if v is None:
             raise RuntimeError(f"{name}.{pname} no longer resolves to a texture after the master rebuild")
+        if want_tex is not None and v.get_path_name() != want_tex.get_path_name():
+            raise RuntimeError(f"{name}.{pname} now resolves to {v.get_path_name()} but was "
+                               f"{want_tex.get_path_name()}: the override was lost in the rebuild")
         resolved[pname] = v.get_name()
     s = assert_compiles(inst)
     report[name] = {"instructions": s.num_pixel_shader_instructions,
@@ -470,5 +487,8 @@ for n in sorted(report):
     r = report[n]
     print(f"  {n:22s} {r['instructions']:4d} instr {r['samples']:2d} samples  anti-tile {r['anti_tile']:.2f} "
           f"({r['mode']})  {r['textures']}")
+if unknown:
+    print(f"  ! {len(unknown)} instances are not in the measured STRENGTH table and got the 1.0 default: "
+          f"{unknown} (harmless, but check the names if a new instance was added)")
 print(f"all {len(report)} instances compile and resolve their textures")
 print("NOW LOOK: run tools/scene/qa_shots.py and open qa_2_settlement.png and qa_4_nadir45.png.")

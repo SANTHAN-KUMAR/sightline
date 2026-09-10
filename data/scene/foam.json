@@ -1,0 +1,94 @@
+{
+ "generated_by": "tools/scene/gen_foam.py",
+ "seed": 53,
+ "terrain_seed": 7,
+ "water_level_m": 1061.6814259297319,
+ "base_z_m": 1046.0069580078125,
+ "ribbon_width_m": 7.0,
+ "ribbon_length_m": 6.0,
+ "z_lift_cm": 3.0,
+ "spacing_m": 4.0,
+ "clear_survivors_m": 2.5,
+ "obj": "foam.obj",
+ "ue_actor": {
+  "location_cm": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "yaw_deg": 90.0,
+  "bounds_cm": {
+   "x_north": [
+    -102606.2,
+    102746.7
+   ],
+   "y_east": [
+    -27557.4,
+    48759.9
+   ],
+   "z": [
+    1570.4,
+    1573.4
+   ]
+  }
+ },
+ "counts": {
+  "shoreline_cells": 2346,
+  "quads_after_thinning": 2346,
+  "quads_shoreline": 2344,
+  "quads_houses": 204,
+  "quads_obstacles": 25,
+  "quads_total": 2573,
+  "triangles": 5146,
+  "vertices": 10292,
+  "approx_shoreline_km": 9.38
+ },
+ "shoreline_slope": {
+  "mean": 0.2245,
+  "p10": 0.0505,
+  "p50": 0.1833,
+  "p90": 0.3495
+ },
+ "probe_points": [
+  {
+   "east_m": 128.0,
+   "north_m": -864.0,
+   "terrain_asl_m": 1061.51
+  },
+  {
+   "east_m": 56.0,
+   "north_m": 356.0,
+   "terrain_asl_m": 1061.462
+  },
+  {
+   "east_m": 140.0,
+   "north_m": 696.0,
+   "terrain_asl_m": 1062.007
+  },
+  {
+   "east_m": 8.0,
+   "north_m": 576.0,
+   "terrain_asl_m": 1061.346
+  },
+  {
+   "east_m": -212.0,
+   "north_m": -508.0,
+   "terrain_asl_m": 1062.781
+  },
+  {
+   "east_m": 124.0,
+   "north_m": 680.0,
+   "terrain_asl_m": 1061.485
+  },
+  {
+   "east_m": 116.0,
+   "north_m": -772.0,
+   "terrain_asl_m": 1061.094
+  },
+  {
+   "east_m": 104.0,
+   "north_m": 480.0,
+   "terrain_asl_m": 1061.198
+  }
+ ]
+}

@@ -265,7 +265,7 @@ def v_tile_endgone(name, tag):
     sunshades at 2.80 m): a lower break would leave window quads hanging in mid-air over the ruin.
     """
     m = gb.Mesh()
-    L, W, storeys, h, fz = shell(m, name, sides=(True, False, True, True))
+    L, W, _st, h, fz = shell(m, name, sides=(True, False, True, True))
     gone = 3.0
     xg = -L / 2 + gone
     for k, ztop in enumerate((2.25, 2.95, 3.20, 1.95)):                     # jagged -u end wall
@@ -397,8 +397,16 @@ def build(seed: int) -> dict:
         base = fn(vname)
         for suffix, mesh in (("a", base), ("b", mirror_v(base))):
             tris = mesh.write(DMG_DIR / f"{vname}_{suffix}.obj")
-            variants[f"{vname}_{suffix}"] = {"archetype": aname, "obj": f"damage/{vname}_{suffix}.obj",
-                                             "triangles": tris, "slots": list(mesh.faces)}
+            # The bounding-box centre in OBJ CENTIMETRES. Unlike the pristine archetypes these meshes are not
+            # symmetric in u/v (rubble spills outside the footprint), so build_damage.py can use this to detect
+            # and correct a re-pivoting OBJ importer instead of silently offsetting a house by up to 1.5 m.
+            vs = mesh.v
+            bb = [[min(p[k] for p in vs) * 100.0, max(p[k] for p in vs) * 100.0] for k in range(3)]
+            variants[f"{vname}_{suffix}"] = {
+                "archetype": aname, "obj": f"damage/{vname}_{suffix}.obj", "triangles": tris,
+                "slots": list(mesh.faces),
+                "bbox_centre_obj_cm": [round((lo + hi) / 2.0, 2) for lo, hi in bb],
+                "bbox_extent_obj_cm": [round((hi - lo) / 2.0, 2) for lo, hi in bb]}
 
     # --- who is standing on or in each house --------------------------------------------------------------
     def occupants(b):
