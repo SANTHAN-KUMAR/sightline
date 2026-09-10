@@ -605,6 +605,8 @@ def _client():
                                "port.") from e
         c.client._timeout = 60
         _sim_client = c
+        global _capture_warmed
+        _capture_warmed = False  # a new connection may mean a new sim process: warm the capture pipeline again
     return _sim_client
 
 
@@ -846,6 +848,26 @@ def sim_fly(action: str, x: float = 0.0, y: float = 0.0, z: float = -10.0, veloc
 _IMAGE_TYPES = {"scene": "Scene", "depth": "DepthPerspective", "depth_planar": "DepthPlanar",
                 "segmentation": "Segmentation", "infrared": "Infrared", "surface_normals": "SurfaceNormals",
                 "annotation": "Annotation"}
+_capture_warmed = False  # touched only on the single AirSim thread, under _sim_lock
+
+
+def _capture_once(c, reqs, vehicle: str):
+    """simGetImages, with a one-shot warm-up per sim connection.
+
+    Measured 2026-09-10 (cold editor, first PIE, nadir camera at 20.5 m): the FIRST simGetImages of a fresh engine
+    process returns the post-processed image types before their capture materials exist - float depth and
+    depth_planar both came back as 0.0-0.6133 (an unconverted buffer, not metres) and surface_normals was a
+    1 727 850-byte PNG instead of ~80 kB. There is no error and the sizes look right, so the caller cannot tell.
+    The very next request (4 s later) was correct and stayed correct. Discarding one request costs ~1 s once per
+    sim session and makes every capture a caller sees valid.
+    Repro/regression: tools/day1/diag_capture_warmup.py; evidence: docs/verification/dev_workflow.md D1."""
+    global _capture_warmed
+    if not _capture_warmed:
+        with contextlib.suppress(Exception):
+            c.simGetImages(reqs, vehicle_name=vehicle)  # discarded: renderer/material warm-up
+        time.sleep(0.25)
+        _capture_warmed = True
+    return c.simGetImages(reqs, vehicle_name=vehicle)
 
 
 @mcp.tool()
@@ -868,7 +890,7 @@ def sim_capture(camera: str = "0", image_types: list[str] | None = None, vehicle
 
     # cosysairsim 3.4.1: simGetImages(requests, vehicle_name) - there is no `external` argument; external cameras
     # are addressed by camera name from the settings "ExternalCameras" block.
-    responses = _sim(lambda c: c.simGetImages(reqs, vehicle_name=vehicle))
+    responses = _sim(lambda c: _capture_once(c, reqs, vehicle))
 
     out_dir = ARTIFACTS / "captures" / datetime.now().strftime("%Y%m%d-%H%M%S-%f")
     if save:
@@ -884,6 +906,12 @@ def sim_capture(camera: str = "0", image_types: list[str] | None = None, vehicle
         if t.startswith("depth"):
             arr = np.array(r.image_data_float, dtype=np.float32).reshape(r.height, r.width)
             entry.update(min=float(arr.min()), max=float(arr.max()))
+            if float(arr.max()) <= 1.0:
+                # Cosys depth is in METRES; an all-below-1 m frame is almost always the unconverted buffer the
+                # renderer returns before the capture materials exist (see _capture_once), not a real scene.
+                entry["warning"] = ("depth max <= 1.0 m: this looks like an unconverted buffer, not metres "
+                                    "(renderer not warm). Re-capture, or ignore only if the camera really is "
+                                    "within 1 m of everything it sees.")
             if save:
                 np.save(out_dir / f"{t}.npy", arr)
             vis = (255 * np.clip(arr / max(np.percentile(arr, 99), 1e-3), 0, 1)).astype(np.uint8)

@@ -92,7 +92,7 @@ already-open terminals/apps (including Claude Code itself) must be restarted to 
 | 2026-09-10 | AirSim settings passed with `-settings=<repo path>`, never `Documents\AirSim` | reproducible, versioned per scenario (doc §5.1 "a settings.json per scenario") |
 | 2026-09-10 | Python 3.11 single env; `opencv-python` only | cosysairsim classifiers stop at 3.11; `opencv-contrib-python` (listed in Cosys requirements.txt, not in the wheel's deps) collides with Ultralytics' opencv-python |
 | 2026-09-10 | Epic's MCP plugin plus our own server, instead of third-party UE MCP plugins | first-party, ships prebuilt with 5.8.2, no extra C++ to maintain; ours covers lifecycle, builds and AirSim |
-| 2026-09-10 | `OriginGeopoint` 11.4870 N, 76.1450 E, 900 m (approximate Chooralmala/Mundakkai valley) | doc §5.1 "set OriginGeopoint to the Wayanad valley"; **verify exact coordinates and elevation against a DEM** |
+| 2026-09-10 | `OriginGeopoint` 11.4870 N, 76.1450 E, **1060 m** (approximate Chooralmala/Mundakkai valley) | doc §5.1 "set OriginGeopoint to the Wayanad valley". Altitude corrected from the guessed 900 m to the Copernicus GLO-30 value at that point, measured with dem-stitcher (docs/verification/python_stack.md §7). Latitude/longitude still to be pinned to the real deposit fan when the scene is built |
 
 ## 6. Verified facts about Cosys-AirSim 5.8-v3.4.1 (from repo docs, 2026-09-10)
 - Settings search order: `-settings="abs path"` or `-settings={json}` > exe dir > launch dir > `Documents\AirSim`.

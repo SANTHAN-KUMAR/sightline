@@ -17,7 +17,7 @@ file). Subsets: `uv run pytest tests/test_stack.py -m "not network"`, `-m gpu`, 
 | Indexes | `pytorch-cu130` (`https://download.pytorch.org/whl/cu130`, explicit: torch, torchvision, torchcodec) and `nvidia` (`https://pypi.nvidia.com`, explicit: tensorrt-cu13, -libs, -bindings). |
 | Git sources (pinned commits) | `thermal-parser` (SanNianYiSi/thermal_parser @ b513647, not on PyPI), `motmetrics` (cheind/py-motmetrics develop @ e5ae766, NumPy-2 fix). |
 | Vendored | `vendor/proben/` (ProbEn score rule, Apache-2.0 header, tested in `test_proben_score_rule`). |
-| Project shims | `tools/thermal.py` (thermal_parser plugin path), `tools/ffmpeg_shim.py` (torchcodec uses PyAV's FFmpeg). |
+| Project shims | `tools/thermal.py` (thermal_parser plugin path, needed to reach its DJI SDK DLLs), `tools/ffmpeg_shim.py` (documents why torchcodec must **not** borrow PyAV's FFmpeg, and detects a real FFmpeg on PATH). |
 
 **Why CUDA 13.0 wheels (cu130):** the driver reports CUDA 13.1, so cu130 runs natively. More importantly,
 `onnxruntime-gpu` 1.29.0 on PyPI is built against CUDA 13 (its `cuda`/`cudnn` extras pull `nvidia-cuda-runtime~=13.0`
@@ -141,3 +141,34 @@ Transient files still go to `%TEMP%` on C: (pytest `tmp_path`, uv build dirs); t
 4. RAM gate: syncs and heavy tests wait for >= 2 GB free RAM; GPU tests wait for 1.5 GB (3 GB for the TensorRT
    build) of free VRAM, because the editor/sim share the 8 GB GPU.
 5. After every change: `tools/sightline_mcp/smoke_test.py` and `import cosysairsim, mcp`.
+
+Smoke test after the last change: **pass** (`tools: 27; missing: none`, protocol 2025-11-25).
+
+## 7. Findings and follow-ups for other agents
+
+1. **DEM says 1060 m, the sim says 900 m.** Copernicus GLO-30 at the OriginGeopoint (11.4870 N, 76.1450 E) gives
+   **1060.3 m**; `DefaultEngine.ini` uses 900 m (CONTEXT.md §5 explicitly asks for this to be verified against a
+   DEM). The tile is in `data/dem/wayanad_glo30_76.10_11.45_76.18_11.53.tif` (294 - 2235 m over the AOI, 30.9 m/px).
+   Owner of the sim settings should decide whether to move the origin height.
+2. **A gamepad is now attached** (pygame and `inputs` both see 1), unlike CONTEXT.md §2. F3 takeover can be tested
+   for real.
+3. **Duplicate weights in `models/`.** `models/rf-detr-nano.pth` (366 MB, created 18:52 by another process)
+   duplicates `models/rfdetr/rf-detr-nano.pth` (downloaded by the tests via `RF_HOME`). `models/yolo26n.onnx` at
+   the root was re-exported by my first TensorRT attempt at 18:58, before I moved test exports into
+   `models/stack_check/`. Nothing of mine writes to the root of `models/` any more; whoever owns those files
+   should decide whether to delete the duplicate (I did not).
+4. **`tests/_harness_server.py` was reformatted by my `ruff check --fix`** (safe fixes only: import order /
+   unused import). It still compiles and is ruff-clean, but flagging it since it belongs to the MCP test work.
+5. **`xmltodict` is installed but no longer in the lock** (the motmetrics develop branch dropped it). A plain
+   `uv sync` (without `--inexact`) will remove it; nothing needs it.
+6. **`YOLO_AUTOINSTALL=false` must be set by pipeline code too**, not just the tests, or Ultralytics will
+   pip-install into the uv venv behind uv's back.
+7. **PyNvVideoCodec frames are views of pooled decoder surfaces.** `DecodedFrame` objects are invalidated by
+   later decodes: consume or `.clone()` a frame before decoding on. A first version of the test collected all
+   frames into a list and read frame 10 afterwards - it saw the *last* frame's pixels.
+8. **pytak transport needs `pytak[with-aiohttp]`** when the TAK client is actually wired up; CoT generation
+   itself works without it.
+9. **torchcodec** needs a user-installed FFmpeg shared build (§4, C8) if it is ever wanted; PyAV +
+   PyNvVideoCodec cover the doc's decode requirements today.
+10. **Empty folder left on C:** `C:\Users\kiran\AppData\Roaming\Ultralytics` (the stray `settings.json` was moved
+    off C:, the now-empty directory was left in place).

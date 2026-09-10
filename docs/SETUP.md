@@ -33,13 +33,20 @@ winget install --id astral-sh.uv --exact --location D:\Tools\uv
 ```
 Restart terminals and Claude Code afterwards.
 
-## 4. Cosys-AirSim plugin + Python env
+## 4. Cosys-AirSim plugin + Python env + external tools
 ```powershell
 cd D:\Sightline
-powershell -ExecutionPolicy Bypass -File tools\setup\fetch_airsim.ps1   # plugin -> sim\SightlineSim\Plugins\AirSim
-uv sync                                                                  # Python 3.11 + locked deps
-uv run python tools\sightline_mcp\smoke_test.py                          # sightline MCP server OK?
+powershell -ExecutionPolicy Bypass -File tools\setup\fetch_airsim.ps1     # plugin -> sim\SightlineSim\Plugins\AirSim
+powershell -ExecutionPolicy Bypass -File tools\setup\install_materials.ps1 # materials.csv next to the executables
+powershell -ExecutionPolicy Bypass -File tools\setup\fetch_external.ps1    # X-AnyLabeling, pmtiles+basemap, MapLibre, DroneModels, Cesium (staged)
+uv sync                    # Python 3.11 + every dependency group (ml/ingest/track/eval/geo/c2/control/ab), ~10 GB
+uv run python tools\sightline_mcp\smoke_test.py       # sightline MCP server OK? (expects 27 tools)
+uv run python -m pytest tests -q                      # protocol + stack suites
+uv run python tools\doctor.py --live                  # whole-toolchain check
 ```
+FiftyOne lives in its own project (`envs/fiftyone`) because its pins conflict with the main env; see
+`docs/verification/python_stack.md`. Without `materials.csv` the sim skips material stencil initialisation and
+prints "Cannot start stencil initialization" on screen.
 
 ## 5. Build and open the project
 ```powershell
@@ -51,4 +58,14 @@ Or, from Claude Code: sightline MCP `ue_build` then `editor_launch`.
 ## 6. Claude Code MCP connection
 `.mcp.json` at the repo root registers `unreal` (http://localhost:8000/mcp, live only while the editor runs) and
 `sightline` (stdio). Open Claude Code with `D:\Sightline` as the working directory and approve both project MCP
-servers when prompted. Verify with `uv run python tools\sightline_mcp\test_unreal_mcp.py` once the editor is up.
+servers when prompted (interactive: startup prompt or `/mcp`). `.claude/settings.json` raises the MCP startup and
+tool-idle timeouts for long tools. For the CLI, log in once with `claude auth login`.
+
+Verify:
+```powershell
+uv run python tools\sightline_mcp\test_unreal_mcp.py -v     # Epic's server (editor must be running)
+uv run python tools\sightline_mcp\test_engine.py            # engine/build/editor/log tools through MCP
+uv run python tools\sightline_mcp\test_sim.py --alt 20 --detect-filter "*Cube*"   # 39 AirSim checks (sim running)
+```
+After an editor restart, reconnect the `unreal` server (`/mcp` -> Reconnect, or a new session); `claude -p`
+reconnects by itself. Editor ready takes ~45 s; port 8000 opens before the server answers, so poll `status`.

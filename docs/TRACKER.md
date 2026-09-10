@@ -37,7 +37,8 @@ Reports land in `docs/verification/`. A tool is not "ready" until its report say
 | Stream | Scope | Report | Status |
 |---|---|---|---|
 | V1 engine MCP | sightline engine/build/editor/log/job tools + Epic `unreal` MCP live (toolset inventory) | `engine_tools.md` | [x] all sightline engine tools PASS; Epic: 31 toolsets / 392 tools, 17 real calls incl. CaptureViewport PNG. Fixed: `ue_generate_project_files` (batch file absent in installed engine), missing user env -> editor DDC would go to C:, UBA store -> D:, double-execution after a timed-out editor command |
-| V9 dev workflow | AirSim inside the editor (PIE), gamepad via AirSim + takeover, full 27-tool matrix, CLI spot-checks | `dev_workflow.md` | [~] agent running |
+| V9 dev workflow | AirSim inside the editor (PIE), gamepad via AirSim + takeover, full 27-tool matrix, CLI spot-checks | `dev_workflow.md` | [x] PIE loop PASS (launch 49 s cold, StopPIE -> tools error in 0.31 s, editor closes cleanly 4/4); AirSim **39/39 in-editor**; tool matrix **33/33 up / 12/12 down, all 27 tools**; CLI drove a real flight + capture (image survived MCP as valid JPEG). Fixed D1: first `simGetImages` per engine process returned **unconverted** depth/normals (silently wrong) -> warm-up frame discarded + implausible-depth warning |
+| V7 GPU latency | day-1 test #8: C1/C2/C3 strategies, TensorRT FP16, RTX 4060 | `gpu_latency.md` | [~] running (`tools/day1/latency_benchmark.py`, yolo26 n+s) |
 | V2 MCP protocol | sightline server schemas, errors, concurrency, cancellation, lifecycle (`tests/test_mcp_protocol.py`) | `mcp_protocol.md` | [x] 20 pass / 2 skip (no-editor cases skip while an editor runs; passed with it down). 9 defects fixed |
 | V3 Claude Code integration | CLI loads `.mcp.json`, real tool calls via `claude -p`, timeouts, reconnect | `claude_code_integration.md` | [!] servers load + tools discovered (27) + unreal connects; real `claude -p` calls BLOCKED: CLI not logged in (user: `claude auth login`). Project `.claude/settings.json` sets MCP timeouts |
 | V4 AirSim tools | every sim_* tool through MCP (`tools/sightline_mcp/test_sim.py`) | results JSON in `_artifacts/verification/` | [x] **39/39** vs packaged Blocks (2026-09-10 19:19). Defects found+fixed: broken `landAsync` (own position-held landing + disarm; RTL lands 0.2 mm from home), velocity-only descent drifting into obstacles, static-actor pose silently "succeeding", `to_eularian_angles`/`to_quaternion`/`simGetImages(external=)` wrong API names, 60 s RPC timeout on long flights, falling-after-reset breaking takeoff, over-strict Ground collision rule |
@@ -50,6 +51,25 @@ MCP defects already found and fixed (2026-09-10): stdout pollution by cosysairsi
 numpy import (now eager imports); blocking tools moved off the event loop (`@threaded`); tool-to-tool calls via
 `__wrapped__`; wrong cosysairsim API names (`to_eularian_angles`, `to_quaternion`, `simGetImages(external=)`).
 Also: `materials.csv` missing -> Cosys skips material stencil init (installed via `tools/setup/install_materials.ps1`).
+
+## Open items carried into development
+- **Gamepad handover unmeasured** (day-1 #4 / F3): AirSim sees the pad (`is_initialized/is_valid` true, VID_045E,
+  resting throttle 0.5) but sticks read neutral through two 180 s windows. Run `tools/day1/gamepad_airsim.py`
+  (~4 min) with someone holding the controller; the Unreal window does NOT need focus (DirectInput uses
+  `DISCL_BACKGROUND`). With `AllowAPIAlways:true`, `AllowAPIWhenDisconnected` is a no-op.
+- **Epic `unreal` MCP drops idle HTTP sockets after 15 s** (`HttpConnection.h:266 ConnectionKeepAliveTimeout`,
+  hard-coded, no cvar). Symptom: "The socket connection was closed unexpectedly". **Retry the call once.**
+- **Cosys 3.4.1 logs nothing to the UE log** (`UAirBlueprintLib::LogMessage` has every `UE_LOG` commented out), so
+  "Loaded settings from ..." can only be seen on the on-screen HUD. Prove settings use via `listVehicles()`,
+  camera resolution and the home geopoint instead.
+
+## Known issues to fix when the flood level is authored
+- **Lumen is still active in PIE** despite `r.DynamicGlobalIlluminationMethod=0` in DefaultEngine.ini: the Blocks
+  sample map (`FlyingExampleMap`) carries a PostProcessVolume that overrides the project default, so the editor logs
+  "Lumen ... has no ray tracing data and won't operate correctly" and pays for GI we do not want on an 8 GB GPU.
+  Author `Sightline/Maps/FloodValley` with GI = None (and no PPV override) rather than patching Epic's sample map.
+- **Never run GPU/ML work while the editor + PIE are up** on this machine: 16 GB RAM / 8 GB VRAM triggers Windows
+  memory-pressure warnings and makes both slow (observed 2026-09-10 20:05 with a TensorRT export alongside PIE).
 
 ## Day-1 unknowns (SOLUTION_DOC §10), with results
 | # | Test | Status | Result |

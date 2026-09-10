@@ -10,7 +10,7 @@
   "LogMessagesVisible": true,
   "InitialInstanceSegmentation": true,
   "EngineSound": false,
-  "OriginGeopoint": { "Latitude": 11.4870, "Longitude": 76.1450, "Altitude": 900 },
+  "OriginGeopoint": { "Latitude": 11.4870, "Longitude": 76.1450, "Altitude": 1060 },
   "CameraDefaults": {
     "CaptureSettings": [
       { "ImageType": 0, "Width": 1920, "Height": 1080, "FOV_Degrees": 75.5, "MotionBlurAmount": 0,
