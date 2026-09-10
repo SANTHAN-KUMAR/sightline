@@ -1,0 +1,644 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sightline C2</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  Sightline command-and-control map (F15, SOLUTION_DOC §5.9).
+
+  Offline by construction: MapLibre GL JS, the pmtiles protocol and the Protomaps style/fonts/sprites are all
+  vendored under app/map/vendor, and the basemap is data/basemap/wayanad.pmtiles. No CDN, no Mapbox token, no
+  external host of any kind — app/map/headless_check.mjs runs the page with every non-loopback name
+  unresolvable and fails if a single external request is made.
+
+  Run it:
+     D:\Tools\uv\uv.exe run python -m sightline.api.serve --port 8781 --demo
+     http://127.0.0.1:8781/app/map/index.html
+  Add ?selfcheck=1 for the headless verdict (document.title -> MAP_OK / MAP_FAIL).
+
+  GUARDRAIL R10: this page has no delete. "Dismiss" demands a reason, keeps the record, and moves it to its
+  own layer. The search-quality raster shows probability of detection, never a "cleared" flag.
+-->
+<link rel="stylesheet" href="vendor/maplibre-gl/maplibre-gl.css">
+<script src="vendor/pmtiles/pmtiles.js"></script>
+<script src="vendor/protomaps-basemaps/basemaps.js"></script>
+<style>
+  :root{
+    --bg:#12161c; --panel:#1a2029; --panel2:#222a35; --line:#2f3946; --ink:#e8edf4; --dim:#9aa8b8;
+    --human:#e63946; --animal:#3d87c9; --dismissed:#7b8794; --stale:#c98f2d; --ok:#38b26a; --warn:#e0a13a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;font:13px/1.45 system-ui,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}
+  #app{display:grid;grid-template-columns:1fr 372px;height:100%}
+  #map{position:relative;height:100%}
+  #side{background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden}
+
+  header{padding:10px 12px;border-bottom:1px solid var(--line);background:var(--panel2)}
+  header h1{margin:0 0 6px;font-size:14px;letter-spacing:.04em;text-transform:uppercase}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{font-size:11px;padding:2px 7px;border-radius:10px;background:#2c3644;border:1px solid var(--line);
+        color:var(--dim);white-space:nowrap}
+  .chip b{color:var(--ink);font-weight:600}
+  .chip.live{border-color:#2a6b46;color:#a8e6c1}
+  .chip.down{border-color:#7a2e2e;color:#f0a8a8}
+  .chip.sim{border-color:#7a6220;color:#ffd479;background:#3a2f12}
+
+  .tabs{display:flex;border-bottom:1px solid var(--line);background:var(--panel2)}
+  .tabs button{flex:1;background:none;border:0;border-bottom:2px solid transparent;color:var(--dim);
+               padding:8px 4px;font:inherit;cursor:pointer}
+  .tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--human)}
+  .pane{flex:1;overflow:auto;padding:8px}
+  .pane[hidden]{display:none}
+
+  .rec{border:1px solid var(--line);border-radius:6px;margin-bottom:7px;background:var(--panel2);cursor:pointer}
+  .rec:hover{border-color:#4a5568}
+  .rec.sel{border-color:var(--human);box-shadow:0 0 0 1px var(--human) inset}
+  .rec.dismissed{opacity:.55}
+  .rec-top{display:flex;align-items:center;gap:8px;padding:7px 9px}
+  .rank{min-width:26px;height:26px;border-radius:13px;display:grid;place-items:center;font-weight:700;
+        font-size:12px;color:#fff;flex:none}
+  .rec-id{font-weight:600}
+  .rec-sub{color:var(--dim);font-size:11px}
+  .grow{flex:1}
+  .bars{display:flex;height:7px;border-radius:4px;overflow:hidden;margin:0 9px 8px}
+  .bars i{display:block;height:100%}
+  .why{font-size:11px;color:var(--dim);padding:0 9px 8px;display:flex;flex-wrap:wrap;gap:4px 10px}
+  .why b{color:var(--ink);font-weight:600}
+
+  .status-pill{font-size:10px;padding:1px 6px;border-radius:8px;border:1px solid var(--line);color:var(--dim)}
+  .st-confirmed{color:#a8e6c1;border-color:#2a6b46}
+  .st-candidate{color:#cfd8e3}
+  .st-stale{color:#e8c98c;border-color:#7a6220}
+  .st-dismissed{color:#b9c2cc;border-color:#4a5568}
+
+  label.toggle{display:flex;align-items:center;gap:8px;padding:5px 4px;color:var(--dim);cursor:pointer}
+  label.toggle input{accent-color:var(--human)}
+  .legend{margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
+  .legend h3,.pane h3{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--dim);margin:10px 0 6px}
+  .lg{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:12px;color:var(--dim)}
+  .sw{width:16px;height:16px;border-radius:3px;flex:none;border:1px solid #0006}
+  .ramp{height:12px;border-radius:3px;flex:1;
+        background:linear-gradient(90deg,#440154,#3b528b,#21918c,#5ec962,#fde725)}
+
+  /* MapLibre popup, dark */
+  .maplibregl-popup-content{background:var(--panel);color:var(--ink);border:1px solid var(--line);
+      border-radius:8px;padding:0;box-shadow:0 10px 30px #0009;max-width:360px}
+  .maplibregl-popup-tip{border-top-color:var(--panel)!important;border-bottom-color:var(--panel)!important}
+  .maplibregl-popup-close-button{color:var(--dim);font-size:18px;padding:2px 7px}
+  .pop{width:340px}
+  .pop img{width:100%;display:block;border-radius:7px 7px 0 0;background:#000}
+  .pop-body{padding:9px 11px 11px}
+  .pop h2{margin:0 0 2px;font-size:14px;display:flex;align-items:center;gap:7px}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:12px;margin:7px 0}
+  .kv dt{color:var(--dim)}
+  .kv dd{margin:0}
+  table.sc{width:100%;border-collapse:collapse;font-size:12px;margin:6px 0 2px}
+  table.sc th{text-align:left;color:var(--dim);font-weight:500;padding:2px 0}
+  table.sc td{text-align:right;font-variant-numeric:tabular-nums;padding:2px 0}
+  table.sc tr.tot td,table.sc tr.tot th{border-top:1px solid var(--line);font-weight:700;padding-top:4px}
+  .formula{font:11px ui-monospace,Consolas,monospace;color:var(--dim);margin:4px 0 0}
+  .act{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap}
+  .act button,.act input{font:inherit;border-radius:5px;border:1px solid var(--line);background:var(--panel2);
+      color:var(--ink);padding:5px 8px}
+  .act button{cursor:pointer}
+  .act button.danger{border-color:#7a2e2e;color:#ffb3b3}
+  .act input{flex:1;min-width:120px}
+  .err{color:#ffb3b3;font-size:11px;margin-top:5px;min-height:14px}
+
+  #banner{position:absolute;left:10px;top:10px;z-index:3;display:flex;gap:6px;align-items:center}
+  #status{position:absolute;left:10px;bottom:26px;z-index:3;background:#0b0e13d9;border:1px solid var(--line);
+          border-radius:5px;padding:5px 9px;font:11px ui-monospace,Consolas,monospace;white-space:pre;color:var(--dim)}
+  .maplibregl-ctrl-attrib{font-size:10px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="map">
+    <div id="banner"></div>
+    <div id="status">starting…</div>
+  </div>
+  <div id="side">
+    <header>
+      <h1>Sightline &mdash; triage</h1>
+      <div class="chips" id="chips"></div>
+    </header>
+    <div class="tabs" role="tablist">
+      <button id="tab-recs" role="tab" aria-selected="true">Records</button>
+      <button id="tab-layers" role="tab" aria-selected="false">Layers</button>
+    </div>
+    <div class="pane" id="pane-recs"></div>
+    <div class="pane" id="pane-layers" hidden></div>
+  </div>
+</div>
+
+<script type="module">
+import * as maplibregl from "./vendor/maplibre-gl/maplibre-gl.mjs";
+
+const ORIGIN = location.origin;
+const QS = new URLSearchParams(location.search);
+const SELFCHECK = QS.get("selfcheck") === "1";
+const CENTER = [Number(QS.get("lon") ?? 76.1450), Number(QS.get("lat") ?? 11.4870)];
+const T0 = performance.now();
+const $ = (id) => document.getElementById(id);
+const statusEl = $("status"), chipsEl = $("chips"), paneRecs = $("pane-recs"), paneLayers = $("pane-layers");
+
+const CLASS_COLOR = { human: "#e63946", animal: "#3d87c9" };
+const DISMISSED = "#7b8794";
+const state = {
+  records: new Map(), selected: null, ws: null, wsState: "connecting", outbox: null,
+  coverage: null, coverageLoaded: false, mission: null, domain: null, errors: [], lastSeq: 0,
+};
+
+// --- WGS-84 metres-per-degree (matches sightline/common/geodesy.py; the h_acc ring must be metre-true) ---
+const A = 6378137.0, E2 = (1 / 298.257223563) * (2 - 1 / 298.257223563);
+function metresPerDeg(lat) {
+  const s = Math.sin(lat * Math.PI / 180), w = 1 - E2 * s * s;
+  return { lat: (Math.PI / 180) * A * (1 - E2) / Math.pow(w, 1.5),
+           lon: (Math.PI / 180) * (A / Math.sqrt(w)) * Math.cos(lat * Math.PI / 180) };
+}
+function circlePolygon(lon, lat, radiusM, n = 64) {
+  const m = metresPerDeg(lat), ring = [];
+  for (let i = 0; i <= n; i++) {
+    const a = (i / n) * 2 * Math.PI;
+    ring.push([lon + (radiusM / m.lon) * Math.cos(a), lat + (radiusM / m.lat) * Math.sin(a)]);
+  }
+  return { type: "Polygon", coordinates: [ring] };
+}
+const EMPTY = { type: "FeatureCollection", features: [] };
+
+// --- basemap style (copied from the verified verify_offline.html) ----------------------------------------
+const protocol = new pmtiles.Protocol();
+maplibregl.addProtocol("pmtiles", protocol.tile);
+const style = {
+  version: 8,
+  glyphs: `${ORIGIN}/app/map/vendor/basemaps-assets/fonts/{fontstack}/{range}.pbf`,
+  sprite: `${ORIGIN}/app/map/vendor/basemaps-assets/sprites/v4/dark`,
+  sources: {
+    protomaps: {
+      type: "vector",
+      url: `pmtiles://${ORIGIN}/data/basemap/wayanad.pmtiles`,
+      attribution: '<a href="https://protomaps.com">Protomaps</a> &copy; <a href="https://openstreetmap.org">OpenStreetMap</a>',
+    },
+  },
+  layers: basemaps.layers("protomaps", basemaps.namedFlavor("dark"), { lang: "en" }),
+};
+
+const map = new maplibregl.Map({
+  container: "map", style, center: CENTER, zoom: Number(QS.get("z") ?? 14.4),
+  attributionControl: { compact: false }, hash: false,
+});
+map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), "top-right");
+map.addControl(new maplibregl.ScaleControl({ maxWidth: 140, unit: "metric" }), "bottom-left");
+map.on("error", (e) => state.errors.push(String(e.error?.message || e.error || e)));
+
+// --- diagonal hatch for "aerial search cannot clear" (§5.9) ---------------------------------------------
+function hatchImage(size = 8, color = "#ff6b6b") {
+  const c = document.createElement("canvas");
+  c.width = c.height = size;
+  const g = c.getContext("2d");
+  g.clearRect(0, 0, size, size);
+  g.strokeStyle = color;
+  g.lineWidth = 2;
+  g.lineCap = "square";
+  g.beginPath();
+  // 45-degree lines with period `size` in x tile seamlessly in both directions.
+  for (const off of [-size, 0, size]) { g.moveTo(off, size); g.lineTo(off + size, 0); }
+  g.stroke();
+  return g.getImageData(0, 0, size, size);
+}
+
+// --- layer construction --------------------------------------------------------------------------------
+// size = rank (rank 1 is biggest), colour = class, ring = h_acc_m.
+const RANK_RADIUS = ["case", ["<", ["get", "priority_rank"], 0], 5,
+  ["interpolate", ["linear"], ["get", "priority_rank"], 1, 13, 4, 9, 10, 6, 25, 4.5]];
+const CLASS_PAINT = ["match", ["get", "cls"], "animal", CLASS_COLOR.animal, CLASS_COLOR.human];
+const NOT_DISMISSED = ["!=", ["get", "status"], "dismissed"];
+const IS_DISMISSED = ["==", ["get", "status"], "dismissed"];
+
+function addLayers() {
+  const firstSymbol = (map.getStyle().layers || []).find((l) => l.type === "symbol")?.id;
+  state.firstSymbol = firstSymbol;  // overlays go UNDER the basemap's place labels
+  map.addImage("cannot-clear-hatch", hatchImage());
+
+  map.addSource("cannot-clear", { type: "geojson", data: EMPTY });
+  map.addLayer({ id: "cannot-clear-base", type: "fill", source: "cannot-clear",
+    paint: { "fill-color": "#ff6b6b", "fill-opacity": 0.16 } }, firstSymbol);
+  map.addLayer({ id: "cannot-clear-fill", type: "fill", source: "cannot-clear",
+    paint: { "fill-pattern": "cannot-clear-hatch", "fill-opacity": 0.85 } }, firstSymbol);
+  map.addLayer({ id: "cannot-clear-line", type: "line", source: "cannot-clear",
+    paint: { "line-color": "#ff6b6b", "line-width": 1.6, "line-opacity": 0.95 } }, firstSymbol);
+
+  map.addSource("plan", { type: "geojson", data: EMPTY });
+  map.addLayer({ id: "plan-line", type: "line", source: "plan",
+    filter: ["==", ["geometry-type"], "LineString"],
+    paint: { "line-color": "#7fd1ff", "line-width": 1.6, "line-dasharray": [3, 2], "line-opacity": 0.75 } });
+  map.addLayer({ id: "plan-wp", type: "circle", source: "plan",
+    filter: ["==", ["geometry-type"], "Point"],
+    paint: { "circle-radius": 2.6, "circle-color": "#7fd1ff", "circle-opacity": 0.8 } });
+
+  map.addSource("track", { type: "geojson", data: EMPTY });
+  map.addLayer({ id: "track-line", type: "line", source: "track",
+    layout: { "line-cap": "round", "line-join": "round" },
+    paint: { "line-width": 2.6,
+      "line-color": ["match", ["get", "mode"], "MANUAL", "#ffb545", "HOLD", "#c77dff", "RTL", "#ff6b6b", "#57e08a"],
+      "line-opacity": 0.95 } });
+
+  map.addSource("footprint", { type: "geojson", data: EMPTY });
+  map.addLayer({ id: "footprint-fill", type: "fill", source: "footprint",
+    paint: { "fill-color": "#ffd479", "fill-opacity": 0.13 } });
+  map.addLayer({ id: "footprint-line", type: "line", source: "footprint",
+    paint: { "line-color": "#ffd479", "line-width": 1.2, "line-opacity": 0.8 } });
+
+  map.addSource("rings", { type: "geojson", data: EMPTY });
+  map.addLayer({ id: "acc-ring-fill", type: "fill", source: "rings", filter: NOT_DISMISSED,
+    paint: { "fill-color": CLASS_PAINT, "fill-opacity": 0.10 } });
+  map.addLayer({ id: "acc-ring-line", type: "line", source: "rings", filter: NOT_DISMISSED,
+    paint: { "line-color": CLASS_PAINT, "line-width": 1.6, "line-opacity": 0.8,
+             "line-dasharray": [2, 2] } });
+
+  map.addSource("records", { type: "geojson", data: EMPTY });
+  map.addLayer({ id: "markers-dismissed", type: "circle", source: "records", filter: IS_DISMISSED,
+    paint: { "circle-radius": 5, "circle-color": "rgba(0,0,0,0)", "circle-stroke-width": 1.6,
+             "circle-stroke-color": DISMISSED, "circle-opacity": 1 } });
+  map.addLayer({ id: "markers", type: "circle", source: "records", filter: NOT_DISMISSED,
+    paint: { "circle-radius": RANK_RADIUS, "circle-color": CLASS_PAINT,
+             "circle-stroke-width": ["case", ["==", ["get", "status"], "confirmed"], 2.2, 1.2],
+             "circle-stroke-color": "#ffffff",
+             "circle-opacity": ["case", ["==", ["get", "status"], "stale"], 0.55, 0.95] } });
+  map.addLayer({ id: "marker-rank", type: "symbol", source: "records", filter: NOT_DISMISSED,
+    layout: { "text-field": ["case", ["<", ["get", "priority_rank"], 0], "?",
+                             ["to-string", ["get", "priority_rank"]]],
+              "text-font": ["Noto Sans Medium"], "text-size": 11, "text-allow-overlap": true },
+    paint: { "text-color": "#ffffff", "text-halo-color": "#000", "text-halo-width": 1 } });
+
+  map.addSource("drone", { type: "geojson", data: EMPTY });
+  map.addLayer({ id: "drone-halo", type: "circle", source: "drone",
+    paint: { "circle-radius": 13, "circle-color": "#ffd479", "circle-opacity": 0.18,
+             "circle-stroke-color": "#ffd479", "circle-stroke-width": 1 } });
+  map.addLayer({ id: "drone-dot", type: "circle", source: "drone",
+    paint: { "circle-radius": 5, "circle-color": "#ffd479", "circle-stroke-color": "#241c05",
+             "circle-stroke-width": 1.6 } });
+
+  for (const id of ["markers", "markers-dismissed"]) {
+    map.on("click", id, (e) => openRecord(e.features[0].properties.record_id));
+    map.on("mouseenter", id, () => (map.getCanvas().style.cursor = "pointer"));
+    map.on("mouseleave", id, () => (map.getCanvas().style.cursor = ""));
+  }
+}
+
+// --- data plumbing -------------------------------------------------------------------------------------
+function upsert(feature) {
+  state.records.set(feature.id ?? feature.properties.record_id, feature);
+  if (state.domain === null) state.domain = feature.properties?.source?.domain ?? null;
+}
+function renderRecords() {
+  const feats = [...state.records.values()];
+  map.getSource("records")?.setData({ type: "FeatureCollection", features: feats });
+  map.getSource("rings")?.setData({
+    type: "FeatureCollection",
+    features: feats.map((f) => ({
+      type: "Feature", id: f.id, properties: f.properties,
+      geometry: circlePolygon(f.geometry.coordinates[0], f.geometry.coordinates[1],
+                              Math.max(0.5, f.properties.h_acc_m || 0)),
+    })),
+  });
+  renderList(feats);
+  renderChips();
+}
+
+async function loadRecords() {
+  const r = await fetch("/api/records.geojson");
+  if (!r.ok) throw new Error(`records ${r.status}`);
+  const fc = await r.json();
+  state.records.clear();
+  fc.features.forEach(upsert);
+  renderRecords();
+  return fc.features.length;
+}
+
+async function loadCoverage() {
+  const r = await fetch("/api/coverage/overlay.json");
+  if (!r.ok) { setStatus(); return false; }
+  const side = await r.json();
+  state.coverage = side;
+  await new Promise((res) => {
+    const img = new Image();
+    img.onload = () => { state.coverageLoaded = true; res(); };
+    img.onerror = () => res();
+    img.src = "/api/coverage/pod.png?t=" + Math.floor(side.generated_utc);
+  });
+  if (state.coverageLoaded) {
+    // The image source is created only once a real raster exists: MapLibre rejects a degenerate placeholder.
+    const url = "/api/coverage/pod.png?t=" + Math.floor(side.generated_utc);
+    if (map.getSource("coverage")) {
+      map.getSource("coverage").updateImage({ url, coordinates: side.coordinates });
+    } else {
+      map.addSource("coverage", { type: "image", url, coordinates: side.coordinates });
+      const under = map.getLayer("cannot-clear-base") ? "cannot-clear-base" : state.firstSymbol;
+      map.addLayer({ id: "coverage-pod", type: "raster", source: "coverage",
+        paint: { "raster-opacity": 0.62, "raster-resampling": "nearest" } }, under);
+    }
+  }
+  const cc = await fetch("/api/coverage/cannot_clear.geojson");
+  if (cc.ok) {
+    const fc = await cc.json();
+    state.cannotClear = fc.features.length;
+    map.getSource("cannot-clear").setData(fc);
+  }
+  return state.coverageLoaded;
+}
+
+async function loadMission() {
+  const r = await fetch("/api/mission");
+  if (!r.ok) return false;
+  applyMission(await r.json());
+  return true;
+}
+function applyMission(m) {
+  state.mission = m;
+  map.getSource("track")?.setData(m.track || EMPTY);
+  map.getSource("plan")?.setData(m.plan || EMPTY);
+  map.getSource("footprint")?.setData(m.footprint ? { type: "FeatureCollection", features: [m.footprint] } : EMPTY);
+  map.getSource("drone")?.setData(m.drone ? { type: "FeatureCollection", features: [m.drone] } : EMPTY);
+  renderChips();
+}
+
+// --- live feed (see sightline/api/live.py for the message format) ---------------------------------------
+function connectWS() {
+  const url = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws`;
+  let ws;
+  try { ws = new WebSocket(url); } catch { state.wsState = "down"; return; }
+  state.ws = ws;
+  ws.onopen = () => { state.wsState = "live"; renderChips(); };
+  ws.onclose = () => { state.wsState = "down"; renderChips(); setTimeout(connectWS, 3000); };
+  ws.onerror = () => { state.wsState = "down"; renderChips(); };
+  ws.onmessage = (ev) => {
+    let m; try { m = JSON.parse(ev.data); } catch { return; }
+    state.lastSeq = m.seq ?? state.lastSeq;
+    if (m.type === "snapshot") { state.records.clear(); (m.records?.features || []).forEach(upsert); renderRecords(); }
+    else if (m.type === "record") { upsert(m.feature); renderRecords(); if (state.selected === m.feature.id) openRecord(m.feature.id, true); }
+    else if (m.type === "mission") applyMission(m);
+    else if (m.type === "coverage") loadCoverage();
+    else if (m.type === "outbox") { state.outbox = m; renderChips(); }
+  };
+}
+
+async function pollOutbox() {
+  try {
+    const r = await fetch("/api/outbox");
+    if (r.ok) { state.outbox = await r.json(); renderChips(); }
+  } catch { /* offline is a normal state here */ }
+}
+
+// --- side panel ----------------------------------------------------------------------------------------
+function pill(status) { return `<span class="status-pill st-${status}">${status}</span>`; }
+function fmt(n, d = 2) { return (n === null || n === undefined) ? "—" : Number(n).toFixed(d); }
+
+function renderChips() {
+  const feats = [...state.records.values()];
+  const by = (s) => feats.filter((f) => f.properties.status === s).length;
+  const ob = state.outbox;
+  const live = state.wsState === "live";
+  const parts = [
+    `<span class="chip ${live ? "live" : "down"}"><b>${live ? "LIVE" : "NO FEED"}</b> ws</span>`,
+    `<span class="chip"><b>${feats.length}</b> records</span>`,
+    `<span class="chip"><b>${by("confirmed")}</b> confirmed</span>`,
+    `<span class="chip"><b>${by("candidate")}</b> candidate</span>`,
+    `<span class="chip"><b>${by("dismissed")}</b> dismissed</span>`,
+  ];
+  if (ob) parts.push(`<span class="chip ${ob.online === false ? "down" : ""}">outbox <b>${ob.depth ?? 0}</b>${ob.online === false ? " · link down" : ""}</span>`);
+  if (state.coverage) parts.push(`<span class="chip">POD mean <b>${fmt(state.coverage.pod_mean)}</b> · swept <b>${state.coverage.cells_swept}/${state.coverage.cells_total}</b></span>`);
+  if (state.mission?.drone) parts.push(`<span class="chip">mode <b>${state.mission.drone.properties.mode}</b> · ${fmt(state.mission.drone.properties.agl_m, 0)} m AGL</span>`);
+  if (state.domain === "sim") parts.push(`<span class="chip sim"><b>SIM</b> simulated data</span>`);
+  chipsEl.innerHTML = parts.join("");
+}
+
+function renderList(feats) {
+  const sorted = [...feats].sort((a, b) => {
+    const ra = a.properties.priority_rank, rb = b.properties.priority_rank;
+    const ka = ra < 0 ? 1e9 : ra, kb = rb < 0 ? 1e9 : rb;
+    return ka - kb;
+  });
+  paneRecs.innerHTML = sorted.map((f) => {
+    const p = f.properties, c = p.score_components || {}, dis = p.status === "dismissed";
+    const col = dis ? DISMISSED : (CLASS_COLOR[p.cls] || CLASS_COLOR.human);
+    const terms = [["p_living", c.p_living, "#e63946"], ["w_class", c.w_class, "#f2a65a"],
+                   ["urgency", c.urgency / 2.5, "#8ac6d1"], ["count", (c.count_bonus - 1) * 5, "#9d8df1"]];
+    const bars = terms.map(([, v, cc]) =>
+      `<i style="flex:${Math.max(0.02, Math.min(1, v || 0))};background:${cc}"></i>`).join("");
+    return `<div class="rec ${dis ? "dismissed" : ""} ${state.selected === f.id ? "sel" : ""}" data-id="${f.id}">
+      <div class="rec-top">
+        <span class="rank" style="background:${col}">${p.priority_rank < 0 ? "?" : p.priority_rank}</span>
+        <span>
+          <span class="rec-id">${f.id}</span> ${pill(p.status)}<br>
+          <span class="rec-sub">${p.cls} · ${c.urgency_class || "unknown"} · ${p.count_estimate}× · ±${fmt(p.h_acc_m, 1)} m</span>
+        </span>
+        <span class="grow"></span>
+        <span style="text-align:right"><b>${fmt(p.score, 2)}</b><br><span class="rec-sub">score</span></span>
+      </div>
+      <div class="bars">${bars}</div>
+      <div class="why">
+        <span>P(living) <b>${fmt(c.p_living)}</b></span><span>w_class <b>${fmt(c.w_class)}</b></span>
+        <span>urgency <b>${fmt(c.urgency)}</b></span><span>count× <b>${fmt(c.count_bonus)}</b></span>
+        <span>${p.thermal_hot ? "thermal ✓" : "thermal ✗"}</span><span>${p.motion_state}</span>
+      </div>
+    </div>`;
+  }).join("") || `<p style="color:var(--dim)">No records yet.</p>`;
+  paneRecs.querySelectorAll(".rec").forEach((el) =>
+    el.addEventListener("click", () => openRecord(el.dataset.id, false, true)));
+}
+
+let popup = null;
+function openRecord(id, keepView = false, fly = false) {
+  const f = state.records.get(id);
+  if (!f) return;
+  state.selected = id;
+  const p = f.properties, c = p.score_components || {}, ev = (p.evidence || [])[0];
+  const col = p.status === "dismissed" ? DISMISSED : (CLASS_COLOR[p.cls] || CLASS_COLOR.human);
+  const el = document.createElement("div");
+  el.className = "pop";
+  el.innerHTML = `
+    ${ev?.thumb_uri ? `<img src="${ev.thumb_uri}" alt="evidence crop">` : ""}
+    <div class="pop-body">
+      <h2><span class="rank" style="background:${col};min-width:22px;height:22px">${p.priority_rank < 0 ? "?" : p.priority_rank}</span>
+          ${f.id} ${pill(p.status)}</h2>
+      <div class="rec-sub">${p.cls} · ${c.urgency_class || "unknown"} · ${p.posture} · ${p.submersion}${p.posture_promoted ? " · posture-promoted" : ""}</div>
+      <table class="sc">
+        <tr><th>P(living | record)</th><td>${fmt(c.p_living, 3)}</td></tr>
+        <tr><th>w_class(t) &nbsp;<span class="rec-sub">t+${fmt(c.elapsed_h, 1)} h</span></th><td>× ${fmt(c.w_class, 3)}</td></tr>
+        <tr><th>urgency_class</th><td>× ${fmt(c.urgency, 3)}</td></tr>
+        <tr><th>1 + 0.1·count &nbsp;<span class="rec-sub">${p.count_estimate} (${p.count_min}–${p.count_max})</span></th><td>× ${fmt(c.count_bonus, 3)}</td></tr>
+        <tr class="tot"><th>priority score</th><td>${fmt(p.score, 3)}</td></tr>
+      </table>
+      <p class="formula">score = P(living) × w_class(t) × urgency × (1 + 0.1·count)<br>
+         thermal boost ${fmt(c.thermal_boost, 2)} · motion boost ${fmt(c.motion_boost, 2)}</p>
+      <dl class="kv">
+        <dt>position</dt><dd>${f.geometry.coordinates[1].toFixed(6)}, ${f.geometry.coordinates[0].toFixed(6)}</dd>
+        <dt>accuracy</dt><dd>±${fmt(p.h_acc_m, 1)} m (1σ) · CE90 ${fmt(p.ce90_m, 1)} m · ${p.method}</dd>
+        <dt>confidence</dt><dd>${fmt(p.confidence, 3)} fused · ${fmt(p.confidence_max_det, 3)} best det</dd>
+        <dt>observations</dt><dd>${p.n_observations} in ${p.n_tracks_merged} track(s), passes [${(p.seen_in_passes || []).join(", ")}]</dd>
+        <dt>motion</dt><dd>${p.motion_state} · ${fmt(p.motion_displacement_m, 1)} m / ${fmt(p.motion_window_s, 0)} s</dd>
+        <dt>thermal</dt><dd>${p.thermal_hot ? `hot ${fmt(p.thermal_c, 1)} °C` : "no thermal agreement"} · ${p.modality}</dd>
+        <dt>size</dt><dd>${fmt(p.pixel_size_px, 0)} px · GSD ${fmt(p.gsd_cm_px, 1)} cm/px · occl ${p.occlusion ?? "—"}</dd>
+        ${ev ? `<dt>evidence</dt><dd>${ev.clip_id} frame ${ev.frame_idx} · conf ${fmt(ev.det_conf, 2)} · ${ev.camera}</dd>` : ""}
+        ${p.dismissed_reason ? `<dt>dismissed</dt><dd>${p.dismissed_reason} — ${p.dismissed_by}</dd>` : ""}
+        ${p.notes ? `<dt>notes</dt><dd>${p.notes}</dd>` : ""}
+      </dl>
+      <div class="act">
+        <button data-act="confirmed">Confirm</button>
+        <button data-act="stale">Mark stale</button>
+      </div>
+      <div class="act">
+        <input id="dismiss-reason" placeholder="reason (required to dismiss)" value="${p.dismissed_reason || ""}">
+        <button class="danger" data-act="dismiss">Dismiss</button>
+      </div>
+      <div class="err" id="act-err"></div>
+      <p class="formula">R10: dismissing keeps the record and its history; nothing is ever deleted.</p>
+    </div>`;
+  el.querySelectorAll("button[data-act]").forEach((b) =>
+    b.addEventListener("click", () => act(id, b.dataset.act, el)));
+
+  popup?.remove();
+  popup = new maplibregl.Popup({ closeButton: true, maxWidth: "360px", offset: 14 })
+    .setLngLat(f.geometry.coordinates.slice(0, 2)).setDOMContent(el).addTo(map);
+  if (fly && !keepView) map.flyTo({ center: f.geometry.coordinates.slice(0, 2), zoom: Math.max(map.getZoom(), 15), speed: 1.4 });
+  renderList([...state.records.values()]);
+}
+
+async function act(id, what, el) {
+  const errEl = el.querySelector("#act-err");
+  errEl.textContent = "";
+  try {
+    let r;
+    if (what === "dismiss") {
+      const reason = el.querySelector("#dismiss-reason").value.trim();
+      if (!reason) { errEl.textContent = "R10: a dismissal needs a reason."; return; }
+      r = await fetch(`/api/records/${encodeURIComponent(id)}/dismiss`,
+        { method: "POST", headers: { "content-type": "application/json" },
+          body: JSON.stringify({ reason, by: "operator" }) });
+    } else {
+      r = await fetch(`/api/records/${encodeURIComponent(id)}/status`,
+        { method: "POST", headers: { "content-type": "application/json" },
+          body: JSON.stringify({ status: what, actor: "operator" }) });
+    }
+    const j = await r.json();
+    if (!r.ok) { errEl.textContent = j.detail || `HTTP ${r.status}`; return; }
+    upsert(j.feature); renderRecords(); openRecord(id, true);
+  } catch (e) { errEl.textContent = String(e); }
+}
+
+// --- layer panel ---------------------------------------------------------------------------------------
+const TOGGLES = [
+  ["Search quality (POD)", ["coverage-pod"], true],
+  ["Aerial search cannot clear", ["cannot-clear-base", "cannot-clear-fill", "cannot-clear-line"], true],
+  ["Triage markers", ["markers", "marker-rank", "acc-ring-fill", "acc-ring-line"], true],
+  ["Dismissed records", ["markers-dismissed"], true],
+  ["Planned pattern", ["plan-line", "plan-wp"], true],
+  ["Flight track", ["track-line"], true],
+  ["Camera footprint", ["footprint-fill", "footprint-line"], true],
+  ["Drone", ["drone-halo", "drone-dot"], true],
+];
+function renderLayerPane() {
+  paneLayers.innerHTML = `<h3>Layers</h3>` + TOGGLES.map(([label, ids, on], i) =>
+    `<label class="toggle"><input type="checkbox" data-i="${i}" ${on ? "checked" : ""}> ${label}</label>`).join("") +
+    `<div class="legend">
+      <h3>Triage markers</h3>
+      <div class="lg"><span class="sw" style="background:${CLASS_COLOR.human}"></span> human — size is priority rank</div>
+      <div class="lg"><span class="sw" style="background:${CLASS_COLOR.animal}"></span> animal</div>
+      <div class="lg"><span class="sw" style="background:transparent;border:1.5px solid ${DISMISSED}"></span> dismissed (kept, R10)</div>
+      <div class="lg"><span class="sw" style="background:${CLASS_COLOR.human}22;border-color:${CLASS_COLOR.human}"></span> ring = h_acc_m (1σ)</div>
+      <h3>Search quality</h3>
+      <div class="lg"><span class="ramp"></span></div>
+      <div class="lg" style="justify-content:space-between"><span>POD 0</span><span>POD 1</span></div>
+      <div class="lg">unshaded = never swept · hatched = aerial search cannot clear</div>
+      <h3>Flight</h3>
+      <div class="lg"><span class="sw" style="background:#57e08a"></span> AUTO</div>
+      <div class="lg"><span class="sw" style="background:#ffb545"></span> MANUAL takeover</div>
+      <div class="lg"><span class="sw" style="background:#7fd1ff"></span> planned pattern</div>
+      <div class="lg"><span class="sw" style="background:#ffd479"></span> drone + camera footprint</div>
+    </div>`;
+  paneLayers.querySelectorAll("input[data-i]").forEach((cb) => cb.addEventListener("change", () => {
+    const ids = TOGGLES[Number(cb.dataset.i)][1];
+    ids.forEach((id) => map.getLayer(id) && map.setLayoutProperty(id, "visibility", cb.checked ? "visible" : "none"));
+  }));
+}
+$("tab-recs").onclick = () => { paneRecs.hidden = false; paneLayers.hidden = true;
+  $("tab-recs").setAttribute("aria-selected", "true"); $("tab-layers").setAttribute("aria-selected", "false"); };
+$("tab-layers").onclick = () => { paneRecs.hidden = true; paneLayers.hidden = false;
+  $("tab-recs").setAttribute("aria-selected", "false"); $("tab-layers").setAttribute("aria-selected", "true"); };
+
+// --- status line + headless self-check ------------------------------------------------------------------
+function setStatus(extra = "") {
+  statusEl.textContent =
+    `records ${state.records.size} · coverage ${state.coverageLoaded ? "on" : "off"} · ws ${state.wsState}` +
+    ` · errors ${state.errors.length}${extra ? "\n" + extra : ""}`;
+}
+
+let reported = false;
+async function selfCheck() {
+  if (reported) return;
+  reported = true;
+  const resources = performance.getEntriesByType("resource").map((r) => r.name);
+  const external = resources.filter((u) => !u.startsWith(ORIGIN) && !u.startsWith("blob:") && !u.startsWith("data:"));
+  const feats = map.queryRenderedFeatures();
+  const bySource = (s) => feats.filter((f) => f.source === s).length;
+  const report = {
+    ok: false,
+    maplibre: maplibregl.getVersion ? maplibregl.getVersion() : "?",
+    ms_to_idle: Math.round(performance.now() - T0),
+    basemap_features: bySource("protomaps"),
+    source_layers: [...new Set(feats.filter((f) => f.source === "protomaps").map((f) => f.sourceLayer))].sort(),
+    marker_features: bySource("records"),
+    ring_features: bySource("rings"),
+    track_features: bySource("track"),
+    plan_features: bySource("plan"),
+    cannot_clear_features: bySource("cannot-clear"),
+    drone_features: bySource("drone"),
+    footprint_features: bySource("footprint"),
+    coverage_raster_loaded: state.coverageLoaded,
+    coverage_pod_mean: state.coverage?.pod_mean ?? null,
+    records_loaded: state.records.size,
+    ranked_top: [...state.records.values()].filter((f) => f.properties.priority_rank === 1)
+      .map((f) => f.id),
+    score_components_present: [...state.records.values()].every((f) => f.properties.score_components &&
+      typeof f.properties.score_components.p_living === "number"),
+    thumbnails_present: [...state.records.values()].filter((f) => (f.properties.evidence || [])[0]?.thumb_uri).length,
+    ws_state: state.wsState,
+    resource_requests: resources.length,
+    external_requests: external,
+    errors: state.errors,
+  };
+  report.ok = report.basemap_features > 0 && report.marker_features > 0 && report.ring_features > 0 &&
+              report.track_features > 0 && report.cannot_clear_features > 0 && report.coverage_raster_loaded &&
+              report.score_components_present && report.thumbnails_present > 0 &&
+              external.length === 0 && state.errors.length === 0;
+  setStatus(JSON.stringify({ basemap: report.basemap_features, markers: report.marker_features,
+    rings: report.ring_features, track: report.track_features, hatched: report.cannot_clear_features,
+    coverage: report.coverage_raster_loaded, ws: report.ws_state, external: external.length }));
+  document.title = report.ok ? "MAP_OK" : "MAP_FAIL";
+  window.__sightlineReport = report;
+  fetch("/__report", { method: "POST", body: JSON.stringify(report) }).catch(() => {});
+}
+
+// --- boot ----------------------------------------------------------------------------------------------
+map.on("load", async () => {
+  addLayers();
+  renderLayerPane();
+  try { await loadCoverage(); } catch (e) { state.errors.push("coverage: " + e); }
+  try { await loadMission(); } catch (e) { state.errors.push("mission: " + e); }
+  try { await loadRecords(); } catch (e) { state.errors.push("records: " + e); }
+  await pollOutbox();
+  connectWS();
+  setInterval(pollOutbox, 5000);
+  setStatus();
+  if (SELFCHECK) {
+    // one idle after the data layers are populated, then judge
+    map.once("idle", () => setTimeout(selfCheck, 400));
+    setTimeout(selfCheck, 20000); // hard deadline so the check never hangs
+  }
+});
+map.on("idle", () => setStatus());
+</script>
+</body>
+</html>

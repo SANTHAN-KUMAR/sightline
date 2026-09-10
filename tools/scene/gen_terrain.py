@@ -140,6 +140,15 @@ def write_obj(path: Path, h: np.ndarray, cell_m: float, size_m: float, base_z: f
     n = h.shape[0]
     xs = np.linspace(-size_m / 2, size_m / 2, n) * 100.0
     zc = (h - base_z) * 100.0
+    # Analytic vertex normals from the height field. WITHOUT these the OBJ carries no `vn` and no smoothing
+    # groups, so UE flat-shades every triangle of this regular grid: the terrain then renders with a corduroy
+    # ridge pattern aligned to the triangulation, clearly visible from survey altitude (measured 2026-09-10).
+    # Central differences in metres; the surface is z = h(x, y), so n = normalize(-dh/dx, -dh/dy, 1).
+    dhdy, dhdx = np.gradient(h, cell_m)  # h is indexed [j, i] = [north, east]
+    nx, ny, nz = -dhdx, -dhdy, np.ones_like(h)
+    ln = np.sqrt(nx * nx + ny * ny + nz * nz)
+    nx, ny, nz = nx / ln, ny / ln, nz / ln
+
     lines = ["# Sightline flood valley terrain (generated, centimetres)"]
     for j in range(n):
         y = xs[j]
@@ -148,12 +157,15 @@ def write_obj(path: Path, h: np.ndarray, cell_m: float, size_m: float, base_z: f
     for j in range(n):
         for i in range(n):
             lines.append(f"vt {i / (n - 1):.5f} {j / (n - 1):.5f}")
+    for j in range(n):
+        for i in range(n):
+            lines.append(f"vn {nx[j, i]:.5f} {ny[j, i]:.5f} {nz[j, i]:.5f}")
     for j in range(n - 1):
         for i in range(n - 1):
             a, b = j * n + i + 1, j * n + i + 2
             c, d = (j + 1) * n + i + 2, (j + 1) * n + i + 1
-            lines.append(f"f {a}/{a} {b}/{b} {c}/{c}")
-            lines.append(f"f {a}/{a} {c}/{c} {d}/{d}")
+            lines.append(f"f {a}/{a}/{a} {b}/{b}/{b} {c}/{c}/{c}")
+            lines.append(f"f {a}/{a}/{a} {c}/{c}/{c} {d}/{d}/{d}")
     path.write_text("\n".join(lines), encoding="utf-8")
     return (n * n, (n - 1) * (n - 1) * 2)
 

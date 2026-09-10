@@ -10,6 +10,11 @@
     "lat": 11.487,
     "lon": 76.145
   },
+  "airsim_origin_geopoint": {
+    "Latitude": 11.487,
+    "Longitude": 76.145,
+    "Altitude": 1046.007
+  },
   "base_z_m": 1046.0069580078125,
   "height_min_m": 1046.0069580078125,
   "height_max_m": 1170.3040771484375,

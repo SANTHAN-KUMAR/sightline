@@ -10,6 +10,12 @@ of work and append to the Session log.
   session requested at the moment of the stop. Run `status` first; stop PIE (`LevelEditorSubsystem.editor_request_end_play()`)
   or `editor_close` before building anything. The `unreal` (Epic) MCP server did not connect at session start
   because the editor was down: reconnect it (`/mcp`) once the editor runs.
+- **Session 2 resumed (2026-09-10 21:27):** items 1-3 below checked in PIE. Water renders (silt-brown, ripples,
+  glints; capture `20260910-212806-083610`), the airframe blob is gone, and `sim_environment(time_of_day=
+  "2024-07-30 06:30:00")` gives warm low dawn light with long terrain shadows (capture `20260910-212927-215281`), so
+  the hidden BP_Sky_Sphere still drives the sun. Still wrong: terrain normals/ARM tile visibly at 45 m and the grass
+  reads dry-yellow -> `build_materials.py` reworked (bigger tiles, near/far blend on all three maps weighted by a
+  smooth macro noise, `GrassTint`, silt band 1.2 m, water `NormalStrength` 0.35); re-check after the rebuild.
 - **Written but NOT yet verified** (do these first, in this order):
   1. `M_FloodValleyTerrain` with anti-tiling (84 nodes / 16 textures) and the rebuilt `M_FloodWater` (21 nodes,
      1 texture, compiles) have **not been seen in a capture yet**. The last capture (`_artifacts/captures/20260910-211540-830858`)

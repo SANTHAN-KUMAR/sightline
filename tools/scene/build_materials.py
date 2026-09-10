@@ -156,28 +156,57 @@ g.link(v, "", zuv, "B")
 zones = g.tex(unreal.load_asset("/Game/Sightline/Terrain/T_FloodValley_Zones"), zuv,
               unreal.MaterialSamplerType.SAMPLERTYPE_LINEAR_COLOR, unreal.SamplerSourceMode.SSM_CLAMP_WORLD_GROUP_SETTINGS)
 
+# Smooth macro noise (~40 m blobs): a LOW MIP (level 7 = 16 px) of a texture, so it is a soft field rather than
+# fine detail. It drives both the anti-tiling blend weight and a large-scale brightness variation.
+noise_uv = g.op(unreal.MaterialExpressionMultiply, wxy, 1.0 / 4100.0)
+noise = g.node(unreal.MaterialExpressionTextureSample, -800, texture=textures["forest"]["col"],
+               sampler_type=unreal.MaterialSamplerType.SAMPLERTYPE_COLOR,
+               sampler_source=unreal.SamplerSourceMode.SSM_WRAP_WORLD_GROUP_SETTINGS,
+               mip_value_mode=unreal.TextureMipValueMode.TMVM_MIP_LEVEL, const_mip_value=7)
+g.link(noise_uv, "", noise, "UVs")
+noise_r = g.sat(g.op(unreal.MaterialExpressionMultiply, g.op(unreal.MaterialExpressionSubtract, noise, 0.25, "R"), 3.0))
+blend_w = g.op(unreal.MaterialExpressionAdd, g.op(unreal.MaterialExpressionMultiply, noise_r, 0.5), 0.25)  # 0.25..0.75
+
 layer = {}
 for key, (pid, _, tile_m) in LAYERS.items():
-    uv = g.op(unreal.MaterialExpressionMultiply, wxy, 1.0 / (tile_m * 100.0))
+    # Anti-tiling, measured need: a 4 m tile repeated visibly every ~110 px at the 45 m survey altitude (capture
+    # 20260910-212806). Tiles are doubled, and colour, normal AND ARM are each blended with a copy at a
+    # non-integer 0.137x scale (offset so the two grids never align), weighted by the macro noise, so no constant
+    # period survives. Shared wrap samplers keep the 31 samples under the sampler limit.
+    uv = g.op(unreal.MaterialExpressionMultiply, wxy, 1.0 / (tile_m * 200.0))
+    uv_far = g.op(unreal.MaterialExpressionAdd, g.op(unreal.MaterialExpressionMultiply, uv, 0.137), 0.371)
     t = textures[key]
-    # Anti-tiling: a 4-5 m tile repeats every ~40 px at 120 m and ~115 px at the 45 m survey altitude. Blend the
-    # colour with itself at a non-integer 0.137x scale (~30 m repeat) so the periodic grid disappears.
-    col_near = g.tex(t["col"], uv, unreal.MaterialSamplerType.SAMPLERTYPE_COLOR)
-    col_far = g.tex(t["col"], g.op(unreal.MaterialExpressionMultiply, uv, 0.137), unreal.MaterialSamplerType.SAMPLERTYPE_COLOR)
-    layer[key] = (g.lerp(col_near, col_far, g.const(0.4)),
-                  g.tex(t["nrm"], uv, unreal.MaterialSamplerType.SAMPLERTYPE_NORMAL),
-                  g.tex(t["arm"], uv, unreal.MaterialSamplerType.SAMPLERTYPE_MASKS))
+    maps = []
+    for tex_key, stype in (("col", unreal.MaterialSamplerType.SAMPLERTYPE_COLOR),
+                           ("nrm", unreal.MaterialSamplerType.SAMPLERTYPE_NORMAL),
+                           ("arm", unreal.MaterialSamplerType.SAMPLERTYPE_MASKS)):
+        maps.append(g.lerp(g.tex(t[tex_key], uv, stype), g.tex(t[tex_key], uv_far, stype), blend_w))
+    if key == "grass":
+        # leafy_grass is a DRY scan: measured linear means R=0.324 G=0.239 B=0.109, i.e. yellow-brown (R > G).
+        # Monsoon Kerala hillsides are saturated green, so the tint has to invert that ordering, not merely
+        # nudge it: (0.35, 1.0, 0.45) lands near linear (0.11, 0.24, 0.05).
+        tint = g.node(unreal.MaterialExpressionVectorParameter, -600, parameter_name="GrassTint",
+                      default_value=unreal.LinearColor(0.35, 1.0, 0.45, 1.0))
+        maps[0] = g.op(unreal.MaterialExpressionMultiply, maps[0], tint)
+    layer[key] = tuple(maps)
 
 # masks
 macro_uv = g.op(unreal.MaterialExpressionMultiply, wxy, 1.0 / 9000.0)       # ~90 m blobs of leaf litter
-macro = g.tex(textures["forest"]["arm"], macro_uv, unreal.MaterialSamplerType.SAMPLERTYPE_MASKS)
-forest_a = g.sat(g.op(unreal.MaterialExpressionMultiply, g.op(unreal.MaterialExpressionSubtract, macro, 0.55, "G"), 4.0))
+# The mask channel must be a field that actually VARIES around the threshold. forest_leaves_02's ARM green is
+# roughness, and leaf litter is uniformly rough: measured p10=0.878 / p50=0.937, so sat((G-0.55)*4) evaluated to
+# 1.0 over the whole map and leaf litter replaced 100 % of the grass layer (the hillsides rendered dry orange,
+# and GrassTint had no visible effect at all). brown_mud_rocks_01's ARM green is genuinely broad
+# (mean 0.545, std 0.243); sat((G-0.55)*3) gives ~27 % coverage, which is the patchiness intended here.
+macro = g.tex(textures["mud"]["arm"], macro_uv, unreal.MaterialSamplerType.SAMPLERTYPE_MASKS)
+forest_a = g.sat(g.op(unreal.MaterialExpressionMultiply, g.op(unreal.MaterialExpressionSubtract, macro, 0.55, "G"), 3.0))
 nws = g.node(unreal.MaterialExpressionVertexNormalWS, -1600)
 nz = g.node(unreal.MaterialExpressionComponentMask, -1500, r=False, g=False, b=True, a=False)
 g.link(nws, "", nz, "")
 steep_a = g.sat(g.op(unreal.MaterialExpressionMultiply, g.op(unreal.MaterialExpressionSubtract, 0.9, nz), 8.0))
-flood_z = g.node(unreal.MaterialExpressionScalarParameter, -1600, parameter_name="SiltLineZ", default_value=FLOOD_Z_CM + 200.0)
-band_a = g.sat(g.op(unreal.MaterialExpressionDivide, g.op(unreal.MaterialExpressionSubtract, flood_z, wz), 80.0))
+# Fresh silt line: fully silt up to ~0.6 m above flood stage, fading out by ~1.2 m (a 2 m band covered most of a
+# gentle bank in capture 20260910-212806).
+flood_z = g.node(unreal.MaterialExpressionScalarParameter, -1600, parameter_name="SiltLineZ", default_value=FLOOD_Z_CM + 120.0)
+band_a = g.sat(g.op(unreal.MaterialExpressionDivide, g.op(unreal.MaterialExpressionSubtract, flood_z, wz), 60.0))
 silt_a = g.op(unreal.MaterialExpressionMax, g.op(unreal.MaterialExpressionMax, zones, zones, "G", "B"), band_a)
 fan_a = g.sat(g.op(unreal.MaterialExpressionMultiply, g.op(unreal.MaterialExpressionSubtract, zones, 0.1, "R"), 1.5))
 
@@ -218,14 +247,18 @@ def sparam(name, val):
 
 
 # Silt-laden monsoon water (§2.3 row 1): extinction ~10-20 /m => opaque within 0.05-0.3 m.
+# The single-layer-water surface tint tends to scattering/(scattering+absorption). The first pass used a dark
+# BaseColor (0.09, 0.065, 0.035) with absorption above scattering, which rendered the flood as near-black and
+# made the 60 m nadir frame - the exact view the detector trains on - a featureless dark field. Heavy suspended
+# silt is bright: these values give albedo (0.85, 0.73, 0.43), a cafe-au-lait flood surface.
 slw = g.node(unreal.MaterialExpressionSingleLayerWaterMaterialOutput, 0)
-for src, pin in ((vparam("Scattering", (4.0, 2.9, 1.6)), "ScatteringCoefficients"),
-                 (vparam("Absorption", (3.5, 5.5, 9.5)), "AbsorptionCoefficients"),
-                 (sparam("PhaseG", 0.3), "PhaseG"),
+for src, pin in ((vparam("Scattering", (7.0, 5.0, 2.6)), "ScatteringCoefficients"),
+                 (vparam("Absorption", (1.2, 1.9, 3.4)), "AbsorptionCoefficients"),
+                 (sparam("PhaseG", 0.35), "PhaseG"),
                  (sparam("ColorScaleBehindWater", 0.0), "ColorScaleBehindWater")):
     g.link(src, "", slw, pin)
-mel.connect_material_property(vparam("BaseColor", (0.09, 0.065, 0.035)), "", unreal.MaterialProperty.MP_BASE_COLOR)
-mel.connect_material_property(sparam("Roughness", 0.12), "", unreal.MaterialProperty.MP_ROUGHNESS)
+mel.connect_material_property(vparam("BaseColor", (0.36, 0.27, 0.17)), "", unreal.MaterialProperty.MP_BASE_COLOR)
+mel.connect_material_property(sparam("Roughness", 0.07), "", unreal.MaterialProperty.MP_ROUGHNESS)
 mel.connect_material_property(sparam("Specular", 0.5), "", unreal.MaterialProperty.MP_SPECULAR)
 
 wn = unreal.load_asset("/Water/Textures/Normals/T_Water_TilingNormal_Waves_02")
@@ -244,7 +277,7 @@ for scale_m, sx, sy in ((6.0, 0.035, 0.02), (15.0, -0.015, 0.03)):   # flow is n
 nsum = g.node(unreal.MaterialExpressionNormalize, -500)
 g.link(g.op(unreal.MaterialExpressionAdd, normals[0], normals[1]), "", nsum, "VectorInput")
 flat = g.node(unreal.MaterialExpressionConstant3Vector, -500, constant=unreal.LinearColor(0, 0, 1, 1))
-strength = sparam("NormalStrength", 0.6)
+strength = sparam("NormalStrength", 0.35)  # 0.6 read as large dark blobs under a low dawn sun (capture 20260910-212927)
 nfinal = g.lerp(flat, nsum, strength)
 mel.connect_material_property(nfinal, "", unreal.MaterialProperty.MP_NORMAL)
 mel.recompile_material(w)

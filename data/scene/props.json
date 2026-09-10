@@ -1,0 +1,709 @@
+{
+  "props": {
+    "rock_07": {
+      "role": "boulder",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/rock_07/rock_07_2k/StaticMeshes/rock_07_2k",
+          "tris": 14844,
+          "size_m": [
+            0.17,
+            0.32,
+            0.14
+          ]
+        }
+      ]
+    },
+    "rock_09": {
+      "role": "boulder",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/rock_09/rock_09_2k/StaticMeshes/rock_09_2k",
+          "tris": 12416,
+          "size_m": [
+            0.07,
+            0.14,
+            0.03
+          ]
+        }
+      ]
+    },
+    "stone_01": {
+      "role": "boulder",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/stone_01/stone_01_2k/StaticMeshes/stone_01_2k",
+          "tris": 53520,
+          "size_m": [
+            0.15,
+            0.09,
+            0.07
+          ]
+        }
+      ]
+    },
+    "rock_moss_set_01": {
+      "role": "boulder",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/rock_moss_set_01/rock_moss_set_01_2k/StaticMeshes/rock_moss_set_01_rock01",
+          "tris": 11000,
+          "size_m": [
+            2.24,
+            3.37,
+            1.47
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/rock_moss_set_01/rock_moss_set_01_2k/StaticMeshes/rock_moss_set_01_rock02",
+          "tris": 10996,
+          "size_m": [
+            2.66,
+            3.26,
+            1.26
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/rock_moss_set_01/rock_moss_set_01_2k/StaticMeshes/rock_moss_set_01_rock03",
+          "tris": 5000,
+          "size_m": [
+            2.11,
+            2.08,
+            1.1
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/rock_moss_set_01/rock_moss_set_01_2k/StaticMeshes/rock_moss_set_01_rock04",
+          "tris": 10589,
+          "size_m": [
+            2.13,
+            1.96,
+            1.77
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/rock_moss_set_01/rock_moss_set_01_2k/StaticMeshes/rock_moss_set_01_rock05",
+          "tris": 16548,
+          "size_m": [
+            1.82,
+            3.0,
+            1.21
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/rock_moss_set_01/rock_moss_set_01_2k/StaticMeshes/rock_moss_set_01_rock06",
+          "tris": 8994,
+          "size_m": [
+            2.13,
+            2.76,
+            1.26
+          ]
+        }
+      ]
+    },
+    "rock_moss_set_02": {
+      "role": "boulder",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/rock_moss_set_02/rock_moss_set_02_2k/StaticMeshes/rock_moss_set_02_rock08",
+          "tris": 8000,
+          "size_m": [
+            1.21,
+            0.98,
+            0.53
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/rock_moss_set_02/rock_moss_set_02_2k/StaticMeshes/rock_moss_set_02_rock09",
+          "tris": 7894,
+          "size_m": [
+            1.63,
+            1.01,
+            0.61
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/rock_moss_set_02/rock_moss_set_02_2k/StaticMeshes/rock_moss_set_02_rock12",
+          "tris": 7999,
+          "size_m": [
+            1.58,
+            1.44,
+            0.74
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/rock_moss_set_02/rock_moss_set_02_2k/StaticMeshes/rock_moss_set_02_rock13",
+          "tris": 7928,
+          "size_m": [
+            2.09,
+            1.14,
+            1.26
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/rock_moss_set_02/rock_moss_set_02_2k/StaticMeshes/rock_moss_set_02_rock10",
+          "tris": 8000,
+          "size_m": [
+            2.2,
+            1.55,
+            0.77
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/rock_moss_set_02/rock_moss_set_02_2k/StaticMeshes/rock_moss_set_02_rock11",
+          "tris": 8000,
+          "size_m": [
+            1.95,
+            1.53,
+            1.31
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/rock_moss_set_02/rock_moss_set_02_2k/StaticMeshes/rock_moss_set_02_rock07",
+          "tris": 9826,
+          "size_m": [
+            1.69,
+            1.22,
+            0.74
+          ]
+        }
+      ]
+    },
+    "namaqualand_boulders_01": {
+      "role": "boulder",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/namaqualand_boulders_01/namaqualand_boulders_01_2k/StaticMeshes/namaqualand_rocks_01_a",
+          "tris": 16058,
+          "size_m": [
+            0.36,
+            0.55,
+            0.25
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/namaqualand_boulders_01/namaqualand_boulders_01_2k/StaticMeshes/namaqualand_rocks_01_b",
+          "tris": 24792,
+          "size_m": [
+            0.34,
+            0.59,
+            0.21
+          ]
+        }
+      ]
+    },
+    "dead_tree_trunk": {
+      "role": "woody",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/dead_tree_trunk/dead_tree_trunk_2k/StaticMeshes/dead_tree_trunk_2k",
+          "tris": 101802,
+          "size_m": [
+            3.05,
+            0.28,
+            0.29
+          ]
+        }
+      ]
+    },
+    "dead_quiver_trunk": {
+      "role": "woody",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/dead_quiver_trunk/dead_quiver_trunk_2k/StaticMeshes/dead_quiver_trunk_2k",
+          "tris": 17978,
+          "size_m": [
+            0.31,
+            0.27,
+            1.99
+          ]
+        }
+      ]
+    },
+    "tree_stump_01": {
+      "role": "woody",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/tree_stump_01/tree_stump_01_2k/StaticMeshes/tree_stump_01_2k",
+          "tris": 41046,
+          "size_m": [
+            1.43,
+            1.59,
+            0.57
+          ]
+        }
+      ]
+    },
+    "tree_stump_02": {
+      "role": "woody",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/tree_stump_02/tree_stump_02_2k/StaticMeshes/tree_stump_02_2k",
+          "tris": 62345,
+          "size_m": [
+            1.52,
+            1.39,
+            0.52
+          ]
+        }
+      ]
+    },
+    "dry_branches_medium_01": {
+      "role": "woody",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/dry_branches_medium_01/dry_branches_medium_01_2k/StaticMeshes/dry_branches_medium_01_c",
+          "tris": 5616,
+          "size_m": [
+            0.13,
+            0.78,
+            0.14
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/dry_branches_medium_01/dry_branches_medium_01_2k/StaticMeshes/dry_branches_medium_01_b",
+          "tris": 5254,
+          "size_m": [
+            0.15,
+            1.04,
+            0.14
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/dry_branches_medium_01/dry_branches_medium_01_2k/StaticMeshes/dry_branches_medium_01_a",
+          "tris": 5933,
+          "size_m": [
+            0.32,
+            1.3,
+            0.34
+          ]
+        }
+      ]
+    },
+    "Barrel_01": {
+      "role": "household",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/Barrel_01/Barrel_01_2k/StaticMeshes/Barrel_01_2k",
+          "tris": 2682,
+          "size_m": [
+            0.56,
+            0.56,
+            0.88
+          ]
+        }
+      ]
+    },
+    "barrel_03": {
+      "role": "household",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/barrel_03/barrel_03_2k/StaticMeshes/barrel_03_2k",
+          "tris": 1473,
+          "size_m": [
+            0.63,
+            0.64,
+            0.93
+          ]
+        }
+      ]
+    },
+    "wooden_crate_01": {
+      "role": "household",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/wooden_crate_01/wooden_crate_01_2k/StaticMeshes/wooden_crate_01_lid",
+          "tris": 692,
+          "size_m": [
+            0.71,
+            0.39,
+            0.04
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/wooden_crate_01/wooden_crate_01_2k/StaticMeshes/wooden_crate_01",
+          "tris": 5508,
+          "size_m": [
+            0.83,
+            0.41,
+            0.32
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/wooden_crate_01/wooden_crate_01_2k/StaticMeshes/wooden_crate_01_latch",
+          "tris": 376,
+          "size_m": [
+            0.03,
+            0.08,
+            0.1
+          ]
+        }
+      ]
+    },
+    "wooden_crate_02": {
+      "role": "household",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/wooden_crate_02/wooden_crate_02_2k/StaticMeshes/wooden_crate_02_crate",
+          "tris": 4492,
+          "size_m": [
+            0.53,
+            1.17,
+            0.45
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/wooden_crate_02/wooden_crate_02_2k/StaticMeshes/wooden_crate_02_lid",
+          "tris": 684,
+          "size_m": [
+            0.48,
+            1.04,
+            0.07
+          ]
+        }
+      ]
+    },
+    "plastic_crate_01": {
+      "role": "household",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/plastic_crate_01/plastic_crate_01_2k/StaticMeshes/plastic_crate_01_2k",
+          "tris": 18320,
+          "size_m": [
+            0.3,
+            0.41,
+            0.26
+          ]
+        }
+      ]
+    },
+    "cardboard_box_01": {
+      "role": "household",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/cardboard_box_01/cardboard_box_01_2k/StaticMeshes/cardboard_box_01_2k",
+          "tris": 16952,
+          "size_m": [
+            0.39,
+            0.52,
+            0.34
+          ]
+        }
+      ]
+    },
+    "plastic_jerrycan": {
+      "role": "household",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/plastic_jerrycan/plastic_jerrycan_2k/StaticMeshes/plastic_jerrycan_2k",
+          "tris": 7348,
+          "size_m": [
+            0.27,
+            0.34,
+            0.32
+          ]
+        }
+      ]
+    },
+    "metal_jerrycan": {
+      "role": "household",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/metal_jerrycan/metal_jerrycan_2k/StaticMeshes/metal_jerrycan_2k",
+          "tris": 20022,
+          "size_m": [
+            0.35,
+            0.17,
+            0.46
+          ]
+        }
+      ]
+    },
+    "plastic_bottle_gallon": {
+      "role": "household",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/plastic_bottle_gallon/plastic_bottle_gallon_2k/StaticMeshes/plastic_bottle_gallon_2k",
+          "tris": 13728,
+          "size_m": [
+            0.17,
+            0.13,
+            0.27
+          ]
+        }
+      ]
+    },
+    "plastic_container": {
+      "role": "household",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/plastic_container/plastic_container_2k/StaticMeshes/plastic_container_2k",
+          "tris": 4070,
+          "size_m": [
+            0.9,
+            0.63,
+            0.43
+          ]
+        }
+      ]
+    },
+    "trashbag": {
+      "role": "household",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/trashbag/trashbag_2k/StaticMeshes/trashbag_2k",
+          "tris": 4482,
+          "size_m": [
+            0.53,
+            0.46,
+            0.57
+          ]
+        }
+      ]
+    },
+    "plastic_monobloc_chair_01": {
+      "role": "household",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/plastic_monobloc_chair_01/plastic_monobloc_chair_01_2k/StaticMeshes/plastic_monobloc_chair_01_2k",
+          "tris": 3356,
+          "size_m": [
+            0.64,
+            0.63,
+            0.88
+          ]
+        }
+      ]
+    },
+    "old_tyre": {
+      "role": "household",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/old_tyre/old_tyre_2k/StaticMeshes/old_tyre_2k",
+          "tris": 2880,
+          "size_m": [
+            0.6,
+            0.17,
+            0.6
+          ]
+        }
+      ]
+    },
+    "rollershutter_door": {
+      "role": "household",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/rollershutter_door/rollershutter_door_2k/StaticMeshes/rollershutter_door",
+          "tris": 552,
+          "size_m": [
+            1.08,
+            0.3,
+            2.4
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/rollershutter_door/rollershutter_door_2k/StaticMeshes/rollershutter_door_graffiti",
+          "tris": 552,
+          "size_m": [
+            1.08,
+            0.3,
+            2.4
+          ]
+        }
+      ]
+    },
+    "covered_car": {
+      "role": "vehicle",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/covered_car/covered_car_2k/StaticMeshes/covered_car_wheel_01",
+          "tris": 2016,
+          "size_m": [
+            0.16,
+            0.6,
+            0.6
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/covered_car/covered_car_2k/StaticMeshes/covered_car_wheel_04",
+          "tris": 2016,
+          "size_m": [
+            0.16,
+            0.6,
+            0.6
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/covered_car/covered_car_2k/StaticMeshes/covered_car_wheel_02",
+          "tris": 2016,
+          "size_m": [
+            0.16,
+            0.6,
+            0.6
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/covered_car/covered_car_2k/StaticMeshes/covered_car_wheel_03",
+          "tris": 2016,
+          "size_m": [
+            0.16,
+            0.6,
+            0.6
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/covered_car/covered_car_2k/StaticMeshes/covered_car",
+          "tris": 4526,
+          "size_m": [
+            1.79,
+            4.38,
+            1.29
+          ]
+        }
+      ]
+    },
+    "fern_02": {
+      "role": "vegetation",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/fern_02/fern_02_2k/StaticMeshes/fern_02_b",
+          "tris": 2384,
+          "size_m": [
+            0.99,
+            0.89,
+            0.43
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/fern_02/fern_02_2k/StaticMeshes/fern_02_c",
+          "tris": 2248,
+          "size_m": [
+            0.87,
+            0.77,
+            0.35
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/fern_02/fern_02_2k/StaticMeshes/fern_02_a",
+          "tris": 784,
+          "size_m": [
+            0.55,
+            0.61,
+            0.29
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/fern_02/fern_02_2k/StaticMeshes/fern_02_d",
+          "tris": 816,
+          "size_m": [
+            0.57,
+            0.59,
+            0.21
+          ]
+        }
+      ]
+    }
+  },
+  "humans": {
+    "Female_Adult_04": {
+      "asset": "/Game/Sightline/Characters/Rocketbox/Female_Adult_04/Female_Adult_04",
+      "height_m": 1.77,
+      "imported": [
+        "AnimSequence",
+        "MaterialInstanceConstant",
+        "PhysicsAsset",
+        "SkeletalMesh",
+        "Skeleton"
+      ]
+    },
+    "Female_Adult_11": {
+      "asset": "/Game/Sightline/Characters/Rocketbox/Female_Adult_11/Female_Adult_11",
+      "height_m": 1.74,
+      "imported": [
+        "AnimSequence",
+        "MaterialInstanceConstant",
+        "PhysicsAsset",
+        "SkeletalMesh",
+        "Skeleton"
+      ]
+    },
+    "Female_Adult_17": {
+      "asset": "/Game/Sightline/Characters/Rocketbox/Female_Adult_17/Female_Adult_17",
+      "height_m": 1.75,
+      "imported": [
+        "AnimSequence",
+        "MaterialInstanceConstant",
+        "PhysicsAsset",
+        "SkeletalMesh",
+        "Skeleton"
+      ]
+    },
+    "Male_Adult_04": {
+      "asset": "/Game/Sightline/Characters/Rocketbox/Male_Adult_04/Male_Adult_04",
+      "height_m": 1.87,
+      "imported": [
+        "AnimSequence",
+        "MaterialInstanceConstant",
+        "PhysicsAsset",
+        "SkeletalMesh",
+        "Skeleton"
+      ]
+    },
+    "Male_Adult_08": {
+      "asset": "/Game/Sightline/Characters/Rocketbox/Male_Adult_08/Male_Adult_08",
+      "height_m": 1.83,
+      "imported": [
+        "AnimSequence",
+        "MaterialInstanceConstant",
+        "PhysicsAsset",
+        "SkeletalMesh",
+        "Skeleton"
+      ]
+    },
+    "Male_Adult_13": {
+      "asset": "/Game/Sightline/Characters/Rocketbox/Male_Adult_13/Male_Adult_13",
+      "height_m": 1.81,
+      "imported": [
+        "AnimSequence",
+        "MaterialInstanceConstant",
+        "PhysicsAsset",
+        "SkeletalMesh",
+        "Skeleton"
+      ]
+    },
+    "Male_Adult_15": {
+      "asset": "/Game/Sightline/Characters/Rocketbox/Male_Adult_15/Male_Adult_15",
+      "height_m": 1.82,
+      "imported": [
+        "AnimSequence",
+        "MaterialInstanceConstant",
+        "PhysicsAsset",
+        "SkeletalMesh",
+        "Skeleton"
+      ]
+    },
+    "Female_Child_02": {
+      "asset": "/Game/Sightline/Characters/Rocketbox/Female_Child_02/Female_Child_02",
+      "height_m": 1.44,
+      "imported": [
+        "AnimSequence",
+        "MaterialInstanceConstant",
+        "PhysicsAsset",
+        "SkeletalMesh",
+        "Skeleton"
+      ]
+    },
+    "Male_Child_02": {
+      "asset": "/Game/Sightline/Characters/Rocketbox/Male_Child_02/Male_Child_02",
+      "height_m": 1.43,
+      "imported": [
+        "AnimSequence",
+        "MaterialInstanceConstant",
+        "PhysicsAsset",
+        "SkeletalMesh",
+        "Skeleton"
+      ]
+    }
+  },
+  "failures": []
+}
