@@ -69,6 +69,17 @@ visual target.
 - **Scene vs `docs/SCENE_REFERENCE.md`**: no trees (the single biggest visual gap), no rubble field on the fan,
   no poles/wires, no boats, houses all pristine, water reads tan rather than green-teal.
 
+### Open finding — thermal (F9b) needs investigation
+`tools/capture/thermal_ids.py` assigns a physically-motivated temperature to every object and encodes it as the
+segmentation ID (`id = round((T_C + 20) / 0.5)`, so grey decodes back to absolute Celsius). All 1162 objects
+accepted the ID, but **the Infrared pass then rendered 100 % grey 0** - nothing. Cosys 3.4.1 runs with
+`InitialInstanceSegmentation: true`, and the suspicion is that the instance-segmentation path has superseded the
+legacy per-object ID that `ImageType.Infrared` reads. Next step: check whether Infrared honours
+`simSetSegmentationObjectID` at all in this build, or whether the **Annotation** layer
+(`simSetAnnotationObjectValue` / `ImageType 11`) is the supported route - the client exposes a full annotation
+API (`simListAnnotationObjects`, `simSetAnnotationObjectColor/Value/ID`) that is probably the intended one.
+Do NOT issue sim calls while a capture flight is running: both share the single AirSim connection.
+
 ### Run order for the scene (all idempotent, PIE OFF)
 ```
 uv run python tools/scene/gen_terrain.py            # host: OBJ + zone masks (now writes vertex normals)

@@ -3,6 +3,12 @@
 Read this first in every session. It is the entry point for continuing work in a new session or account.
 
 ## Read order for a fresh session
+0. **`docs/QUALITY_GATE.md`: MANDATORY.** Eyeball verification is a hard rule. Seven pieces of work in session 3
+   passed every programmatic check and were still wrong (T-posed survivors, one-armed poses, untextured
+   characters, a dataset full of the drone's own propellers, a material that silently failed to compile, a
+   terrain layer completely replaced by another, "unfindable" survivors that were plainly visible). Every one
+   was caught by looking at a picture; none by reading a return value.
+   `docs/SCENE_REFERENCE.md` is the visual target the scene is built to.
 1. `CLAUDE.md` (this file): rules, commands, tooling.
 2. `docs/HANDBOOK.md`: current state, hard rules, machine limits, simulator behaviour that costs hours to
    rediscover, and the traps in the work that comes next. **Read §5 and §6 before touching the sim or the scene.**
@@ -23,6 +29,14 @@ Read this first in every session. It is the entry point for continuing work in a
 - **Guardrail R10:** no code path may delete a record or mark a segment "cleared".
 - **Update the tracker** (`docs/TRACKER.md`) at the end of every meaningful chunk of work, including a
   session-log line, so the next session can resume. Record new facts/decisions in `docs/CONTEXT.md`.
+- **Look at the thing before calling it done.** Render it, open the image, and say what you saw. The engine and
+  Cosys-AirSim both fail silently in the ways catalogued in `docs/CONTEXT.md` §7; a `True` return, a saved
+  asset, a passing schema check and a plausible-looking JSON all coexist happily with a broken scene.
+  `tools/scene/qa_shots.py` (scene), `tools/capture/contact_sheet.py` (dataset) and
+  `tools/capture/validate.py` (dataset, exits non-zero) exist for exactly this.
+- **Fab cannot add assets to this project** - its content has no UE 5.8.2 build, so the compatible-project list
+  is empty even with "Show all projects" ticked. Use Poly Haven (CC0, no login, HTTP API), ambientCG, or
+  generate the geometry, which is how the 73 houses, 63 pose assets and the rubble field were built.
 
 ## Tooling: two MCP servers (configured in `.mcp.json`)
 | Server | Transport | Lives | Use it for |

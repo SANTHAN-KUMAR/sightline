@@ -1,0 +1,5855 @@
+{
+ "generated_by": "tools/capture/thermal_ids.py",
+ "time_of_day": "day",
+ "encoding": {
+  "t_min_c": -20.0,
+  "t_step_c": 0.5,
+  "id_max": 255,
+  "decode": "temp_c = t_min_c + id * t_step_c",
+  "note": "Cosys Infrared renders the segmentation ID directly as grey, so grey == id and this scale makes the 8-bit IR pass decodable to absolute temperature."
+ },
+ "surfaces": {
+  "skin_dry": 34.0,
+  "skin_wet": 29.0,
+  "skin_immersed": 27.5,
+  "water": 27.5,
+  "mud": 32.0,
+  "vegetation": 29.0,
+  "concrete": 52.0,
+  "metal_roof": 64.0,
+  "tile_roof": 48.0,
+  "wood": 38.0,
+  "plastic": 44.0,
+  "rock": 40.0,
+  "vehicle": 55.0,
+  "background": 30.0
+ },
+ "counts": {
+  "background": 138,
+  "mud": 1,
+  "water": 1,
+  "concrete": 40,
+  "tile_roof": 24,
+  "metal_roof": 9,
+  "skin_dry": 60,
+  "skin_immersed": 10,
+  "skin_wet": 1,
+  "rock": 130,
+  "wood": 331,
+  "plastic": 127,
+  "vehicle": 30,
+  "vegetation": 260
+ },
+ "objects": {
+  "SM_SkySphere_0_BP_Sky_Sphere_C_0_76150": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "SM_FloodValley_0_Ground_80134": {
+   "surface": "mud",
+   "temp_c": 32.0,
+   "id": 104
+  },
+  "Plane_0_FloodWater_80126": {
+   "surface": "water",
+   "temp_c": 27.5,
+   "id": 95
+  },
+  "SM_E_flat_1s_0_StaticMeshActor_0_80120": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_B_flat_2s_0_StaticMeshActor_1_80118": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_D_tile_2s_0_StaticMeshActor_2_80116": {
+   "surface": "tile_roof",
+   "temp_c": 48.0,
+   "id": 136
+  },
+  "SM_A_tile_1s_0_StaticMeshActor_3_80114": {
+   "surface": "tile_roof",
+   "temp_c": 48.0,
+   "id": 136
+  },
+  "SM_A_tile_1s_0_StaticMeshActor_4_80112": {
+   "surface": "tile_roof",
+   "temp_c": 48.0,
+   "id": 136
+  },
+  "SM_D_tile_2s_0_StaticMeshActor_5_80110": {
+   "surface": "tile_roof",
+   "temp_c": 48.0,
+   "id": 136
+  },
+  "SM_B_flat_2s_0_StaticMeshActor_6_80108": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_D_tile_2s_0_StaticMeshActor_7_80106": {
+   "surface": "tile_roof",
+   "temp_c": 48.0,
+   "id": 136
+  },
+  "SM_B_flat_2s_0_StaticMeshActor_8_80104": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_D_tile_2s_0_StaticMeshActor_9_80102": {
+   "surface": "tile_roof",
+   "temp_c": 48.0,
+   "id": 136
+  },
+  "SM_B_flat_2s_0_StaticMeshActor_10_80100": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_D_tile_2s_0_StaticMeshActor_11_80098": {
+   "surface": "tile_roof",
+   "temp_c": 48.0,
+   "id": 136
+  },
+  "SM_B_flat_2s_0_StaticMeshActor_12_80096": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_B_flat_2s_0_StaticMeshActor_13_80094": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_A_tile_1s_0_StaticMeshActor_14_80092": {
+   "surface": "tile_roof",
+   "temp_c": 48.0,
+   "id": 136
+  },
+  "SM_B_flat_2s_0_StaticMeshActor_15_80090": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_A_tile_1s_0_StaticMeshActor_16_80088": {
+   "surface": "tile_roof",
+   "temp_c": 48.0,
+   "id": 136
+  },
+  "SM_C_sheet_1s_0_StaticMeshActor_17_80086": {
+   "surface": "metal_roof",
+   "temp_c": 64.0,
+   "id": 168
+  },
+  "SM_E_flat_1s_0_StaticMeshActor_18_80084": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_A_tile_1s_0_StaticMeshActor_19_80082": {
+   "surface": "tile_roof",
+   "temp_c": 48.0,
+   "id": 136
+  },
+  "SM_D_tile_2s_0_StaticMeshActor_20_80080": {
+   "surface": "tile_roof",
+   "temp_c": 48.0,
+   "id": 136
+  },
+  "SM_A_tile_1s_0_StaticMeshActor_21_80078": {
+   "surface": "tile_roof",
+   "temp_c": 48.0,
+   "id": 136
+  },
+  "SM_D_tile_2s_0_StaticMeshActor_22_80076": {
+   "surface": "tile_roof",
+   "temp_c": 48.0,
+   "id": 136
+  },
+  "SM_B_flat_2s_0_StaticMeshActor_23_80074": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_B_flat_2s_0_StaticMeshActor_24_80072": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_B_flat_2s_0_StaticMeshActor_25_80070": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_C_sheet_1s_0_StaticMeshActor_26_80068": {
+   "surface": "metal_roof",
+   "temp_c": 64.0,
+   "id": 168
+  },
+  "SM_C_sheet_1s_0_StaticMeshActor_27_80066": {
+   "surface": "metal_roof",
+   "temp_c": 64.0,
+   "id": 168
+  },
+  "SM_B_flat_2s_0_StaticMeshActor_28_80064": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_C_sheet_1s_0_StaticMeshActor_29_80062": {
+   "surface": "metal_roof",
+   "temp_c": 64.0,
+   "id": 168
+  },
+  "SM_D_tile_2s_0_StaticMeshActor_30_80060": {
+   "surface": "tile_roof",
+   "temp_c": 48.0,
+   "id": 136
+  },
+  "SM_E_flat_1s_0_StaticMeshActor_31_80058": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_E_flat_1s_0_StaticMeshActor_32_80056": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_B_flat_2s_0_StaticMeshActor_33_80054": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_C_sheet_1s_0_StaticMeshActor_34_80052": {
+   "surface": "metal_roof",
+   "temp_c": 64.0,
+   "id": 168
+  },
+  "SM_C_sheet_1s_0_StaticMeshActor_35_80050": {
+   "surface": "metal_roof",
+   "temp_c": 64.0,
+   "id": 168
+  },
+  "SM_B_flat_2s_0_StaticMeshActor_36_80048": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_C_sheet_1s_0_StaticMeshActor_37_80046": {
+   "surface": "metal_roof",
+   "temp_c": 64.0,
+   "id": 168
+  },
+  "SM_B_flat_2s_0_StaticMeshActor_38_80044": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_A_tile_1s_0_StaticMeshActor_39_80042": {
+   "surface": "tile_roof",
+   "temp_c": 48.0,
+   "id": 136
+  },
+  "SM_E_flat_1s_0_StaticMeshActor_40_80040": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_B_flat_2s_0_StaticMeshActor_41_80038": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_D_tile_2s_0_StaticMeshActor_42_80036": {
+   "surface": "tile_roof",
+   "temp_c": 48.0,
+   "id": 136
+  },
+  "SM_A_tile_1s_0_StaticMeshActor_43_80034": {
+   "surface": "tile_roof",
+   "temp_c": 48.0,
+   "id": 136
+  },
+  "SM_A_tile_1s_0_StaticMeshActor_44_80032": {
+   "surface": "tile_roof",
+   "temp_c": 48.0,
+   "id": 136
+  },
+  "SM_B_flat_2s_0_StaticMeshActor_45_80030": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_B_flat_2s_0_StaticMeshActor_46_80028": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_E_flat_1s_0_StaticMeshActor_47_80026": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_D_tile_2s_0_StaticMeshActor_48_80024": {
+   "surface": "tile_roof",
+   "temp_c": 48.0,
+   "id": 136
+  },
+  "SM_B_flat_2s_0_StaticMeshActor_49_80022": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_B_flat_2s_0_StaticMeshActor_50_80020": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_E_flat_1s_0_StaticMeshActor_51_80018": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_E_flat_1s_0_StaticMeshActor_52_80016": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_B_flat_2s_0_StaticMeshActor_53_80014": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_E_flat_1s_0_StaticMeshActor_54_80012": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_E_flat_1s_0_StaticMeshActor_55_80010": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_E_flat_1s_0_StaticMeshActor_56_80008": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_E_flat_1s_0_StaticMeshActor_57_80006": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_A_tile_1s_0_StaticMeshActor_58_80004": {
+   "surface": "tile_roof",
+   "temp_c": 48.0,
+   "id": 136
+  },
+  "SM_B_flat_2s_0_StaticMeshActor_59_80002": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_A_tile_1s_0_StaticMeshActor_60_80000": {
+   "surface": "tile_roof",
+   "temp_c": 48.0,
+   "id": 136
+  },
+  "SM_B_flat_2s_0_StaticMeshActor_61_79998": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_E_flat_1s_0_StaticMeshActor_62_79996": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_E_flat_1s_0_StaticMeshActor_63_79994": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_D_tile_2s_0_StaticMeshActor_64_79992": {
+   "surface": "tile_roof",
+   "temp_c": 48.0,
+   "id": 136
+  },
+  "SM_B_flat_2s_0_StaticMeshActor_65_79990": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_D_tile_2s_0_StaticMeshActor_66_79988": {
+   "surface": "tile_roof",
+   "temp_c": 48.0,
+   "id": 136
+  },
+  "SM_B_flat_2s_0_StaticMeshActor_67_79986": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_C_sheet_1s_0_StaticMeshActor_68_79984": {
+   "surface": "metal_roof",
+   "temp_c": 64.0,
+   "id": 168
+  },
+  "SM_A_tile_1s_0_StaticMeshActor_69_79982": {
+   "surface": "tile_roof",
+   "temp_c": 48.0,
+   "id": 136
+  },
+  "SM_C_sheet_1s_0_StaticMeshActor_70_79980": {
+   "surface": "metal_roof",
+   "temp_c": 64.0,
+   "id": 168
+  },
+  "SM_E_flat_1s_0_StaticMeshActor_71_79978": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "SM_E_flat_1s_0_StaticMeshActor_72_79976": {
+   "surface": "concrete",
+   "temp_c": 52.0,
+   "id": 144
+  },
+  "Human_000_79974": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_001_79972": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_002_79970": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_003_79968": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_004_79966": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_005_79964": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_006_79962": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_007_79960": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_008_79958": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_009_79956": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_010_79954": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_011_79952": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_012_79950": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_013_79948": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_014_79946": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_015_79944": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_016_79942": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_017_79940": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_018_79938": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_019_79936": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_020_79934": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_021_79932": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_022_79930": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_023_79928": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_024_79926": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_025_79924": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_026_79922": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_027_79920": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_028_79918": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_029_79916": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_030_79914": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_031_79912": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_032_79910": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_033_79908": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_034_79906": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_035_79904": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_036_79902": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_037_79900": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_038_79898": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_039_79896": {
+   "surface": "skin_immersed",
+   "temp_c": 27.5,
+   "id": 95
+  },
+  "Human_040_79894": {
+   "surface": "skin_immersed",
+   "temp_c": 27.5,
+   "id": 95
+  },
+  "Human_041_79892": {
+   "surface": "skin_immersed",
+   "temp_c": 27.5,
+   "id": 95
+  },
+  "Human_042_79890": {
+   "surface": "skin_immersed",
+   "temp_c": 27.5,
+   "id": 95
+  },
+  "Human_043_79888": {
+   "surface": "skin_immersed",
+   "temp_c": 27.5,
+   "id": 95
+  },
+  "Human_044_79886": {
+   "surface": "skin_immersed",
+   "temp_c": 27.5,
+   "id": 95
+  },
+  "Human_045_79884": {
+   "surface": "skin_immersed",
+   "temp_c": 27.5,
+   "id": 95
+  },
+  "Human_046_79882": {
+   "surface": "skin_immersed",
+   "temp_c": 27.5,
+   "id": 95
+  },
+  "Human_047_79880": {
+   "surface": "skin_immersed",
+   "temp_c": 27.5,
+   "id": 95
+  },
+  "Human_048_79878": {
+   "surface": "skin_immersed",
+   "temp_c": 27.5,
+   "id": 95
+  },
+  "Human_049_79876": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_050_79874": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_051_79872": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_052_79870": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_053_79868": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_054_79866": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_055_79864": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_056_79862": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_057_79860": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_058_79858": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_059_79856": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_060_79854": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_061_79852": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_062_79850": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_063_79848": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_064_79846": {
+   "surface": "skin_wet",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "Human_065_79844": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_066_79842": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_067_79840": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_068_79838": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_069_79836": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "Human_070_79834": {
+   "surface": "skin_dry",
+   "temp_c": 34.0,
+   "id": 108
+  },
+  "rock_moss_set_02_rock08_0_StaticMeshActor_974_79832": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock02_0_StaticMeshActor_975_79830": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_976_79828": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_977_79826": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_01_rock03_0_StaticMeshActor_978_79824": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock06_0_StaticMeshActor_979_79822": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock09_0_StaticMeshActor_980_79820": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock02_0_StaticMeshActor_981_79818": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock02_0_StaticMeshActor_982_79816": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock11_0_StaticMeshActor_983_79814": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock06_0_StaticMeshActor_984_79812": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_985_79810": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_986_79808": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_02_rock08_0_StaticMeshActor_987_79806": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_988_79804": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_989_79802": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_990_79800": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_991_79798": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_992_79796": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_01_rock03_0_StaticMeshActor_993_79794": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock02_0_StaticMeshActor_994_79792": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock04_0_StaticMeshActor_995_79790": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_996_79788": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_02_rock08_0_StaticMeshActor_997_79786": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock02_0_StaticMeshActor_998_79784": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock01_0_StaticMeshActor_999_79782": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock09_0_StaticMeshActor_1000_79780": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1001_79778": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_01_rock01_0_StaticMeshActor_1002_79776": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1003_79774": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1004_79772": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_01_rock02_0_StaticMeshActor_1005_79770": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1006_79768": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_01_rock01_0_StaticMeshActor_1007_79766": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock12_0_StaticMeshActor_1008_79764": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock10_0_StaticMeshActor_1009_79762": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1010_79760": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1011_79758": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1012_79756": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1013_79754": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1014_79752": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_01_rock06_0_StaticMeshActor_1015_79750": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1016_79748": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_02_rock13_0_StaticMeshActor_1017_79746": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock12_0_StaticMeshActor_1018_79744": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock12_0_StaticMeshActor_1019_79742": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock07_0_StaticMeshActor_1020_79740": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock13_0_StaticMeshActor_1021_79738": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock10_0_StaticMeshActor_1022_79736": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1023_79734": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1024_79732": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1025_79730": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_01_rock03_0_StaticMeshActor_1026_79728": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock01_0_StaticMeshActor_1027_79726": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock04_0_StaticMeshActor_1028_79724": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock04_0_StaticMeshActor_1029_79722": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock11_0_StaticMeshActor_1030_79720": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock02_0_StaticMeshActor_1031_79718": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock10_0_StaticMeshActor_1032_79716": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock06_0_StaticMeshActor_1033_79714": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1034_79712": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1035_79710": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1036_79708": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1037_79706": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1038_79704": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1039_79702": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1040_79700": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_02_rock12_0_StaticMeshActor_1041_79698": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1042_79696": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_02_rock12_0_StaticMeshActor_1043_79694": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1044_79692": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_01_rock01_0_StaticMeshActor_1045_79690": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock06_0_StaticMeshActor_1046_79688": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1047_79686": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_02_rock12_0_StaticMeshActor_1048_79684": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock02_0_StaticMeshActor_1049_79682": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1050_79680": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1051_79678": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_02_rock07_0_StaticMeshActor_1052_79676": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1053_79674": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1054_79672": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_01_rock06_0_StaticMeshActor_1055_79670": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1056_79668": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1057_79666": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_02_rock10_0_StaticMeshActor_1058_79664": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1059_79662": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1060_79660": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1061_79658": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_01_rock01_0_StaticMeshActor_1062_79656": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock09_0_StaticMeshActor_1063_79654": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock13_0_StaticMeshActor_1064_79652": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1065_79650": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1066_79648": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1067_79646": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1068_79644": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1069_79642": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1070_79640": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_02_rock12_0_StaticMeshActor_1071_79638": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1072_79636": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1073_79634": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_02_rock09_0_StaticMeshActor_1074_79632": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1075_79630": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_01_rock02_0_StaticMeshActor_1076_79628": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock09_0_StaticMeshActor_1077_79626": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1078_79624": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1079_79622": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1080_79620": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_01_rock02_0_StaticMeshActor_1081_79618": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock02_0_StaticMeshActor_1082_79616": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1083_79614": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1084_79612": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_02_rock08_0_StaticMeshActor_1085_79610": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock08_0_StaticMeshActor_1086_79608": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock01_0_StaticMeshActor_1087_79606": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1088_79604": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_01_rock04_0_StaticMeshActor_1089_79602": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1090_79600": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_01_rock01_0_StaticMeshActor_1091_79598": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1092_79596": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1093_79594": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1094_79592": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1095_79590": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_01_rock03_0_StaticMeshActor_1096_79588": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock08_0_StaticMeshActor_1097_79586": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1098_79584": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1099_79582": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_02_rock11_0_StaticMeshActor_1100_79580": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1101_79578": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1102_79576": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1103_79574": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_02_rock09_0_StaticMeshActor_1104_79572": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock04_0_StaticMeshActor_1105_79570": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1106_79568": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_01_rock06_0_StaticMeshActor_1107_79566": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock13_0_StaticMeshActor_1108_79564": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock04_0_StaticMeshActor_1109_79562": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock04_0_StaticMeshActor_1110_79560": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1111_79558": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1112_79556": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_02_rock10_0_StaticMeshActor_1113_79554": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1114_79552": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_01_rock02_0_StaticMeshActor_1115_79550": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock01_0_StaticMeshActor_1116_79548": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1117_79546": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_02_rock13_0_StaticMeshActor_1118_79544": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock12_0_StaticMeshActor_1119_79542": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1120_79540": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_02_rock07_0_StaticMeshActor_1121_79538": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1122_79536": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1123_79534": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_01_rock02_0_StaticMeshActor_1124_79532": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock06_0_StaticMeshActor_1125_79530": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1126_79528": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1127_79526": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_02_rock09_0_StaticMeshActor_1128_79524": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock11_0_StaticMeshActor_1129_79522": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock11_0_StaticMeshActor_1130_79520": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock13_0_StaticMeshActor_1131_79518": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock08_0_StaticMeshActor_1132_79516": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock03_0_StaticMeshActor_1133_79514": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1134_79512": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1135_79510": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_01_rock03_0_StaticMeshActor_1136_79508": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1137_79506": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_01_rock06_0_StaticMeshActor_1138_79504": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock06_0_StaticMeshActor_1139_79502": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock01_0_StaticMeshActor_1140_79500": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1141_79498": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1142_79496": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_02_rock07_0_StaticMeshActor_1143_79494": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1144_79492": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1145_79490": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_02_rock13_0_StaticMeshActor_1146_79488": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock11_0_StaticMeshActor_1147_79486": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1148_79484": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1149_79482": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1150_79480": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1151_79478": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_02_rock07_0_StaticMeshActor_1152_79476": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1153_79474": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1154_79472": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1155_79470": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1156_79468": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_01_rock06_0_StaticMeshActor_1157_79466": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock11_0_StaticMeshActor_1158_79464": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock03_0_StaticMeshActor_1159_79462": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1160_79460": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1161_79458": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1162_79456": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1163_79454": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1164_79452": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_01_rock02_0_StaticMeshActor_1165_79450": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1166_79448": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_01_rock04_0_StaticMeshActor_1167_79446": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1168_79444": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1169_79442": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_02_rock09_0_StaticMeshActor_1170_79440": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1171_79438": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_02_rock11_0_StaticMeshActor_1172_79436": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1173_79434": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1174_79432": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1175_79430": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1176_79428": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1177_79426": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_02_rock10_0_StaticMeshActor_1178_79424": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock12_0_StaticMeshActor_1179_79422": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1180_79420": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1181_79418": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_01_rock03_0_StaticMeshActor_1182_79416": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1183_79414": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_02_rock10_0_StaticMeshActor_1184_79412": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1185_79410": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1186_79408": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1187_79406": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_02_rock11_0_StaticMeshActor_1188_79404": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock12_0_StaticMeshActor_1189_79402": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock03_0_StaticMeshActor_1190_79400": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1191_79398": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_01_rock02_0_StaticMeshActor_1192_79396": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1193_79394": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_02_rock08_0_StaticMeshActor_1194_79392": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1195_79390": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1196_79388": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1197_79386": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_02_rock07_0_StaticMeshActor_1198_79384": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1199_79382": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_02_rock07_0_StaticMeshActor_1200_79380": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1201_79378": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_01_rock04_0_StaticMeshActor_1202_79376": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock13_0_StaticMeshActor_1203_79374": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock10_0_StaticMeshActor_1204_79372": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock07_0_StaticMeshActor_1205_79370": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock01_0_StaticMeshActor_1206_79368": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock08_0_StaticMeshActor_1207_79366": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock09_0_StaticMeshActor_1208_79364": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock13_0_StaticMeshActor_1209_79362": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock12_0_StaticMeshActor_1210_79360": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1211_79358": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1212_79356": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1213_79354": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_01_latch_0_StaticMeshActor_1214_79352": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "Barrel_01_2k_0_StaticMeshActor_1215_79350": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_02_lid_0_StaticMeshActor_1216_79348": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1217_79346": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "trashbag_2k_0_StaticMeshActor_1218_79344": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1219_79342": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_02_lid_0_StaticMeshActor_1220_79340": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "old_tyre_2k_0_StaticMeshActor_1221_79338": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "old_tyre_2k_0_StaticMeshActor_1222_79336": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1223_79334": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1224_79332": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_02_lid_0_StaticMeshActor_1225_79330": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1226_79328": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "Barrel_01_2k_0_StaticMeshActor_1227_79326": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "rollershutter_door_0_StaticMeshActor_1228_79324": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "barrel_03_2k_0_StaticMeshActor_1229_79322": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "plastic_monobloc_chair_01_2k_0_StaticMeshActor_1230_79320": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_01_latch_0_StaticMeshActor_1231_79318": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "plastic_monobloc_chair_01_2k_0_StaticMeshActor_1232_79316": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1233_79314": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1234_79312": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rollershutter_door_graffiti_0_StaticMeshActor_1235_79310": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "wooden_crate_02_crate_0_StaticMeshActor_1236_79308": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1237_79306": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_01_lid_0_StaticMeshActor_1238_79304": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "barrel_03_2k_0_StaticMeshActor_1239_79302": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_01_lid_0_StaticMeshActor_1240_79300": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_01_lid_0_StaticMeshActor_1241_79298": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_02_lid_0_StaticMeshActor_1242_79296": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_01_latch_0_StaticMeshActor_1243_79294": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_02_crate_0_StaticMeshActor_1244_79292": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_01_latch_0_StaticMeshActor_1245_79290": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "old_tyre_2k_0_StaticMeshActor_1246_79288": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1247_79286": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "Barrel_01_2k_0_StaticMeshActor_1248_79284": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "trashbag_2k_0_StaticMeshActor_1249_79282": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "barrel_03_2k_0_StaticMeshActor_1250_79280": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "old_tyre_2k_0_StaticMeshActor_1251_79278": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1252_79276": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1253_79274": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1254_79272": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "plastic_monobloc_chair_01_2k_0_StaticMeshActor_1255_79270": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "plastic_container_2k_0_StaticMeshActor_1256_79268": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "trashbag_2k_0_StaticMeshActor_1257_79266": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_02_lid_0_StaticMeshActor_1258_79264": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1259_79262": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_01_lid_0_StaticMeshActor_1260_79260": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1261_79258": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "Barrel_01_2k_0_StaticMeshActor_1262_79256": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1263_79254": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1264_79252": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1265_79250": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_02_crate_0_StaticMeshActor_1266_79248": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rollershutter_door_graffiti_0_StaticMeshActor_1267_79246": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "plastic_container_2k_0_StaticMeshActor_1268_79244": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "barrel_03_2k_0_StaticMeshActor_1269_79242": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "plastic_container_2k_0_StaticMeshActor_1270_79240": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "plastic_monobloc_chair_01_2k_0_StaticMeshActor_1271_79238": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "rollershutter_door_graffiti_0_StaticMeshActor_1272_79236": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "wooden_crate_02_crate_0_StaticMeshActor_1273_79234": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1274_79232": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rollershutter_door_0_StaticMeshActor_1275_79230": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1276_79228": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "old_tyre_2k_0_StaticMeshActor_1277_79226": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "plastic_monobloc_chair_01_2k_0_StaticMeshActor_1278_79224": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "plastic_container_2k_0_StaticMeshActor_1279_79222": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1280_79220": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rollershutter_door_0_StaticMeshActor_1281_79218": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "rollershutter_door_graffiti_0_StaticMeshActor_1282_79216": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1283_79214": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "barrel_03_2k_0_StaticMeshActor_1284_79212": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "trashbag_2k_0_StaticMeshActor_1285_79210": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "rollershutter_door_graffiti_0_StaticMeshActor_1286_79208": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "wooden_crate_02_lid_0_StaticMeshActor_1287_79206": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_02_lid_0_StaticMeshActor_1288_79204": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "plastic_container_2k_0_StaticMeshActor_1289_79202": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "plastic_container_2k_0_StaticMeshActor_1290_79200": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "trashbag_2k_0_StaticMeshActor_1291_79198": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_01_latch_0_StaticMeshActor_1292_79196": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rollershutter_door_0_StaticMeshActor_1293_79194": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "wooden_crate_01_lid_0_StaticMeshActor_1294_79192": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1295_79190": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_02_crate_0_StaticMeshActor_1296_79188": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1297_79186": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "trashbag_2k_0_StaticMeshActor_1298_79184": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1299_79182": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "old_tyre_2k_0_StaticMeshActor_1300_79180": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1301_79178": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_02_lid_0_StaticMeshActor_1302_79176": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1303_79174": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_02_crate_0_StaticMeshActor_1304_79172": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1305_79170": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1306_79168": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_02_crate_0_StaticMeshActor_1307_79166": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1308_79164": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "old_tyre_2k_0_StaticMeshActor_1309_79162": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "plastic_monobloc_chair_01_2k_0_StaticMeshActor_1310_79160": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_02_crate_0_StaticMeshActor_1311_79158": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rollershutter_door_graffiti_0_StaticMeshActor_1312_79156": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1313_79154": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1314_79152": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "old_tyre_2k_0_StaticMeshActor_1315_79150": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1316_79148": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_01_latch_0_StaticMeshActor_1317_79146": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_01_latch_0_StaticMeshActor_1318_79144": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rollershutter_door_0_StaticMeshActor_1319_79142": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1320_79140": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1321_79138": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1322_79136": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1323_79134": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1324_79132": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_01_lid_0_StaticMeshActor_1325_79130": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1326_79128": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "barrel_03_2k_0_StaticMeshActor_1327_79126": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "plastic_container_2k_0_StaticMeshActor_1328_79124": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "plastic_container_2k_0_StaticMeshActor_1329_79122": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_01_latch_0_StaticMeshActor_1330_79120": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1331_79118": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1332_79116": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1333_79114": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1334_79112": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "barrel_03_2k_0_StaticMeshActor_1335_79110": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "Barrel_01_2k_0_StaticMeshActor_1336_79108": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1337_79106": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "plastic_monobloc_chair_01_2k_0_StaticMeshActor_1338_79104": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "barrel_03_2k_0_StaticMeshActor_1339_79102": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_01_lid_0_StaticMeshActor_1340_79100": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "barrel_03_2k_0_StaticMeshActor_1341_79098": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "trashbag_2k_0_StaticMeshActor_1342_79096": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1343_79094": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_01_lid_0_StaticMeshActor_1344_79092": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_01_latch_0_StaticMeshActor_1345_79090": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1346_79088": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "old_tyre_2k_0_StaticMeshActor_1347_79086": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1348_79084": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1349_79082": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_02_crate_0_StaticMeshActor_1350_79080": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "plastic_monobloc_chair_01_2k_0_StaticMeshActor_1351_79078": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "plastic_container_2k_0_StaticMeshActor_1352_79076": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "trashbag_2k_0_StaticMeshActor_1353_79074": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_02_lid_0_StaticMeshActor_1354_79072": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "barrel_03_2k_0_StaticMeshActor_1355_79070": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "old_tyre_2k_0_StaticMeshActor_1356_79068": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_01_latch_0_StaticMeshActor_1357_79066": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "plastic_monobloc_chair_01_2k_0_StaticMeshActor_1358_79064": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1359_79062": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_01_lid_0_StaticMeshActor_1360_79060": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_01_lid_0_StaticMeshActor_1361_79058": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_02_lid_0_StaticMeshActor_1362_79056": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_02_crate_0_StaticMeshActor_1363_79054": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "barrel_03_2k_0_StaticMeshActor_1364_77212": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_02_crate_0_StaticMeshActor_1365_77210": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "Barrel_01_2k_0_StaticMeshActor_1366_77208": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_01_latch_0_StaticMeshActor_1367_77206": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rollershutter_door_0_StaticMeshActor_1368_77204": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "wooden_crate_02_lid_0_StaticMeshActor_1369_77202": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "trashbag_2k_0_StaticMeshActor_1370_77200": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "rollershutter_door_0_StaticMeshActor_1371_77198": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "wooden_crate_02_lid_0_StaticMeshActor_1372_77196": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "Barrel_01_2k_0_StaticMeshActor_1373_77194": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "rollershutter_door_graffiti_0_StaticMeshActor_1374_77192": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "wooden_crate_02_crate_0_StaticMeshActor_1375_77190": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_01_latch_0_StaticMeshActor_1376_77188": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "trashbag_2k_0_StaticMeshActor_1377_77186": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "trashbag_2k_0_StaticMeshActor_1378_77184": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "old_tyre_2k_0_StaticMeshActor_1379_77182": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "trashbag_2k_0_StaticMeshActor_1380_77180": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "rollershutter_door_graffiti_0_StaticMeshActor_1381_77178": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "plastic_monobloc_chair_01_2k_0_StaticMeshActor_1382_77176": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_01_latch_0_StaticMeshActor_1383_77174": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_01_latch_0_StaticMeshActor_1384_77172": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "barrel_03_2k_0_StaticMeshActor_1385_77170": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "trashbag_2k_0_StaticMeshActor_1386_77168": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "rollershutter_door_0_StaticMeshActor_1387_77166": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1388_77164": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1389_77162": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1390_77160": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "barrel_03_2k_0_StaticMeshActor_1391_77158": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_01_lid_0_StaticMeshActor_1392_77156": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1393_77154": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1394_77152": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_01_latch_0_StaticMeshActor_1395_77150": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rollershutter_door_0_StaticMeshActor_1396_77148": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "barrel_03_2k_0_StaticMeshActor_1397_77146": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_02_crate_0_StaticMeshActor_1398_77144": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "Barrel_01_2k_0_StaticMeshActor_1399_77142": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "barrel_03_2k_0_StaticMeshActor_1400_77140": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1401_77138": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1402_77136": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1403_77134": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "old_tyre_2k_0_StaticMeshActor_1404_77132": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "plastic_container_2k_0_StaticMeshActor_1405_77130": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "plastic_monobloc_chair_01_2k_0_StaticMeshActor_1406_77128": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1407_77126": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rollershutter_door_graffiti_0_StaticMeshActor_1408_77124": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1409_77122": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "Barrel_01_2k_0_StaticMeshActor_1410_77120": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1411_77118": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "plastic_monobloc_chair_01_2k_0_StaticMeshActor_1412_77116": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_01_lid_0_StaticMeshActor_1413_77114": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_01_lid_0_StaticMeshActor_1414_77112": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_01_lid_0_StaticMeshActor_1415_77110": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_01_lid_0_StaticMeshActor_1416_77108": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1417_77106": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1418_77104": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1419_77102": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "barrel_03_2k_0_StaticMeshActor_1420_77100": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "Barrel_01_2k_0_StaticMeshActor_1421_77098": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_02_crate_0_StaticMeshActor_1422_77096": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1423_77094": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1424_77092": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1425_77090": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_01_lid_0_StaticMeshActor_1426_77088": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "old_tyre_2k_0_StaticMeshActor_1427_77086": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "barrel_03_2k_0_StaticMeshActor_1428_77084": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "old_tyre_2k_0_StaticMeshActor_1429_77082": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1430_77080": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "barrel_03_2k_0_StaticMeshActor_1431_77078": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_01_latch_0_StaticMeshActor_1432_77076": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_02_lid_0_StaticMeshActor_1433_77074": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_01_lid_0_StaticMeshActor_1434_77072": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_02_lid_0_StaticMeshActor_1435_77070": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rollershutter_door_graffiti_0_StaticMeshActor_1436_77068": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "wooden_crate_02_lid_0_StaticMeshActor_1437_77066": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1438_77064": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_01_latch_0_StaticMeshActor_1439_77062": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "plastic_container_2k_0_StaticMeshActor_1440_77060": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "plastic_container_2k_0_StaticMeshActor_1441_77058": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "rollershutter_door_graffiti_0_StaticMeshActor_1442_77056": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1443_77054": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1444_77052": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1445_77050": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1446_77048": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rollershutter_door_0_StaticMeshActor_1447_77046": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "plastic_monobloc_chair_01_2k_0_StaticMeshActor_1448_77044": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "rollershutter_door_0_StaticMeshActor_1449_77042": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "wooden_crate_01_lid_0_StaticMeshActor_1450_77040": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1451_77038": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1452_77036": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "old_tyre_2k_0_StaticMeshActor_1453_77034": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "trashbag_2k_0_StaticMeshActor_1454_77032": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "plastic_container_2k_0_StaticMeshActor_1455_77030": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "barrel_03_2k_0_StaticMeshActor_1456_77028": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1457_77026": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_02_lid_0_StaticMeshActor_1458_77024": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "barrel_03_2k_0_StaticMeshActor_1459_77022": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1460_77020": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "old_tyre_2k_0_StaticMeshActor_1461_77018": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1462_77016": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1463_77014": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_02_crate_0_StaticMeshActor_1464_77012": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_01_latch_0_StaticMeshActor_1465_77010": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_02_crate_0_StaticMeshActor_1466_77008": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_01_lid_0_StaticMeshActor_1467_77006": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "plastic_container_2k_0_StaticMeshActor_1468_77004": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_02_crate_0_StaticMeshActor_1469_77002": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "old_tyre_2k_0_StaticMeshActor_1470_77000": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "Barrel_01_2k_0_StaticMeshActor_1471_76998": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_02_crate_0_StaticMeshActor_1472_76996": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rollershutter_door_0_StaticMeshActor_1473_76994": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "rollershutter_door_graffiti_0_StaticMeshActor_1474_76992": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1475_76990": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_02_lid_0_StaticMeshActor_1476_76988": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1477_76986": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1478_76984": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_01_latch_0_StaticMeshActor_1479_76982": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "old_tyre_2k_0_StaticMeshActor_1480_76980": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1481_76978": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "plastic_monobloc_chair_01_2k_0_StaticMeshActor_1482_76976": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "rollershutter_door_graffiti_0_StaticMeshActor_1483_76974": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "wooden_crate_02_crate_0_StaticMeshActor_1484_76972": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "trashbag_2k_0_StaticMeshActor_1485_76970": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "rollershutter_door_0_StaticMeshActor_1486_76968": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1487_76966": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "barrel_03_2k_0_StaticMeshActor_1488_76964": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1489_76962": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_02_lid_0_StaticMeshActor_1490_76960": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "barrel_03_2k_0_StaticMeshActor_1491_76958": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "barrel_03_2k_0_StaticMeshActor_1492_76956": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_01_latch_0_StaticMeshActor_1493_76954": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1494_76952": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_01_latch_0_StaticMeshActor_1495_76950": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "plastic_container_2k_0_StaticMeshActor_1496_76948": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_01_latch_0_StaticMeshActor_1497_76946": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "old_tyre_2k_0_StaticMeshActor_1498_76944": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_02_crate_0_StaticMeshActor_1499_76942": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1500_76940": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "plastic_container_2k_0_StaticMeshActor_1501_76938": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "Barrel_01_2k_0_StaticMeshActor_1502_76936": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1503_76934": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "Barrel_01_2k_0_StaticMeshActor_1504_76932": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1505_76930": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1506_76928": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_02_lid_0_StaticMeshActor_1507_76926": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "Barrel_01_2k_0_StaticMeshActor_1508_76924": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1509_76922": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "plastic_monobloc_chair_01_2k_0_StaticMeshActor_1510_76920": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1511_76918": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_01_latch_0_StaticMeshActor_1512_76916": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "Barrel_01_2k_0_StaticMeshActor_1513_76914": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_01_latch_0_StaticMeshActor_1514_76912": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rollershutter_door_0_StaticMeshActor_1515_76910": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "wooden_crate_02_crate_0_StaticMeshActor_1516_76908": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "old_tyre_2k_0_StaticMeshActor_1517_76906": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_02_crate_0_StaticMeshActor_1518_76904": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_01_lid_0_StaticMeshActor_1519_76902": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1520_76900": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_01_lid_0_StaticMeshActor_1521_76898": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_01_lid_0_StaticMeshActor_1522_76896": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1523_76894": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "trashbag_2k_0_StaticMeshActor_1524_76892": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "barrel_03_2k_0_StaticMeshActor_1525_76890": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1526_76888": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "old_tyre_2k_0_StaticMeshActor_1527_76886": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "rollershutter_door_graffiti_0_StaticMeshActor_1528_76884": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "wooden_crate_01_lid_0_StaticMeshActor_1529_76882": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1530_76880": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rollershutter_door_0_StaticMeshActor_1531_76878": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1532_76876": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_01_lid_0_StaticMeshActor_1533_76874": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rollershutter_door_graffiti_0_StaticMeshActor_1534_76872": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "barrel_03_2k_0_StaticMeshActor_1535_76870": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "plastic_monobloc_chair_01_2k_0_StaticMeshActor_1536_76868": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_02_crate_0_StaticMeshActor_1537_76866": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "Barrel_01_2k_0_StaticMeshActor_1538_76864": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "rollershutter_door_graffiti_0_StaticMeshActor_1539_76862": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "rollershutter_door_graffiti_0_StaticMeshActor_1540_76860": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "rollershutter_door_0_StaticMeshActor_1541_76858": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "trashbag_2k_0_StaticMeshActor_1542_76856": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_01_latch_0_StaticMeshActor_1543_76854": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rollershutter_door_graffiti_0_StaticMeshActor_1544_76852": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "wooden_crate_02_lid_0_StaticMeshActor_1545_76850": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_b_0_StaticMeshActor_1546_76848": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "plastic_monobloc_chair_01_2k_0_StaticMeshActor_1547_76846": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_01_latch_0_StaticMeshActor_1548_76844": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rollershutter_door_graffiti_0_StaticMeshActor_1549_76842": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "plastic_monobloc_chair_01_2k_0_StaticMeshActor_1550_76840": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_01_lid_0_StaticMeshActor_1551_76838": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rollershutter_door_0_StaticMeshActor_1552_76836": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "wooden_crate_02_crate_0_StaticMeshActor_1553_76834": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1554_76832": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_02_lid_0_StaticMeshActor_1555_76830": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "Barrel_01_2k_0_StaticMeshActor_1556_76828": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "Barrel_01_2k_0_StaticMeshActor_1557_76826": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "barrel_03_2k_0_StaticMeshActor_1558_76824": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_02_lid_0_StaticMeshActor_1559_76822": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "old_tyre_2k_0_StaticMeshActor_1560_76820": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "barrel_03_2k_0_StaticMeshActor_1561_76818": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "plastic_container_2k_0_StaticMeshActor_1562_76816": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "old_tyre_2k_0_StaticMeshActor_1563_76814": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_01_lid_0_StaticMeshActor_1564_76812": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "plastic_container_2k_0_StaticMeshActor_1565_76810": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_02_lid_0_StaticMeshActor_1566_76808": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rollershutter_door_0_StaticMeshActor_1567_76806": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "wooden_crate_02_lid_0_StaticMeshActor_1568_76804": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "Barrel_01_2k_0_StaticMeshActor_1569_76802": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_02_lid_0_StaticMeshActor_1570_76800": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rollershutter_door_0_StaticMeshActor_1571_76798": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "barrel_03_2k_0_StaticMeshActor_1572_76796": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "wooden_crate_01_lid_0_StaticMeshActor_1573_76794": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rollershutter_door_0_StaticMeshActor_1574_76792": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "wooden_crate_01_latch_0_StaticMeshActor_1575_76790": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_01_latch_0_StaticMeshActor_1576_76788": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "barrel_03_2k_0_StaticMeshActor_1577_76786": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "dry_branches_medium_01_c_0_StaticMeshActor_1578_76784": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "wooden_crate_01_lid_0_StaticMeshActor_1579_76782": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rollershutter_door_0_StaticMeshActor_1580_76780": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "barrel_03_2k_0_StaticMeshActor_1581_76778": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "plastic_monobloc_chair_01_2k_0_StaticMeshActor_1582_76776": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "rollershutter_door_0_StaticMeshActor_1583_76774": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "plastic_container_2k_0_StaticMeshActor_1584_76772": {
+   "surface": "plastic",
+   "temp_c": 44.0,
+   "id": 128
+  },
+  "covered_car_wheel_01_0_StaticMeshActor_1585_76770": {
+   "surface": "vehicle",
+   "temp_c": 55.0,
+   "id": 150
+  },
+  "covered_car_wheel_04_0_StaticMeshActor_1586_76768": {
+   "surface": "vehicle",
+   "temp_c": 55.0,
+   "id": 150
+  },
+  "covered_car_wheel_02_0_StaticMeshActor_1587_76766": {
+   "surface": "vehicle",
+   "temp_c": 55.0,
+   "id": 150
+  },
+  "covered_car_wheel_03_0_StaticMeshActor_1588_76764": {
+   "surface": "vehicle",
+   "temp_c": 55.0,
+   "id": 150
+  },
+  "covered_car_0_StaticMeshActor_1589_76762": {
+   "surface": "vehicle",
+   "temp_c": 55.0,
+   "id": 150
+  },
+  "covered_car_wheel_01_0_StaticMeshActor_1590_76760": {
+   "surface": "vehicle",
+   "temp_c": 55.0,
+   "id": 150
+  },
+  "covered_car_wheel_04_0_StaticMeshActor_1591_76758": {
+   "surface": "vehicle",
+   "temp_c": 55.0,
+   "id": 150
+  },
+  "covered_car_wheel_02_0_StaticMeshActor_1592_76756": {
+   "surface": "vehicle",
+   "temp_c": 55.0,
+   "id": 150
+  },
+  "covered_car_wheel_03_0_StaticMeshActor_1593_76754": {
+   "surface": "vehicle",
+   "temp_c": 55.0,
+   "id": 150
+  },
+  "covered_car_0_StaticMeshActor_1594_76752": {
+   "surface": "vehicle",
+   "temp_c": 55.0,
+   "id": 150
+  },
+  "covered_car_wheel_01_0_StaticMeshActor_1595_76750": {
+   "surface": "vehicle",
+   "temp_c": 55.0,
+   "id": 150
+  },
+  "covered_car_wheel_04_0_StaticMeshActor_1596_76748": {
+   "surface": "vehicle",
+   "temp_c": 55.0,
+   "id": 150
+  },
+  "covered_car_wheel_02_0_StaticMeshActor_1597_76746": {
+   "surface": "vehicle",
+   "temp_c": 55.0,
+   "id": 150
+  },
+  "covered_car_wheel_03_0_StaticMeshActor_1598_76744": {
+   "surface": "vehicle",
+   "temp_c": 55.0,
+   "id": 150
+  },
+  "covered_car_0_StaticMeshActor_1599_76742": {
+   "surface": "vehicle",
+   "temp_c": 55.0,
+   "id": 150
+  },
+  "covered_car_wheel_01_0_StaticMeshActor_1600_76740": {
+   "surface": "vehicle",
+   "temp_c": 55.0,
+   "id": 150
+  },
+  "covered_car_wheel_04_0_StaticMeshActor_1601_76738": {
+   "surface": "vehicle",
+   "temp_c": 55.0,
+   "id": 150
+  },
+  "covered_car_wheel_02_0_StaticMeshActor_1602_76736": {
+   "surface": "vehicle",
+   "temp_c": 55.0,
+   "id": 150
+  },
+  "covered_car_wheel_03_0_StaticMeshActor_1603_76734": {
+   "surface": "vehicle",
+   "temp_c": 55.0,
+   "id": 150
+  },
+  "covered_car_0_StaticMeshActor_1604_76732": {
+   "surface": "vehicle",
+   "temp_c": 55.0,
+   "id": 150
+  },
+  "covered_car_wheel_01_0_StaticMeshActor_1605_76730": {
+   "surface": "vehicle",
+   "temp_c": 55.0,
+   "id": 150
+  },
+  "covered_car_wheel_04_0_StaticMeshActor_1606_76728": {
+   "surface": "vehicle",
+   "temp_c": 55.0,
+   "id": 150
+  },
+  "covered_car_wheel_02_0_StaticMeshActor_1607_76726": {
+   "surface": "vehicle",
+   "temp_c": 55.0,
+   "id": 150
+  },
+  "covered_car_wheel_03_0_StaticMeshActor_1608_76724": {
+   "surface": "vehicle",
+   "temp_c": 55.0,
+   "id": 150
+  },
+  "covered_car_0_StaticMeshActor_1609_76722": {
+   "surface": "vehicle",
+   "temp_c": 55.0,
+   "id": 150
+  },
+  "covered_car_wheel_01_0_StaticMeshActor_1610_76720": {
+   "surface": "vehicle",
+   "temp_c": 55.0,
+   "id": 150
+  },
+  "covered_car_wheel_04_0_StaticMeshActor_1611_76718": {
+   "surface": "vehicle",
+   "temp_c": 55.0,
+   "id": 150
+  },
+  "covered_car_wheel_02_0_StaticMeshActor_1612_76716": {
+   "surface": "vehicle",
+   "temp_c": 55.0,
+   "id": 150
+  },
+  "covered_car_wheel_03_0_StaticMeshActor_1613_76714": {
+   "surface": "vehicle",
+   "temp_c": 55.0,
+   "id": 150
+  },
+  "covered_car_0_StaticMeshActor_1614_76712": {
+   "surface": "vehicle",
+   "temp_c": 55.0,
+   "id": 150
+  },
+  "rock_moss_set_01_rock04_0_StaticMeshActor_1615_76710": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock01_0_StaticMeshActor_1616_76708": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock13_0_StaticMeshActor_1617_76706": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock08_0_StaticMeshActor_1618_76704": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock02_0_StaticMeshActor_1619_76702": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock08_0_StaticMeshActor_1620_76700": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1621_76698": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1622_76696": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1623_76694": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "rock_moss_set_02_rock08_0_StaticMeshActor_1624_76692": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock07_0_StaticMeshActor_1625_76690": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock01_0_StaticMeshActor_1626_76688": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_02_rock13_0_StaticMeshActor_1627_76686": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock02_0_StaticMeshActor_1628_76684": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "rock_moss_set_01_rock01_0_StaticMeshActor_1629_76682": {
+   "surface": "rock",
+   "temp_c": 40.0,
+   "id": 120
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1630_76680": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dead_quiver_trunk_2k_0_StaticMeshActor_1631_76678": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "dry_branches_medium_01_a_0_StaticMeshActor_1632_76676": {
+   "surface": "wood",
+   "temp_c": 38.0,
+   "id": 116
+  },
+  "fern_02_c_0_StaticMeshActor_1633_76674": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1634_76672": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1635_76670": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1636_76668": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1637_76666": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1638_76664": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1639_76662": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1640_76660": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1641_76658": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1642_76656": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1643_76654": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1644_76652": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1645_76650": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1646_76648": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1647_76646": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1648_76644": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1649_76642": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1650_76640": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1651_76638": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1652_76636": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1653_76634": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1654_76632": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1655_76630": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1656_76628": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1657_76626": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1658_76624": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1659_76622": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1660_76620": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1661_76618": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1662_76616": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1663_76614": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1664_76612": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1665_76610": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1666_76608": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1667_76606": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1668_76604": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1669_76602": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1670_76600": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1671_76598": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1672_76596": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1673_76594": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1674_76592": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1675_76590": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1676_76588": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1677_76586": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1678_76584": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1679_76582": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1680_76580": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1681_76578": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1682_76576": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1683_76574": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1684_76572": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1685_76570": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1686_76568": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1687_76566": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1688_76564": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1689_76562": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1690_76560": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1691_76558": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1692_76556": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1693_76554": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1694_76552": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1695_76550": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1696_76548": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1697_76546": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1698_76544": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1699_76542": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1700_76540": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1701_76538": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1702_76536": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1703_76534": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1704_76532": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1705_76530": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1706_76528": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1707_76526": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1708_76524": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1709_76522": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1710_76520": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1711_76518": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1712_76516": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1713_76514": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1714_76512": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1715_76510": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1716_76508": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1717_76506": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1718_76504": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1719_76502": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1720_76500": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1721_76498": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1722_76496": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1723_76494": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1724_76492": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1725_76490": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1726_76488": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1727_76486": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1728_76484": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1729_76482": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1730_76480": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1731_76478": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1732_76476": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1733_76474": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1734_76472": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1735_76470": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1736_76468": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1737_76466": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1738_76464": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1739_76462": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1740_76460": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1741_76458": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1742_76456": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1743_76454": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1744_76452": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1745_76450": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1746_76448": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1747_76446": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1748_76444": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1749_76442": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1750_76440": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1751_76438": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1752_76436": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1753_76434": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1754_76432": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1755_76430": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1756_76428": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1757_76426": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1758_76424": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1759_76422": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1760_76420": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1761_76418": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1762_76416": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1763_76414": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1764_76412": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1765_76410": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1766_76408": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1767_76406": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1768_76404": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1769_76402": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1770_76400": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1771_76398": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1772_76396": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1773_76394": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1774_76392": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1775_76390": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1776_76388": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1777_76386": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1778_76384": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1779_76382": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1780_76380": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1781_76378": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1782_76376": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1783_76374": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1784_76372": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1785_76370": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1786_76368": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1787_76366": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1788_76364": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1789_76362": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1790_76360": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1791_76358": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1792_76356": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1793_76354": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1794_76352": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1795_76350": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1796_76348": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1797_76346": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1798_76344": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1799_76342": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1800_76340": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1801_76338": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1802_76336": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1803_76334": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1804_76332": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1805_76330": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1806_76328": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1807_76326": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1808_76324": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1809_76322": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1810_76320": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1811_76318": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1812_76316": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1813_76314": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1814_76312": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1815_76310": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1816_76308": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1817_76306": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1818_76304": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1819_76302": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1820_76300": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1821_76298": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1822_76296": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1823_76294": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1824_76292": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1825_76290": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1826_76288": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1827_76286": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1828_76284": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1829_76282": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1830_76280": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1831_76278": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1832_76276": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1833_76274": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1834_76272": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1835_76270": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1836_76268": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1837_76266": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1838_76264": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1839_76262": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1840_76260": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1841_76258": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1842_76256": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1843_76254": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1844_76252": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1845_76250": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1846_76248": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1847_76246": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1848_76244": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1849_76242": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1850_76240": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1851_76238": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1852_76236": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1853_76234": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1854_76232": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1855_76230": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1856_76228": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1857_76226": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1858_76224": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1859_76222": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1860_76220": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1861_76218": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1862_76216": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1863_76214": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1864_76212": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1865_76210": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1866_76208": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1867_76206": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1868_76204": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1869_76202": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1870_76200": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1871_76198": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1872_76196": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1873_76194": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1874_76192": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1875_76190": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1876_76188": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1877_76186": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1878_76184": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1879_76182": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1880_76180": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1881_76178": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1882_76176": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1883_76174": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1884_76172": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_a_0_StaticMeshActor_1885_76170": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1886_76168": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1887_76166": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_b_0_StaticMeshActor_1888_76164": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1889_76162": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1890_76160": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_d_0_StaticMeshActor_1891_76158": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "fern_02_c_0_StaticMeshActor_1892_76156": {
+   "surface": "vegetation",
+   "temp_c": 29.0,
+   "id": 98
+  },
+  "SM_CineCam_0_ExternalCamera_75731": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_1_ExternalCamera_75728": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_2_ExternalCamera_75725": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_3_ExternalCamera_75722": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_4_ExternalCamera_75719": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_5_ExternalCamera_75716": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "Cone_6_ExternalCamera_75714": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_7_ExternalCamera_75712": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_8_ExternalCamera_75709": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_9_ExternalCamera_75706": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_10_ExternalCamera_75703": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_11_ExternalCamera_75700": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_12_ExternalCamera_75697": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "Quadrotor1_0_Drone_75661": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "Propeller_1_Drone_75552": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "Propeller_2_Drone_75551": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "Propeller_3_Drone_75550": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "Propeller_4_Drone_75542": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "SM_CineCam_0_FrontRightCamera_Drone_75656": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_1_FrontRightCamera_Drone_75653": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_2_FrontRightCamera_Drone_75650": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_3_FrontRightCamera_Drone_75647": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_4_FrontRightCamera_Drone_75644": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_5_FrontRightCamera_Drone_75641": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "Cone_6_FrontRightCamera_Drone_75639": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_7_FrontRightCamera_Drone_75637": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_8_FrontRightCamera_Drone_75634": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_9_FrontRightCamera_Drone_75631": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_10_FrontRightCamera_Drone_75628": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_11_FrontRightCamera_Drone_75625": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_12_FrontRightCamera_Drone_75622": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "SM_CineCam_0_FrontLeftCamera_Drone_75605": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_1_FrontLeftCamera_Drone_75602": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_2_FrontLeftCamera_Drone_75599": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_3_FrontLeftCamera_Drone_75596": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_4_FrontLeftCamera_Drone_75593": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_5_FrontLeftCamera_Drone_75590": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "Cone_6_FrontLeftCamera_Drone_75588": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_7_FrontLeftCamera_Drone_75586": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_8_FrontLeftCamera_Drone_75583": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_9_FrontLeftCamera_Drone_75580": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_10_FrontLeftCamera_Drone_75577": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_11_FrontLeftCamera_Drone_75574": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_12_FrontLeftCamera_Drone_75571": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "SM_CineCam_0_FrontCenterCamera_Drone_75537": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_1_FrontCenterCamera_Drone_75534": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_2_FrontCenterCamera_Drone_75531": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_3_FrontCenterCamera_Drone_75528": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_4_FrontCenterCamera_Drone_75525": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_5_FrontCenterCamera_Drone_75522": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "Cone_6_FrontCenterCamera_Drone_75520": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_7_FrontCenterCamera_Drone_75518": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_8_FrontCenterCamera_Drone_75515": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_9_FrontCenterCamera_Drone_75512": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_10_FrontCenterCamera_Drone_75509": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_11_FrontCenterCamera_Drone_75506": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_12_FrontCenterCamera_Drone_75503": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "SM_CineCam_0_BackCenterCamera_Drone_75486": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_1_BackCenterCamera_Drone_75483": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_2_BackCenterCamera_Drone_75480": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_3_BackCenterCamera_Drone_75477": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_4_BackCenterCamera_Drone_75474": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_5_BackCenterCamera_Drone_75435": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "Cone_6_BackCenterCamera_Drone_75432": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_7_BackCenterCamera_Drone_75430": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_8_BackCenterCamera_Drone_75424": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_9_BackCenterCamera_Drone_75421": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_10_BackCenterCamera_Drone_75418": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_11_BackCenterCamera_Drone_75415": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_12_BackCenterCamera_Drone_75398": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "SM_CineCam_0_BottomCenterCamera_Drone_75381": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_1_BottomCenterCamera_Drone_75378": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_2_BottomCenterCamera_Drone_75375": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_3_BottomCenterCamera_Drone_75372": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_4_BottomCenterCamera_Drone_75369": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_5_BottomCenterCamera_Drone_75366": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "Cone_6_BottomCenterCamera_Drone_75364": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_7_BottomCenterCamera_Drone_75362": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_8_BottomCenterCamera_Drone_75359": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_9_BottomCenterCamera_Drone_75356": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_10_BottomCenterCamera_Drone_75353": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_11_BottomCenterCamera_Drone_75350": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_12_BottomCenterCamera_Drone_75347": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "SM_CineCam_0_BP_PIPCamera_C_5_75217": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_1_BP_PIPCamera_C_5_75214": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_2_BP_PIPCamera_C_5_75211": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_3_BP_PIPCamera_C_5_75208": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_4_BP_PIPCamera_C_5_75205": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_5_BP_PIPCamera_C_5_75202": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "Cone_6_BP_PIPCamera_C_5_75200": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_7_BP_PIPCamera_C_5_75198": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_8_BP_PIPCamera_C_5_75195": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_9_BP_PIPCamera_C_5_75192": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_10_BP_PIPCamera_C_5_75189": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_11_BP_PIPCamera_C_5_75186": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  },
+  "MatineeCam_SM_12_BP_PIPCamera_C_5_75183": {
+   "surface": "background",
+   "temp_c": 30.0,
+   "id": 100
+  }
+ }
+}
