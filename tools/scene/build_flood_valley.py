@@ -88,10 +88,18 @@ lc.set_editor_property("intensity", 8.0)
 lc.set_editor_property("dynamic_shadow_distance_movable_light", 40000.0)
 lc.set_editor_property("dynamic_shadow_cascades", 4)
 
+lc.set_editor_property("atmosphere_sun_light", True)
+
+# BP_Sky_Sphere stays (Cosys finds the sun through it and rotates it for simSetTimeOfDay) but is HIDDEN: the visible
+# sky is a physically based SkyAtmosphere lit by the same sun, so sky colour and ambient follow the time of day.
 sky = ensure("SkySphere", unreal.load_asset("/Engine/EngineSky/BP_Sky_Sphere.BP_Sky_Sphere"))
 sky.set_editor_property("Directional light actor", sun)
 sky.call_method("RefreshMaterial")
+sky.set_actor_hidden_in_game(True)
+sky.set_is_temporarily_hidden_in_editor(True)
+ensure("SkyAtmosphere", unreal.SkyAtmosphere)
 
+# Real-time sky capture needs a SkyAtmosphere (else it is black and the editor prints a red warning).
 sl = ensure("SkyLight", unreal.SkyLight, unreal.Vector(0, 0, 5000))
 slc = sl.get_component_by_class(unreal.SkyLightComponent)
 slc.set_mobility(unreal.ComponentMobility.MOVABLE)

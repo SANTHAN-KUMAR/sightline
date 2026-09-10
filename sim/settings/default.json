@@ -32,7 +32,7 @@
       "RC": { "RemoteControlID": 0, "AllowAPIWhenDisconnected": true },
       "Cameras": {
         "survey": {
-          "X": 0.30, "Y": 0.0, "Z": 0.15,
+          "X": 0.0, "Y": 0.0, "Z": 0.30,
           "Pitch": -90.0, "Roll": 0.0, "Yaw": 0.0,
           "Gimbal": { "Stabilization": 1.0, "Pitch": -90.0, "Roll": 0.0, "Yaw": 0.0 }
         }

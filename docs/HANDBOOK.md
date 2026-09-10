@@ -1,8 +1,9 @@
 # Sightline handbook for session agents
 
-Written 2026-09-10, at the end of the environment/validation phase and the start of the development phase.
-Read `CLAUDE.md` first (rules and commands), then this file, then `TRACKER.md` (what to do next) and
-`CONTEXT.md` (environment facts). `SOLUTION_DOC.md` is the specification; read it by section, it is ~77k tokens.
+Written 2026-09-10 at the start of the development phase; **updated at the end of session 2 (2026-09-10)**.
+Read `CLAUDE.md` first (rules and commands), then this file, then `TRACKER.md` (start at "Handoff state" and
+"Next actions") and `CONTEXT.md` (environment facts). `SOLUTION_DOC.md` is the specification; read it by section,
+it is ~80k tokens.
 
 ---
 
@@ -34,13 +35,35 @@ PIE gives a working AirSim on port 41451.
 
 ---
 
-## 2. The development phase has NOT started
+## 2. Development state (end of session 2)
 
-Nothing from the feature list (F1-F21) is implemented. The scene is still Epic's Blocks sample map.
-`tools/scene/gen_terrain.py` is a **draft, never imported into Unreal and never validated** - treat it as a
-starting sketch, not a deliverable, and regenerate its outputs before trusting anything in `data/scene/`.
+**F1 (the flood-valley scene) has a working foundation; everything after F1 is untouched.**
 
-Start from `TRACKER.md` -> "Next actions".
+The map `/Game/Sightline/Maps/FloodValley` is the project's startup and game-default map. It is produced by three
+scripts, all idempotent and all runnable through MCP:
+
+| Step | Command | Produces |
+|---|---|---|
+| 1. terrain data | `uv run python tools/scene/gen_terrain.py` (seed 7, 2048 m, 4 m cells) | `data/scene/flood_valley.{obj,json,_height.npy,_zones.png,_preview.png}` (obj/npy gitignored) |
+| 2. level | `ue_python code="exec(open(r'D:\Sightline\tools\scene\build_flood_valley.py').read())"` (PIE off) | the level: terrain `Ground`, `FloodWater`, sun, hidden BP_Sky_Sphere, SkyAtmosphere, sky light, fog, `PPV_NoGI`, `PlayerStart_Home`, AirSim game mode. Aborts if a line trace at the pad disagrees with the generator |
+| 3. materials | `ue_python code="exec(open(r'D:\Sightline\tools\scene\build_materials.py').read())"` (PIE off) | `M_FloodValleyTerrain` (zone mask + slope + flood silt line, 5 Poly Haven 2K sets, anti-tiling) and `M_FloodWater` (single-layer water, silt turbidity parameters, panning normals) |
+| runtime | `uv run python tools/scene/flood_level.py [asl_m]` | reads / sets the flood level through `simSetObjectPose`, read-back verified |
+
+Scene layout (local metres, x = east, y = north, origin = map centre = 11.4870 N 76.1450 E): deposit fan upstream
+(north), meandering channel, flooded settlement terrace on the east bank (0.5-3.7 m under flood stage 1061.68 m
+ASL), command-post pad at east 492 / north 148, 4.9 m above flood stage = the drone's home.
+
+**Verified in PIE:** GPS at the pad equals the pad's computed geopoint; takeoff, flight, RTL on the terrain; water
+writes depth and has its own instance-segmentation colour; FloodLevel changes through the API; the level script
+rebuilds cleanly. **Written but not yet verified** — see TRACKER "Handoff state": the final materials in a capture,
+the lowered survey camera, time of day with the hidden sky sphere, the background-throttle fix, and the new
+steep-contact rule in `sim_fly`.
+
+**Assets:** `_downloads/assets/` (gitignored, 1.74 GB, `MANIFEST.md`) holds 79 photoreal assets: Poly Haven/ambientCG
+CC0 textures and models (rocks, logs, stumps, barrels, crates, plastics, tyre, covered car, fern) and 9 Microsoft
+Rocketbox rigged humans (MIT). Only the five terrain texture sets are imported so far (`/Game/Sightline/Textures/`).
+**Blocked on logins (ask the user):** houses, palms/areca/coconut, rigged animals, uncovered car, photoscanned
+humans. The user's bar: **photoreal only, no stylised or low-poly assets**, chosen for realism and runtime cost.
 
 ---
 
@@ -53,9 +76,13 @@ Start from `TRACKER.md` -> "Next actions".
 3. **Everything installs to D:.** See `CONTEXT.md` §3 for the redirected caches. C: has ~40 GB free and is the
    binding constraint after RAM.
 4. **Guardrail R10:** no code path may delete a record or mark a search segment "cleared".
-5. **Every accuracy number states its slice** (zone x altitude x band x time-of-day x occlusion x posture) and
-   says whether it came from simulation or real footage.
+5. **Every accuracy number states its slice** (zone x altitude x band x time-of-day x occlusion x posture) **and its
+   domain** (`sim` or `real`, in the same sentence). Never average a sim number with a real one (§5.5c).
 6. **Pinned dependencies only**: `uv add`, never `pip install` into the venv; commit `uv.lock`.
+7. **Simulation-first (§5.5c).** The renderer is the deployment domain. The demo model (F8b) is trained on sim
+   frames only, split by scenario seed (never by frame), with **domain randomisation OFF by default**; do not turn
+   randomisation on midway and compare numbers across the switch.
+8. **Keep `TRACKER.md` and `CONTEXT.md` current as you go**, not only at the end (the user asked for this).
 
 ---
 
@@ -68,8 +95,12 @@ Start from `TRACKER.md` -> "Next actions".
 - **Never train while the engine runs** (`SOLUTION_DOC.md` §4). Capture first, close the engine, then train.
 - **One simulator at a time.** The packaged Blocks build and the editor's PIE both bind AirSim's port 41451.
   Check with `status` before launching anything.
-- Close browsers before an editor session; the editor wants 5+ GB.
+- Close browsers before an editor session; the editor wants 5+ GB. With editor + PIE on FloodValley, free RAM was
+  1.9-2.7 GB.
 - Use a **packaged build** for long data-capture runs; the editor costs several GB more.
+- **UE renders on the RTX 4060** (verified). The Intel iGPU drives the display (Optimus), so it shows activity too.
+  CPU spikes during imports / texture compression / shader compiles are expected. With the bare scene the 4060 sat
+  at P5 (~750 MHz) under PIE with throttle reason `Idle` only: the load was light, not capped.
 
 ---
 
@@ -89,9 +120,18 @@ These cost hours to rediscover. Details and line references in `CONTEXT.md` §7.
 - **`simPause` freezes physics and pose**, but under `ScalableClock` the state timestamp keeps following wall
   time: judge a pause by pose, not timestamp. Use the `capture_4k` profile (SteppableClock) for deterministic runs.
 - **Static level actors cannot be moved** (`simSetObjectPose` returns False); spawn movable ones with
-  `sim_spawn_object` (asset names from `sim_list_assets`).
+  `sim_spawn_object` (asset names from `sim_list_assets`) or give level actors Movable mobility (`FloodWater`).
 - **Cosys 3.4.1 logs nothing to the UE log** (every `UE_LOG` in `UAirBlueprintLib::LogMessage` is commented out).
   Prove settings are in use via `listVehicles()`, camera resolution and the home geopoint - not by grepping the log.
+- **`OriginGeopoint` is anchored at the UE WORLD ORIGIN, not the PlayerStart** (measured: vehicle GPS =
+  OriginGeopoint + PlayerStart offset, to 0.3 m). Settings carry the map centre at `base_z_m` (1046.007 m).
+- **AirSim settings are re-read on every PIE start**; no editor restart is needed after editing `sim/settings/*.json`.
+- **Cosys names objects by `GetName()`, not the editor label.** Rename actors whose API name matters
+  (`actor.rename("FloodWater")`).
+- **`sim_fly` ignores contact with an object named `Ground`**, so the terrain actor must be named `Ground`. From the
+  next sightline-server start, a `Ground` contact steeper than ~45 deg fails as a hillside strike.
+- **The first sim tool call right after PIE starts often times out** while PIE boots; `sim_state` then shows
+  whether the command ran. Retry once.
 - **`materials.csv` must sit next to the executable** or material stencil initialisation is skipped
   (`tools/setup/install_materials.ps1` installs it; re-run after packaging).
 - **Braking from 6 m/s overshoots ~2 m and settles in 7-8 s.** Let the vehicle settle before precise captures.
@@ -104,16 +144,29 @@ These cost hours to rediscover. Details and line references in `CONTEXT.md` §7.
 
 ## 6. Traps specific to the work that comes next
 
-**Scene building (F1)**
+**Scene building (F1)** — the ones marked ✔ were hit and solved in session 2; keep them solved.
 - Use **static-mesh terrain, not Landscape**, and avoid foliage actors for anything that must be labelled:
   Cosys gives Landscape/foliage a single default instance-segmentation colour, which corrupts auto-labels (§5.1).
-- Author the level with **GI = None**. Epic's sample map re-enables Lumen through its PostProcessVolume, which is
-  why the editor logs Lumen ray-tracing warnings; do not inherit that.
-- The **water surface must write depth/stencil** or submerged body parts will still appear in the label passes
-  (§5.1 step 6). Verify with an actual capture, not by assumption.
-- A single flat water plane is only physical over a gentle gradient. Keep the valley fall small or model the
-  water surface per reach.
-- The DEM says **1060 m** at the origin geopoint; `sim/settings/*.json` now matches. Keep them consistent.
+- ✔ **GI = None**: FloodValley's `PPV_NoGI` forces it. Never use Epic's FlyingExampleMap (its PPV re-enables Lumen).
+- ✔ **UE's OBJ importer flips handedness** (x = east -> UE +X, y = north -> UE -Y). The terrain actor carries yaw
+  +90 so UE X = north, Y = east = NED. **Every spawner must use** `UE (X, Y, Z) cm = (north*100, east*100,
+  (asl - base_z)*100)`, also in `flood_valley.json` `ue_import`.
+- ✔ **OBJ must be in centimetres** (UE does not rescale) and **imported meshes arrive with Nanite ON** (the triangle
+  count then reports the fallback mesh). `build_flood_valley.py` handles both and asserts the triangle count.
+- ✔ **Editor Python has no numpy.** Do grid maths on the host and read `flood_valley.json` in the editor.
+- ✔ **Builds, imports and saves fail silently while PIE runs** (32 px texture placeholders, `save` returns False,
+  `editor_request_end_play()` is asynchronous). End PIE in one call, edit in the next.
+- ✔ **Material scripting:** deleting a referenced material fails (ensure + callstack in the log); reuse and clear
+  instead. `delete_all_material_expressions` leaves nodes behind; delete each and assert zero.
+  `BlendAngleCorrectedNormals` is a function, not an expression. Check a material by its used-texture count: 0 means
+  it failed to compile and renders as the grey checker.
+- ✔ **Real-time sky light needs a SkyAtmosphere** (red viewport warning otherwise). BP_Sky_Sphere stays in the level
+  only for Cosys' time-of-day sun lookup, hidden.
+- The **water surface must write depth/stencil** so submerged body parts are hidden in the label passes: the
+  single-layer-water plane does write depth (measured); the half-submerged *actor* test is still to do.
+- A single flat water plane is only physical over a gentle gradient; the valley falls 8 m over 2 km on purpose.
+- Keep the DEM/geopoint consistent: `OriginGeopoint` altitude = `base_z_m` from `flood_valley.json`. If the
+  generator changes, regenerate and update both settings files.
 
 **Synthetic data (F5)**
 - Thermal in Cosys is a **per-object ID -> grey map**, not radiometry. The doc's realistic thermal (per-material
@@ -121,6 +174,7 @@ These cost hours to rediscover. Details and line references in `CONTEXT.md` §7.
   real work, not a setting.
 - Auto-labels come from **instance segmentation masks**, and the visible-extent box is the training box (§6.3).
 - Measure 4K capture throughput before committing to it (day-1 test #3, `tools/day1/capture_benchmark.py`).
+- Simulation-first: fly the nominal slice at 40-60 m and tile the 4K frame at native resolution (§5.5c).
 
 **Pipeline (F7-F19)**
 - `dji-log-parser` has **no Python bindings** (the doc is wrong); use the Rust CLI via subprocess.
@@ -133,8 +187,11 @@ These cost hours to rediscover. Details and line references in `CONTEXT.md` §7.
 ## 7. How to work a session
 
 1. `uv run python tools/doctor.py --live` - catches a broken environment before you waste an hour.
-2. Read `TRACKER.md` "Next actions"; work the top item.
+   (`uv` is at `D:\Tools\uv\uv.exe`; it may not be on PATH inside the agent's PowerShell.)
+2. Read `TRACKER.md` "Handoff state" and "Next actions"; work the top item.
 3. Drive Unreal through MCP. Long jobs (`ue_build`, `ue_package`) return a `job_id`; poll `job_status`.
+   Batch editor work into scripts under `tools/scene/` and run them with `exec(open(...).read())` — fewer round
+   trips, and the scene stays reproducible. The user asked for speed without dropping quality.
 4. Re-run the relevant suite after changes:
    `tests/test_mcp_protocol.py`, `tools/sightline_mcp/test_tool_matrix.py`, `test_sim.py`, `tests/test_stack.py`.
 5. **Close the editor and any sim when you finish.**
@@ -142,20 +199,23 @@ These cost hours to rediscover. Details and line references in `CONTEXT.md` §7.
 
 **If you spawn subagents:** give each an exclusive resource. Only one agent may own the editor, one the sim port,
 one the Python environment (`pyproject.toml`/`uv.lock`). Tell them to re-read a shared file immediately before
-editing and to use small unique-string edits - several agents edit `server.py`.
+editing and to use small unique-string edits - several agents edit `server.py`. `SendMessage` is disabled in these
+sessions, so a running subagent cannot be redirected: brief it fully up front (e.g. the asset quality bar).
 
 ---
 
-## 8. Open items inherited by the development phase
+## 8. Open items
 
 | Item | State | Who can close it |
 |---|---|---|
 | ~~Gamepad handover (F3, day-1 #4)~~ | **CLOSED**: 13 PASS / 0 FAIL; API→RC 394 ms, RC→API 2.96 s | — (re-run `tools/day1/gamepad_airsim.py` after changes to `sim_fly`) |
+| ~~GPU latency table (day-1 #8)~~ | **CLOSED**: all six configs < 300 ms; design pass C2/yolo26s = 65 ms (`gpu_latency.md`) | INT8 and the Orin table (F20) remain open |
+| Session-2 unverified items | final materials, camera mount, TOD with hidden sky sphere, throttle fix, steep-contact rule | next agent (TRACKER "Handoff state") |
+| Houses, palms, rigged animals, uncovered car, photoscanned humans | blocked: Fab / Sketchfab / Mixamo / MetaHuman need a login | the user (sign-in) — or build houses by script from the downloaded textures |
+| Rocketbox humans + Poly Haven models | downloaded, not imported | next agent (spawners) |
 | Cesium for Unreal | staged in `_staging/plugins`, BuildId matches | integration steps in `external_tools.md`; needs the user's Cesium ion sign-in |
 | X-AnyLabeling on GPU | runs on CPU; cuDNN 9 missing | unpack cuDNN 9 into `D:\Tools\cudnn` |
-| Human/animal assets | none acquired | Mixamo needs an Adobe login (user); UE mannequin is the fallback |
-| ~~GPU latency table (day-1 #8)~~ | **CLOSED**: all six configs < 300 ms; design pass C2/yolo26s = 65 ms (`gpu_latency.md`) | INT8 and the Orin table (F20) remain open |
-| Real datasets (§6.1) | none downloaded | licences differ per set; record each in the data card |
+| Real datasets (§6.1) | none downloaded; optional for the demo model (§5.5c), needed for F8c | licences differ per set; record each in the data card |
 | PX4 SITL / QGC (F4, stretch) | not installed; WSL has no distro | steps in `external_tools.md` |
 
 ---
@@ -165,17 +225,21 @@ editing and to use small unique-string edits - several agents edit `server.py`.
 ```
 CLAUDE.md              rules, commands, MCP overview (read first)
 docs/HANDBOOK.md       this file
-docs/TRACKER.md        status, next actions, feature table, session log
-docs/CONTEXT.md        machine, paths, decisions, verified facts, pitfalls
+docs/TRACKER.md        handoff state, next actions, feature table, session log
+docs/CONTEXT.md        machine, paths, decisions, verified facts, pitfalls (§7 has the FloodValley facts)
 docs/SETUP.md          rebuild from scratch
-docs/SOLUTION_DOC.md   the specification
+docs/SOLUTION_DOC.md   the specification (simulation-first version, 2026-09-10)
 docs/verification/     one report per verification stream (the evidence)
 tools/sightline_mcp/   the MCP server + its test suites
 tools/day1/            day-1 probes and benchmarks (diag_*, gamepad, latency, capture)
-tools/scene/           scene generation (draft)
+tools/scene/           gen_terrain.py, build_flood_valley.py, build_materials.py, flood_level.py
 tools/setup/           reproducible install/restore scripts
+data/scene/            generator outputs (json + pngs tracked; obj/npy regenerated)
 sim/SightlineSim/      the UE 5.8 project (AirSim plugin not committed; fetch_airsim.ps1 restores it)
+  Content/Sightline/   Maps/FloodValley, Terrain/, Water/, Textures/
 sim/settings/          AirSim settings profiles, passed with -settings=
 tests/                 pytest suites (protocol, stack)
+_downloads/assets/     CC0/MIT scene assets + MANIFEST.md (gitignored)
+_artifacts/captures/   every sim_capture (gitignored)
 _artifacts/ _logs/ _downloads/ _build/ _staging/   local only, gitignored
 ```

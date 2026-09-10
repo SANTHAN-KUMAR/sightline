@@ -3,10 +3,12 @@
 What a new session needs to know that is **not** obvious from the code. Keep it factual; date every change.
 The build plan itself lives in `SOLUTION_DOC.md`; progress lives in `TRACKER.md`.
 
-**Phase status (2026-09-10):** environment and both MCP servers are validated end to end (see §4a and
-`docs/verification/`); the development phase has **not** started. The only development artefact is
-`tools/scene/gen_terrain.py`, an unvalidated draft whose generated outputs were deleted because its parameters
-changed after the single run — regenerate and inspect before using it. New sessions: read `docs/HANDBOOK.md`.
+**Phase status (end of session 2, 2026-09-10):** environment and both MCP servers are validated end to end (see
+§4a and `docs/verification/`). Development has started: the FloodValley scene foundation (F1) is built and
+verified in PIE (terrain, zones, water + FloodLevel API, lighting, georeferencing), materials are built but their
+final look is not yet verified. Scene facts are in §7 "FloodValley scene facts" and "Material scripting".
+The build document was updated to a **simulation-first** version (§5 decisions). New sessions: read
+`docs/HANDBOOK.md`, then `docs/TRACKER.md` "Handoff state".
 
 ## 1. The project in one paragraph
 PS2 "Real-time vision system for identifying survivors in flood, landslide and tsunami zones". We simulate a
@@ -164,3 +166,35 @@ already-open terminals/apps (including Claude Code itself) must be restarted to 
   still returns the PIE world and `save_current_level()` returns False. End PIE in one call, edit in the next.
 - AirSim settings files are re-read on every PIE start (a changed OriginGeopoint took effect without an editor
   restart).
+- **"Use Less CPU when in Background" lives in `UEditorPerformanceSettings`**, config section
+  `[/Script/UnrealEd.EditorPerformanceSettings]` in `Config/DefaultEditorSettings.ini` (source:
+  `Editor/UnrealEd/Classes/Editor/EditorPerformanceSettings.h:74`). The old override in
+  `DefaultEditorPerProjectUserSettings.ini [/Script/UnrealEd.EditorPerProjectUserSettings]` was silently ignored.
+  Fixed 2026-09-10; takes effect at the next editor start.
+- **Red viewport text "A sky light with real-time capture enabled ... requires at least a SkyAtmosphere"**: the
+  legacy BP_Sky_Sphere dome is not an `IsSky` mesh, so a real-time SkyLight captures black. FloodValley now has a
+  SkyAtmosphere (sun flagged `atmosphere_sun_light`) as the visible sky; BP_Sky_Sphere stays only because Cosys'
+  `simSetTimeOfDay` finds the sun through its "Directional light actor" property, and is hidden.
+- **GPU is used, not the iGPU** (diagnosed 2026-09-10 on a user report of CPU 91 % / NVIDIA 2 % / Intel 20 %):
+  UE's RHI picks the RTX 4060 (log: CsvProfiler gpu="NVIDIA GeForce RTX 4060 Laptop GPU", texture pool from its
+  6.5 GB); `nvidia-smi` lists UnrealEditor.exe as a C+G client. The Intel iGPU drives the display (Optimus), so
+  desktop compositing and frame copies show there. The CPU spike was imports/texture compression/asset unzipping,
+  all CPU-bound. Under PIE with the bare scene the 4060 ran 75-82 % busy at **P5, ~750 MHz, 8-14 W of 40 W**, throttle
+  reason `Idle` only (AC power, Windows "Best performance" overlay): the load is too light to boost, not a cap.
+  Re-measure once the scene is dressed; `nvidia-smi -q -d PERFORMANCE` gives the throttle reasons.
+
+**Material scripting through Python (measured 2026-09-10):**
+- Deleting a material that a level actor references fails (`EnsureFailed ... ForceDeleteObjects` callstack in the
+  log) and `create_asset` then returns None. Reuse the asset and clear its graph instead.
+- `MaterialEditingLibrary.delete_all_material_expressions` does **not** clear everything (a terrain graph grew
+  64 -> 95 -> 111 nodes over three reruns). Delete each node from `get_material_expressions()` and assert the count
+  is 0; `delete_unused_expressions` strips leftovers from an existing asset.
+- `BlendAngleCorrectedNormals` is a material *function*, not a `MaterialExpression*` class; a script that dies
+  mid-graph leaves a material that fails to compile (log: "Failed to compile Material ... Default Material will be
+  used") and renders as the grey checker. Sum + Normalize is the cheap substitute.
+- Check a built material with `get_material_property_input_node(mat, MP_*)` and the used-texture count: a
+  compile failure shows as 0 used textures even though the nodes exist.
+- Textures, saves and material recompiles are unreliable while PIE runs (imports come back as 32 px
+  placeholders, saves return False). Build with PIE off.
+- The survey camera sits at NED (0, 0, 0.30) below the body: at (0.30, 0, 0.15) part of the airframe showed as a
+  blurred dark blob in a nadir frame corner.
