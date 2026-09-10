@@ -1,0 +1,40 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.ruff_cache/
+.pytest_cache/
+
+# Local-only working dirs
+_downloads/
+_logs/
+_artifacts/
+_build/
+_staging/
+_scratch/
+data/raw/
+data/datasets/
+
+# Unreal (generated)
+sim/SightlineSim/Binaries/
+sim/SightlineSim/Intermediate/
+sim/SightlineSim/Saved/
+sim/SightlineSim/DerivedDataCache/
+sim/SightlineSim/.vs/
+sim/SightlineSim/*.sln
+sim/SightlineSim/*.slnx
+# Cosys-AirSim plugin is a 740 MB third-party binary drop: restored by tools/setup/fetch_airsim.ps1
+sim/SightlineSim/Plugins/AirSim/
+
+# Model weights / engines
+*.pt
+*.pth
+*.engine
+*.onnx
+*.safetensors
+models/hf/
+models/rfdetr/
+!models/.keep
+
+# FiftyOne MongoDB and scratch images (envs/fiftyone)
+data/fiftyone/

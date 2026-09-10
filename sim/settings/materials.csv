@@ -1,0 +1,14 @@
+default,0.5
+concrete,0.3
+asphalt,0.1
+wood,0.9
+metal,0.5
+alluminium,0.5
+water,0.05
+mud,0.2
+soil,0.25
+rock,0.35
+vegetation,0.45
+fabric,0.6
+skin,0.4
+plastic,0.55

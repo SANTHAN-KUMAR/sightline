@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "unreal": {
+      "type": "http",
+      "url": "http://localhost:8000/mcp"
+    },
+    "sightline": {
+      "type": "stdio",
+      "command": "D:/Sightline/.venv/Scripts/python.exe",
+      "args": ["D:/Sightline/tools/sightline_mcp/server.py"],
+      "env": {
+        "SIGHTLINE_UE_ROOT": "D:/UE_5.8",
+        "SIGHTLINE_UPROJECT": "D:/Sightline/sim/SightlineSim/SightlineSim.uproject"
+      }
+    }
+  }
+}

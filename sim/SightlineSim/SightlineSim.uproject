@@ -1,0 +1,34 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "5.8",
+	"Category": "",
+	"Description": "Sightline: aerial survivor-triage simulation (flood/debris-flow valley) on Cosys-AirSim",
+	"Modules": [
+		{
+			"Name": "SightlineSim",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"AirSim"
+			]
+		}
+	],
+	"Plugins": [
+		{ "Name": "AirSim", "Enabled": true },
+		{ "Name": "ChaosVehiclesPlugin", "Enabled": true },
+		{ "Name": "PythonScriptPlugin", "Enabled": true },
+		{ "Name": "EditorScriptingUtilities", "Enabled": true },
+		{ "Name": "Water", "Enabled": true },
+		{ "Name": "ModelContextProtocol", "Enabled": true },
+		{ "Name": "ToolsetRegistry", "Enabled": true },
+		{ "Name": "EditorToolset", "Enabled": true },
+		{ "Name": "ConfigSettingsToolset", "Enabled": true },
+		{ "Name": "PluginToolset", "Enabled": true },
+		{ "Name": "AutomationTestToolset", "Enabled": true },
+		{ "Name": "LiveCodingToolset", "Enabled": true },
+		{ "Name": "PhysicsToolsets", "Enabled": true },
+		{ "Name": "NiagaraToolsets", "Enabled": true },
+		{ "Name": "PCG", "Enabled": true },
+		{ "Name": "PCGToolset", "Enabled": true }
+	]
+}

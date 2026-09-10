@@ -1,0 +1,48 @@
+{
+  "SettingsVersion": 2.0,
+  "SimMode": "Multirotor",
+  "ClockType": "ScalableClock",
+  "ClockSpeed": 1.0,
+  "LocalHostIp": "127.0.0.1",
+  "ApiServerPort": 41451,
+  "RpcEnabled": true,
+  "RecordUIVisible": true,
+  "LogMessagesVisible": true,
+  "InitialInstanceSegmentation": true,
+  "EngineSound": false,
+  "OriginGeopoint": { "Latitude": 11.4870, "Longitude": 76.1450, "Altitude": 900 },
+  "CameraDefaults": {
+    "CaptureSettings": [
+      { "ImageType": 0, "Width": 1920, "Height": 1080, "FOV_Degrees": 75.5, "MotionBlurAmount": 0,
+        "LumenGIEnable": false, "LumenReflectionEnable": false },
+      { "ImageType": 1, "Width": 1920, "Height": 1080, "FOV_Degrees": 75.5 },
+      { "ImageType": 2, "Width": 1920, "Height": 1080, "FOV_Degrees": 75.5 },
+      { "ImageType": 5, "Width": 1920, "Height": 1080, "FOV_Degrees": 75.5 },
+      { "ImageType": 6, "Width": 1920, "Height": 1080, "FOV_Degrees": 75.5 },
+      { "ImageType": 7, "Width": 1920, "Height": 1080, "FOV_Degrees": 75.5 }
+    ]
+  },
+  "Vehicles": {
+    "Drone": {
+      "VehicleType": "SimpleFlight",
+      "DefaultVehicleState": "Armed",
+      "AutoCreate": true,
+      "EnableCollisions": true,
+      "AllowAPIAlways": true,
+      "RC": { "RemoteControlID": 0, "AllowAPIWhenDisconnected": true },
+      "Cameras": {
+        "survey": {
+          "X": 0.30, "Y": 0.0, "Z": 0.15,
+          "Pitch": -90.0, "Roll": 0.0, "Yaw": 0.0,
+          "Gimbal": { "Stabilization": 1.0, "Pitch": -90.0, "Roll": 0.0, "Yaw": 0.0 }
+        }
+      },
+      "X": 0, "Y": 0, "Z": 0, "Yaw": 0
+    }
+  },
+  "SubWindows": [
+    { "WindowID": 0, "CameraName": "survey", "ImageType": 0, "VehicleName": "Drone", "Visible": true },
+    { "WindowID": 1, "CameraName": "survey", "ImageType": 5, "VehicleName": "Drone", "Visible": true },
+    { "WindowID": 2, "CameraName": "survey", "ImageType": 7, "VehicleName": "Drone", "Visible": true }
+  ]
+}

@@ -1,0 +1,1008 @@
+{
+  "generated": "2026-09-10 19:18:44",
+  "python": "3.11.16",
+  "pytest_returncode": 0,
+  "duration_s": 328.1,
+  "counts": {
+    "passed": 37,
+    "FAILED": 0,
+    "ERROR": 0,
+    "skipped": 2
+  },
+  "tools": [
+    {
+      "tool": "PyTorch (CUDA)",
+      "distribution": "torch",
+      "version": "2.14.0+cu130",
+      "licence": "Apache-2.0 AND Apache-2.0 WITH LLVM-exception AND BSD-2-Clause AND BSD-3-Clause AND BSL-1.0 AND MIT",
+      "test": "test_torch_cuda_matmul",
+      "result": "passed",
+      "time_s": 4.44,
+      "message": "",
+      "metrics": {
+        "version": "2.14.0+cu130",
+        "cuda": "13.0",
+        "cudnn": 92400,
+        "device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+        "fp16_matmul_2048_ms": 19.357,
+        "torchvision": "0.29.0+cu130"
+      }
+    },
+    {
+      "tool": "torchvision",
+      "distribution": "torchvision",
+      "version": "0.29.0+cu130",
+      "licence": "BSD",
+      "test": "test_torch_cuda_matmul",
+      "result": "passed",
+      "time_s": 4.44,
+      "message": "",
+      "metrics": {
+        "version": "2.14.0+cu130",
+        "cuda": "13.0",
+        "cudnn": 92400,
+        "device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+        "fp16_matmul_2048_ms": 19.357,
+        "torchvision": "0.29.0+cu130"
+      }
+    },
+    {
+      "tool": "Ultralytics YOLO26",
+      "distribution": "ultralytics",
+      "version": "8.4.146",
+      "licence": "AGPL-3.0",
+      "test": "test_yolo26n_predict",
+      "result": "passed",
+      "time_s": 1.01,
+      "message": "",
+      "metrics": {
+        "version": "8.4.146",
+        "weights": "D:\\Sightline\\models\\yolo26n.pt",
+        "detections": 5,
+        "p2_configs": [
+          "yolo26-p2.yaml"
+        ],
+        "speed_ms": {
+          "preprocess": 28.695900000457186,
+          "inference": 15.606599998136517,
+          "postprocess": 17.249100001208717
+        }
+      }
+    },
+    {
+      "tool": "TensorRT (cu13)",
+      "distribution": "tensorrt-cu13-libs",
+      "version": "11.3.0.99",
+      "licence": "Proprietary",
+      "test": "test_yolo26n_tensorrt_fp16_engine",
+      "result": "passed",
+      "time_s": 215.2,
+      "message": "",
+      "metrics": {
+        "version": "11.3.0.99",
+        "engine": "D:\\Sightline\\models\\stack_check\\yolo26n.engine",
+        "engine_mb": 92.1,
+        "build_s": 214.3,
+        "predict_e2e_ms": 12.74,
+        "inference_ms": 4.64
+      }
+    },
+    {
+      "tool": "ONNX",
+      "distribution": "onnx",
+      "version": "1.22.0",
+      "licence": "Apache-2.0",
+      "test": "test_onnx_and_onnxruntime_gpu",
+      "result": "passed",
+      "time_s": 1.58,
+      "message": "",
+      "metrics": {
+        "version": "1.29.0",
+        "onnx": "1.22.0",
+        "output_shape": [
+          1,
+          84,
+          8400
+        ],
+        "cuda_ep_ms": 17.08
+      }
+    },
+    {
+      "tool": "onnxslim",
+      "distribution": "onnxslim",
+      "version": "0.1.96",
+      "licence": "MIT",
+      "test": "test_onnx_and_onnxruntime_gpu",
+      "result": "passed",
+      "time_s": 1.58,
+      "message": "",
+      "metrics": {
+        "version": "1.29.0",
+        "onnx": "1.22.0",
+        "output_shape": [
+          1,
+          84,
+          8400
+        ],
+        "cuda_ep_ms": 17.08
+      }
+    },
+    {
+      "tool": "ONNX Runtime GPU",
+      "distribution": "onnxruntime-gpu",
+      "version": "1.29.0",
+      "licence": "MIT License",
+      "test": "test_onnx_and_onnxruntime_gpu",
+      "result": "passed",
+      "time_s": 1.58,
+      "message": "",
+      "metrics": {
+        "version": "1.29.0",
+        "onnx": "1.22.0",
+        "output_shape": [
+          1,
+          84,
+          8400
+        ],
+        "cuda_ep_ms": 17.08
+      }
+    },
+    {
+      "tool": "Ultralytics BoT-SORT",
+      "distribution": "ultralytics",
+      "version": "8.4.146",
+      "licence": "AGPL-3.0",
+      "test": "test_ultralytics_botsort_track",
+      "result": "passed",
+      "time_s": 0.79,
+      "message": "",
+      "metrics": {
+        "stable_ids": 4,
+        "frames": 8
+      }
+    },
+    {
+      "tool": "RF-DETR",
+      "distribution": "rfdetr",
+      "version": "1.10.1",
+      "licence": "Apache License 2.0",
+      "test": "test_rfdetr_nano_predict",
+      "result": "passed",
+      "time_s": 18.2,
+      "message": "",
+      "metrics": {
+        "version": "1.10.1",
+        "weights": "D:\\Sightline\\models\\rfdetr\\rf-detr-nano.pth",
+        "weights_mb": 366.3,
+        "detections": 5,
+        "predict_ms": 60.9
+      }
+    },
+    {
+      "tool": "SAHI",
+      "distribution": "sahi",
+      "version": "0.12.6",
+      "licence": "MIT",
+      "test": "test_sahi_sliced_prediction_4k",
+      "result": "passed",
+      "time_s": 1.38,
+      "message": "",
+      "metrics": {
+        "version": "0.12.6",
+        "persons": 12,
+        "seconds_4k": 1.01
+      }
+    },
+    {
+      "tool": "supervision (InferenceSlicer)",
+      "distribution": "supervision",
+      "version": "0.30.2",
+      "licence": "MIT",
+      "test": "test_supervision_inference_slicer_4k",
+      "result": "passed",
+      "time_s": 0.97,
+      "message": "",
+      "metrics": {
+        "version": "0.30.2",
+        "persons": 16,
+        "seconds_4k": 0.88
+      }
+    },
+    {
+      "tool": "Weighted Boxes Fusion",
+      "distribution": "ensemble-boxes",
+      "version": "1.0.9",
+      "licence": "MIT License",
+      "test": "test_weighted_boxes_fusion",
+      "result": "passed",
+      "time_s": 0.55,
+      "message": "",
+      "metrics": {
+        "fused_boxes": 3
+      }
+    },
+    {
+      "tool": "ProbEn score rule (vendored)",
+      "distribution": null,
+      "version": null,
+      "licence": "Apache-2.0 (vendor/proben)",
+      "test": "test_proben_score_rule",
+      "result": "passed",
+      "time_s": 0.01,
+      "message": "",
+      "metrics": {
+        "vendored": "vendor/proben",
+        "fused_07_08": 0.9032
+      }
+    },
+    {
+      "tool": "DINOv2 ViT-S (timm)",
+      "distribution": "timm",
+      "version": "1.0.29",
+      "licence": "Apache-2.0",
+      "test": "test_dinov2_vits_features",
+      "result": "passed",
+      "time_s": 4.22,
+      "message": "",
+      "metrics": {
+        "version": "1.0.29",
+        "model": "vit_small_patch14_dinov2.lvd142m",
+        "feat_dim": 384,
+        "ms_10_crops": 66.42
+      }
+    },
+    {
+      "tool": "transformers (RF-DETR dep)",
+      "distribution": "transformers",
+      "version": "5.17.0",
+      "licence": "Apache 2.0 License",
+      "test": "test_rfdetr_nano_predict",
+      "result": "passed",
+      "time_s": 18.2,
+      "message": "",
+      "metrics": {
+        "version": "1.10.1",
+        "weights": "D:\\Sightline\\models\\rfdetr\\rf-detr-nano.pth",
+        "weights_mb": 366.3,
+        "detections": 5,
+        "predict_ms": 60.9
+      }
+    },
+    {
+      "tool": "PyAV",
+      "distribution": "av",
+      "version": "18.1.0",
+      "licence": "BSD-3-Clause",
+      "test": "test_pyav_decode_pts",
+      "result": "passed",
+      "time_s": 1.07,
+      "message": "",
+      "metrics": {
+        "version": "18.1.0",
+        "encoder": "libx264",
+        "frames": 48
+      }
+    },
+    {
+      "tool": "PyNvVideoCodec",
+      "distribution": "pynvvideocodec",
+      "version": "2.2.2",
+      "licence": "MIT",
+      "test": "test_pynvvideocodec_decode",
+      "result": "passed",
+      "time_s": 0.23,
+      "message": "",
+      "metrics": {
+        "version": "2.2.2",
+        "frames": 48,
+        "frame_shape": [
+          720,
+          1280,
+          3
+        ],
+        "decode_fps_720p_incl_dlpack": 546.9
+      }
+    },
+    {
+      "tool": "torchcodec",
+      "distribution": "torchcodec",
+      "version": "0.16.0+cu130",
+      "licence": "unknown",
+      "test": "test_torchcodec_decode",
+      "result": "skipped",
+      "time_s": 0.07,
+      "message": "no FFmpeg shared build on PATH: install one on D: and add its bin\\ to PATH to enable torchcodec",
+      "metrics": {
+        "version": "0.16.0+cu130",
+        "ffmpeg_on_path": null,
+        "note": "installs and imports; needs an external FFmpeg 4-8 shared build on PATH (none on this machine). Project decodes with PyAV + PyNvVideoCodec instead (doc 5.4)."
+      }
+    },
+    {
+      "tool": "pymavlink",
+      "distribution": "pymavlink",
+      "version": "2.4.49",
+      "licence": "LGPLv3",
+      "test": "test_pymavlink_tlog_roundtrip",
+      "result": "passed",
+      "time_s": 0.24,
+      "message": "",
+      "metrics": {
+        "version": "2.4.49",
+        "messages": {
+          "SYSTEM_TIME": 20,
+          "GLOBAL_POSITION_INT": 20,
+          "ATTITUDE": 20,
+          "GIMBAL_DEVICE_ATTITUDE_STATUS": 20
+        }
+      }
+    },
+    {
+      "tool": "pyulog",
+      "distribution": "pyulog",
+      "version": "1.2.4",
+      "licence": "BSD-3-Clause",
+      "test": "test_pyulog_real_sample",
+      "result": "passed",
+      "time_s": 0.14,
+      "message": "",
+      "metrics": {
+        "version": null,
+        "sample": "D:\\Sightline\\data\\samples\\px4_sample_log_small.ulg",
+        "topics": 55,
+        "has_attitude": true,
+        "duration_s": 1174.1
+      }
+    },
+    {
+      "tool": "thermal_parser (DJI R-JPEG)",
+      "distribution": "thermal-parser",
+      "version": "20240826",
+      "licence": "MIT Licence",
+      "test": "test_thermal_parser_dji_rjpeg",
+      "result": "passed",
+      "time_s": 1.22,
+      "message": "",
+      "metrics": {
+        "shape": [
+          512,
+          640
+        ],
+        "t_min_c": 13.1,
+        "t_max_c": 28.1
+      }
+    },
+    {
+      "tool": "roboflow trackers",
+      "distribution": "trackers",
+      "version": "2.6.0",
+      "licence": "Apache License 2.0",
+      "test": "test_roboflow_trackers",
+      "result": "passed",
+      "time_s": 0.18,
+      "message": "",
+      "metrics": {
+        "version": null,
+        "tracker": "ByteTrackTracker",
+        "ids": [
+          0,
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "tool": "BoxMOT (A/B only)",
+      "distribution": "boxmot",
+      "version": "25.0.0",
+      "licence": "AGPL-3.0",
+      "test": "test_boxmot_bytetrack_ab",
+      "result": "passed",
+      "time_s": 0.31,
+      "message": "",
+      "metrics": {
+        "version": "25.0.0",
+        "ids": [
+          0,
+          1,
+          2
+        ],
+        "lap_module": "lap (lapx overridden)"
+      }
+    },
+    {
+      "tool": "lap (assignment)",
+      "distribution": "lap",
+      "version": "0.5.13",
+      "licence": "BSD-2-Clause",
+      "test": "test_ultralytics_botsort_track",
+      "result": "passed",
+      "time_s": 0.79,
+      "message": "",
+      "metrics": {
+        "stable_ids": 4,
+        "frames": 8
+      }
+    },
+    {
+      "tool": "scikit-learn DBSCAN",
+      "distribution": "scikit-learn",
+      "version": "1.9.0",
+      "licence": "BSD-3-Clause",
+      "test": "test_dbscan_haversine_geo_dedup",
+      "result": "passed",
+      "time_s": 0.73,
+      "message": "",
+      "metrics": {
+        "version": "1.9.0",
+        "clusters": 3
+      }
+    },
+    {
+      "tool": "torchmetrics mAP",
+      "distribution": "torchmetrics",
+      "version": "1.9.0",
+      "licence": "Apache-2.0",
+      "test": "test_torchmetrics_map_recall_at_05",
+      "result": "passed",
+      "time_s": 2.48,
+      "message": "",
+      "metrics": {
+        "version": "1.9.0",
+        "recall_iou05": 0.6667,
+        "map50": 0.6634
+      }
+    },
+    {
+      "tool": "pycocotools",
+      "distribution": "pycocotools",
+      "version": "2.0.11",
+      "licence": "FreeBSD",
+      "test": "test_pycocotools_eval",
+      "result": "passed",
+      "time_s": 0.01,
+      "message": "",
+      "metrics": {
+        "version": null,
+        "ap50": 0.9999999999999999
+      }
+    },
+    {
+      "tool": "py-motmetrics",
+      "distribution": "motmetrics",
+      "version": "1.4.0",
+      "licence": "unknown",
+      "test": "test_motmetrics_mota_idf1",
+      "result": "passed",
+      "time_s": 0.21,
+      "message": "",
+      "metrics": {
+        "version": "1.4.0",
+        "mota": 0.9167,
+        "idf1": 0.75
+      }
+    },
+    {
+      "tool": "FiftyOne (separate env)",
+      "distribution": "@fiftyone",
+      "version": "1.21.0",
+      "licence": "Apache",
+      "test": "test_fiftyone_separate_env",
+      "result": "passed",
+      "time_s": 22.07,
+      "message": "",
+      "metrics": {
+        "version": "1.21.0",
+        "samples": 3,
+        "tp": 3,
+        "fp": 3,
+        "fn": 0,
+        "deleted": true,
+        "database_dir": "D:\\Sightline\\data\\fiftyone\\db",
+        "db_files": 72,
+        "home_dotfiftyone_exists": false,
+        "python": "3.11.16"
+      }
+    },
+    {
+      "tool": "pyproj",
+      "distribution": "pyproj",
+      "version": "3.7.2",
+      "licence": "MIT",
+      "test": "test_pyproj_geod_fwd_inv",
+      "result": "passed",
+      "time_s": 0.04,
+      "message": "",
+      "metrics": {
+        "version": "3.7.2",
+        "proj": "9.5.1"
+      }
+    },
+    {
+      "tool": "rasterio",
+      "distribution": "rasterio",
+      "version": "1.4.4",
+      "licence": "BSD",
+      "test": "test_rasterio_geotiff_roundtrip",
+      "result": "passed",
+      "time_s": 0.84,
+      "message": "",
+      "metrics": {
+        "version": "1.4.4",
+        "gdal": "3.10.3"
+      }
+    },
+    {
+      "tool": "dem-stitcher",
+      "distribution": "dem-stitcher",
+      "version": "3.2.0",
+      "licence": "Apache-2.0",
+      "test": "test_dem_stitcher_glo30_wayanad",
+      "result": "passed",
+      "time_s": 0.2,
+      "message": "",
+      "metrics": {
+        "version": "3.2.0",
+        "file": "D:\\Sightline\\data\\dem\\wayanad_glo30_76.10_11.45_76.18_11.53.tif",
+        "shape": [
+          289,
+          289
+        ],
+        "z_min": 293.8,
+        "z_max": 2234.7,
+        "res_m": 30.9,
+        "origin_geopoint_height_m": 1060.3
+      }
+    },
+    {
+      "tool": "shapely",
+      "distribution": "shapely",
+      "version": "2.1.2",
+      "licence": "BSD 3-Clause",
+      "test": "test_shapely_geopandas_pyogrio_gpkg",
+      "result": "passed",
+      "time_s": 0.73,
+      "message": "",
+      "metrics": {
+        "version": "1.1.4",
+        "pyogrio": "0.13.0",
+        "shapely": "2.1.2",
+        "gdal": "3.12.4"
+      }
+    },
+    {
+      "tool": "geopandas",
+      "distribution": "geopandas",
+      "version": "1.1.4",
+      "licence": "BSD-3-Clause",
+      "test": "test_shapely_geopandas_pyogrio_gpkg",
+      "result": "passed",
+      "time_s": 0.73,
+      "message": "",
+      "metrics": {
+        "version": "1.1.4",
+        "pyogrio": "0.13.0",
+        "shapely": "2.1.2",
+        "gdal": "3.12.4"
+      }
+    },
+    {
+      "tool": "pyogrio",
+      "distribution": "pyogrio",
+      "version": "0.13.0",
+      "licence": "MIT License",
+      "test": "test_shapely_geopandas_pyogrio_gpkg",
+      "result": "passed",
+      "time_s": 0.73,
+      "message": "",
+      "metrics": {
+        "version": "1.1.4",
+        "pyogrio": "0.13.0",
+        "shapely": "2.1.2",
+        "gdal": "3.12.4"
+      }
+    },
+    {
+      "tool": "DuckDB + spatial",
+      "distribution": "duckdb",
+      "version": "1.5.5",
+      "licence": "MIT License",
+      "test": "test_duckdb_spatial",
+      "result": "passed",
+      "time_s": 2.1,
+      "message": "",
+      "metrics": {
+        "version": "1.5.5",
+        "extension_dir": "D:\\Tools\\cache\\duckdb\\extensions",
+        "distance_m": 108.97
+      }
+    },
+    {
+      "tool": "FastAPI",
+      "distribution": "fastapi",
+      "version": "0.141.1",
+      "licence": "MIT",
+      "test": "test_fastapi_websocket_testclient",
+      "result": "passed",
+      "time_s": 0.43,
+      "message": "",
+      "metrics": {
+        "version": "0.141.1"
+      }
+    },
+    {
+      "tool": "httpx (TestClient)",
+      "distribution": "httpx",
+      "version": "0.28.1",
+      "licence": "BSD-3-Clause",
+      "test": "test_fastapi_websocket_testclient",
+      "result": "passed",
+      "time_s": 0.43,
+      "message": "",
+      "metrics": {
+        "version": "0.141.1"
+      }
+    },
+    {
+      "tool": "uvicorn",
+      "distribution": "uvicorn",
+      "version": "0.52.4",
+      "licence": "BSD-3-Clause",
+      "test": "test_uvicorn_websockets_real_socket",
+      "result": "passed",
+      "time_s": 0.39,
+      "message": "",
+      "metrics": {
+        "version": "0.52.4",
+        "websockets": "17.1"
+      }
+    },
+    {
+      "tool": "websockets",
+      "distribution": "websockets",
+      "version": "17.1",
+      "licence": "BSD-3-Clause",
+      "test": "test_uvicorn_websockets_real_socket",
+      "result": "passed",
+      "time_s": 0.39,
+      "message": "",
+      "metrics": {
+        "version": "0.52.4",
+        "websockets": "17.1"
+      }
+    },
+    {
+      "tool": "persist-queue",
+      "distribution": "persist-queue",
+      "version": "1.1.0",
+      "licence": "BSD",
+      "test": "test_persist_queue_sqliteackqueue_durability",
+      "result": "passed",
+      "time_s": 0.17,
+      "message": "",
+      "metrics": {
+        "version": "1.1.0",
+        "resumed": [
+          "r-1",
+          "r-2"
+        ]
+      }
+    },
+    {
+      "tool": "simplekml",
+      "distribution": "simplekml",
+      "version": "1.3.6",
+      "licence": "GNU Lesser General Public License v3+",
+      "test": "test_simplekml_kmz_with_thumbnail",
+      "result": "passed",
+      "time_s": 0.1,
+      "message": "",
+      "metrics": {
+        "files": [
+          "doc.kml",
+          "files/r-0001.png"
+        ]
+      }
+    },
+    {
+      "tool": "geojson",
+      "distribution": "geojson",
+      "version": "3.3.0",
+      "licence": "BSD",
+      "test": "test_geojson_feature",
+      "result": "passed",
+      "time_s": 0.02,
+      "message": "",
+      "metrics": {
+        "version": "3.3.0"
+      }
+    },
+    {
+      "tool": "pytak (CoT)",
+      "distribution": "pytak",
+      "version": "7.6.1",
+      "licence": "Apache 2.0",
+      "test": "test_pytak_cot_event",
+      "result": "passed",
+      "time_s": 0.2,
+      "message": "",
+      "metrics": {
+        "version": null,
+        "cot_bytes": 338
+      }
+    },
+    {
+      "tool": "Fields2Cover",
+      "distribution": null,
+      "version": null,
+      "licence": "n/a",
+      "test": "test_fields2cover_windows_availability",
+      "result": "skipped",
+      "time_s": 0.0,
+      "message": "Fields2Cover has no Windows wheel (sdist only); use the own boustrophedon fallback",
+      "metrics": {
+        "installed": false,
+        "note": "PyPI 2.1.0 ships an sdist only (C++ build needing GDAL, OR-Tools, Eigen); no Windows wheel. Fallback: own boustrophedon generator (doc 5.3)."
+      }
+    },
+    {
+      "tool": "pygame (joystick)",
+      "distribution": "pygame",
+      "version": "2.6.1",
+      "licence": "LGPL",
+      "test": "test_pygame_joystick_init_without_device",
+      "result": "passed",
+      "time_s": 1.85,
+      "message": "",
+      "metrics": {
+        "version": "2.6.1",
+        "sdl": "2.28.4",
+        "joysticks": 1
+      }
+    },
+    {
+      "tool": "inputs",
+      "distribution": "inputs",
+      "version": "0.5",
+      "licence": "BSD",
+      "test": "test_inputs_gamepad_enumeration",
+      "result": "passed",
+      "time_s": 0.04,
+      "message": "",
+      "metrics": {
+        "gamepads": 1
+      }
+    },
+    {
+      "tool": "mavsdk",
+      "distribution": "mavsdk",
+      "version": "3.17.2",
+      "licence": "BSD License",
+      "test": "test_mavsdk_server_binary",
+      "result": "passed",
+      "time_s": 1.33,
+      "message": "",
+      "metrics": {
+        "version": null,
+        "server": "D:\\Sightline\\.venv\\Lib\\site-packages\\mavsdk\\bin\\mavsdk_server.exe"
+      }
+    }
+  ],
+  "tests": {
+    "test_torch_cuda_matmul": {
+      "status": "passed",
+      "time_s": 4.44,
+      "message": ""
+    },
+    "test_yolo26n_predict": {
+      "status": "passed",
+      "time_s": 1.01,
+      "message": ""
+    },
+    "test_yolo26n_tensorrt_fp16_engine": {
+      "status": "passed",
+      "time_s": 215.2,
+      "message": ""
+    },
+    "test_onnx_and_onnxruntime_gpu": {
+      "status": "passed",
+      "time_s": 1.58,
+      "message": ""
+    },
+    "test_ultralytics_botsort_track": {
+      "status": "passed",
+      "time_s": 0.79,
+      "message": ""
+    },
+    "test_rfdetr_nano_predict": {
+      "status": "passed",
+      "time_s": 18.2,
+      "message": ""
+    },
+    "test_sahi_sliced_prediction_4k": {
+      "status": "passed",
+      "time_s": 1.38,
+      "message": ""
+    },
+    "test_supervision_inference_slicer_4k": {
+      "status": "passed",
+      "time_s": 0.97,
+      "message": ""
+    },
+    "test_weighted_boxes_fusion": {
+      "status": "passed",
+      "time_s": 0.55,
+      "message": ""
+    },
+    "test_proben_score_rule": {
+      "status": "passed",
+      "time_s": 0.01,
+      "message": ""
+    },
+    "test_dinov2_vits_features": {
+      "status": "passed",
+      "time_s": 4.22,
+      "message": ""
+    },
+    "test_pyav_decode_pts": {
+      "status": "passed",
+      "time_s": 1.07,
+      "message": ""
+    },
+    "test_pynvvideocodec_decode": {
+      "status": "passed",
+      "time_s": 0.23,
+      "message": ""
+    },
+    "test_torchcodec_decode": {
+      "status": "skipped",
+      "time_s": 0.07,
+      "message": "no FFmpeg shared build on PATH: install one on D: and add its bin\\ to PATH to enable torchcodec"
+    },
+    "test_pymavlink_tlog_roundtrip": {
+      "status": "passed",
+      "time_s": 0.24,
+      "message": ""
+    },
+    "test_pyulog_real_sample": {
+      "status": "passed",
+      "time_s": 0.14,
+      "message": ""
+    },
+    "test_thermal_parser_dji_rjpeg": {
+      "status": "passed",
+      "time_s": 1.22,
+      "message": ""
+    },
+    "test_roboflow_trackers": {
+      "status": "passed",
+      "time_s": 0.18,
+      "message": ""
+    },
+    "test_boxmot_bytetrack_ab": {
+      "status": "passed",
+      "time_s": 0.31,
+      "message": ""
+    },
+    "test_dbscan_haversine_geo_dedup": {
+      "status": "passed",
+      "time_s": 0.73,
+      "message": ""
+    },
+    "test_torchmetrics_map_recall_at_05": {
+      "status": "passed",
+      "time_s": 2.48,
+      "message": ""
+    },
+    "test_pycocotools_eval": {
+      "status": "passed",
+      "time_s": 0.01,
+      "message": ""
+    },
+    "test_motmetrics_mota_idf1": {
+      "status": "passed",
+      "time_s": 0.21,
+      "message": ""
+    },
+    "test_fiftyone_separate_env": {
+      "status": "passed",
+      "time_s": 22.07,
+      "message": ""
+    },
+    "test_pyproj_geod_fwd_inv": {
+      "status": "passed",
+      "time_s": 0.04,
+      "message": ""
+    },
+    "test_rasterio_geotiff_roundtrip": {
+      "status": "passed",
+      "time_s": 0.84,
+      "message": ""
+    },
+    "test_dem_stitcher_glo30_wayanad": {
+      "status": "passed",
+      "time_s": 0.2,
+      "message": ""
+    },
+    "test_shapely_geopandas_pyogrio_gpkg": {
+      "status": "passed",
+      "time_s": 0.73,
+      "message": ""
+    },
+    "test_duckdb_spatial": {
+      "status": "passed",
+      "time_s": 2.1,
+      "message": ""
+    },
+    "test_fastapi_websocket_testclient": {
+      "status": "passed",
+      "time_s": 0.43,
+      "message": ""
+    },
+    "test_uvicorn_websockets_real_socket": {
+      "status": "passed",
+      "time_s": 0.39,
+      "message": ""
+    },
+    "test_persist_queue_sqliteackqueue_durability": {
+      "status": "passed",
+      "time_s": 0.17,
+      "message": ""
+    },
+    "test_simplekml_kmz_with_thumbnail": {
+      "status": "passed",
+      "time_s": 0.1,
+      "message": ""
+    },
+    "test_geojson_feature": {
+      "status": "passed",
+      "time_s": 0.02,
+      "message": ""
+    },
+    "test_pytak_cot_event": {
+      "status": "passed",
+      "time_s": 0.2,
+      "message": ""
+    },
+    "test_fields2cover_windows_availability": {
+      "status": "skipped",
+      "time_s": 0.0,
+      "message": "Fields2Cover has no Windows wheel (sdist only); use the own boustrophedon fallback"
+    },
+    "test_pygame_joystick_init_without_device": {
+      "status": "passed",
+      "time_s": 1.85,
+      "message": ""
+    },
+    "test_inputs_gamepad_enumeration": {
+      "status": "passed",
+      "time_s": 0.04,
+      "message": ""
+    },
+    "test_mavsdk_server_binary": {
+      "status": "passed",
+      "time_s": 1.33,
+      "message": ""
+    }
+  },
+  "disk_gb": {
+    ".venv (logical, hardlinked from uv cache)": 7.53,
+    "envs/fiftyone/.venv": 0.75,
+    "models": 0.95,
+    "data/dem": 0.0,
+    "data/samples": 0.0,
+    "data/fiftyone": 0.32,
+    "D:/Tools/cache/uv": 10.24,
+    "D:/Tools/cache/hf": 0.0,
+    "D:/Tools/cache/duckdb": 0.06
+  },
+  "mcp_smoke": {
+    "returncode": 0,
+    "tail": [
+      "server: sightline 1.30.0 protocol 2025-11-25",
+      "tools: 27; missing: none",
+      "status.endpoints: {\"unreal_mcp_http:8000\": false, \"airsim_rpc:41451\": true, \"editor_python_remote_exec\": []}",
+      "status.ram_available_gb: 4.7 gpu: {'name': 'NVIDIA GeForce RTX 4060 Laptop GPU', 'vram_used_mb': 6938, 'vram_total_mb': 8188, 'util_pct': 96, 'temp_c': 58}"
+    ]
+  }
+}

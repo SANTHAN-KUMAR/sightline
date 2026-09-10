@@ -1,0 +1,154 @@
+[project]
+name = "sightline"
+version = "0.1.0"
+description = "Aerial survivor triage system (PS2): Unreal/Cosys-AirSim simulation, vision pipeline, MCP tooling"
+readme = "CLAUDE.md"
+# cosysairsim 3.4.1 declares support up to 3.11; keep every env on 3.11 to avoid drift.
+requires-python = "==3.11.*"
+dependencies = [
+    # --- simulator client (Cosys-AirSim 3.4.1, wheel shipped with the 5.8-v3.4.1 release) ---
+    "cosysairsim",
+    "rpc-msgpack",
+    "numpy>=1.26,<2.3",
+    # --- MCP tooling (pinned to the last 1.x line; FastMCP API) ---
+    "mcp[cli]==1.30.0",
+    "psutil>=6.0",
+    "pillow>=10.4",
+    # opencv-python only: never add opencv-contrib-python / -headless alongside it (all own the cv2 package).
+    # opencv-python-headless is excluded below via override-dependencies.
+    "opencv-python>=4.10,<5",
+]
+
+# Stack verified by tests/test_stack.py (docs/verification/python_stack.md). All groups are installed by a
+# plain `uv sync` (default-groups = "all"). FiftyOne lives in its own project: envs/fiftyone (pin conflicts).
+[dependency-groups]
+dev = ["pytest>=8.3", "ruff>=0.6"]
+# Detection / fusion / export (doc 5.5, 5.11). torch/torchvision come from the PyTorch cu130 index.
+ml = [
+    "torch==2.14.0",
+    "torchvision==0.29.0",
+    "ultralytics==8.4.146",
+    "rfdetr==1.10.1",
+    "sahi>=0.12.6",
+    "supervision>=0.30.2",
+    "ensemble-boxes>=1.0.9",
+    "onnx>=1.20",
+    "onnxslim>=0.1.82",
+    "onnxruntime-gpu==1.29.0",
+    "tensorrt-cu13==11.3.0.99",
+    # TensorRT 11 is strongly-typed only: Ultralytics bakes FP16/INT8 into the ONNX with ModelOpt before building.
+    # Base package only: the [onnx] extra pins onnxruntime-gpu==1.22.0 (CUDA 12) + onnx~=1.21 + cupy-cuda12x on
+    # Windows, which would break the CUDA-13 stack. Only the modules modelopt.onnx imports eagerly for AutoCast
+    # are added (cppimport and cupy are lazy, INT4-only, and skipped).
+    "nvidia-modelopt>=0.44",
+    "onnx-graphsurgeon>=0.6.1",
+    "onnxscript>=0.7",
+    "lief>=1.0",
+    "polygraphy>=0.53",
+    "timm>=1.0.20",
+]
+# Ingest and synchronisation (doc 5.4, 5.5b)
+ingest = [
+    "pynvvideocodec==2.2.2",
+    "av>=18.1",
+    "torchcodec==0.16.0",
+    "pymavlink>=2.4.49",
+    "pyulog>=1.2.4",
+    "thermal-parser",
+]
+# Tracking / dedup (doc 5.6)
+track = [
+    "trackers>=2.6.0",
+    "scikit-learn>=1.6",
+    "lap>=0.5.12",
+]
+# Evaluation (doc 5.12)
+eval = [
+    "torchmetrics>=1.9.0",
+    "pycocotools>=2.0.11",
+    "motmetrics>=1.4.0",
+]
+# Geolocation / DEM / GIS formats (doc 5.7, 5.8). pyproj 3.8 and rasterio 1.5 need Python 3.12, so 3.11 gets
+# pyproj 3.7.x and rasterio 1.4.x.
+geo = [
+    "pyproj>=3.7,<3.8",
+    "rasterio>=1.4.3,<1.5",
+    "dem-stitcher>=3.2.0",
+    "shapely>=2.1",
+    "geopandas>=1.1",
+    "pyogrio>=0.12",
+    "duckdb>=1.5",
+]
+# Output / C2 / offline outbox (doc 5.8-5.10)
+c2 = [
+    "fastapi>=0.141",
+    "uvicorn>=0.40",
+    "httpx>=0.28",
+    "websockets>=15",
+    "persist-queue>=1.1.0",
+    "simplekml>=1.3.6",
+    "geojson>=3.2",
+    "pytak>=7.6",
+]
+# Gamepad takeover and optional MAVSDK (doc 5.2)
+control = [
+    "pygame>=2.6.1",
+    "inputs>=0.5",
+    "mavsdk>=3.17",
+]
+# A/B only (AGPL-3.0, never shipped in the product; doc 5.6)
+ab = [
+    "boxmot==25.0.0",
+]
+
+[tool.uv]
+package = false
+default-groups = "all"
+# The project is Windows-only (UE 5.8 + Cosys-AirSim on Windows). Restricting the lock avoids resolving CUDA,
+# TensorRT and PyNvVideoCodec wheels for platforms we never install on.
+environments = ["sys_platform == 'win32' and platform_machine == 'AMD64'"]
+override-dependencies = [
+    # cv2 conflict guard: FiftyOne/albumentations-style deps pull the headless variant, which overwrites cv2 from
+    # opencv-python (required by ultralytics, sahi, trackers, boxmot). Never install it in this env.
+    "opencv-python-headless; sys_platform == 'never'",
+    # lap/lapx both install the `lap` module. Ultralytics uses `lap`; boxmot asks for `lapx`. Keep `lap` only.
+    "lapx; sys_platform == 'never'",
+    # onnxruntime (CPU) and onnxruntime-gpu both install the `onnxruntime` module. Keep the GPU build only.
+    "onnxruntime; sys_platform == 'never'",
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true
+
+[[tool.uv.index]]
+name = "nvidia"
+url = "https://pypi.nvidia.com"
+explicit = true
+
+[tool.uv.sources]
+cosysairsim = { path = "vendor/wheels/cosysairsim-3.4.1-py3-none-any.whl" }
+torch = { index = "pytorch-cu130" }
+torchvision = { index = "pytorch-cu130" }
+torchcodec = { index = "pytorch-cu130" }
+tensorrt-cu13 = { index = "nvidia" }
+tensorrt-cu13-libs = { index = "nvidia" }
+tensorrt-cu13-bindings = { index = "nvidia" }
+# PyPI motmetrics 1.4.0 (2022) calls np.asfarray, removed in NumPy 2 (iou_matrix/norm2squared_matrix crash).
+# The maintained develop branch (17 Jul 2026, HOTA + TrackEval parity) fixes it; still versioned 1.4.0.
+motmetrics = { git = "https://github.com/cheind/py-motmetrics", rev = "e5ae766fab03b804f485d7c95ee1809b94d32dcc" }
+# Not on PyPI. Pinned commit (31 Mar 2025). See tools/thermal.py for the plugin-path shim it needs.
+thermal-parser = { git = "https://github.com/SanNianYiSi/thermal_parser", rev = "b513647ef2318ba99dd2e2a543fa0fb071fd9579" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "gpu: needs the CUDA GPU (keep small; the editor may be compiling shaders)",
+    "network: downloads data or weights on first run",
+    "slow: takes more than ~30 s (e.g. TensorRT engine build)",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"

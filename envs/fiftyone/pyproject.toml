@@ -1,0 +1,19 @@
+[project]
+name = "sightline-fiftyone"
+version = "0.1.0"
+description = "Isolated FiftyOne env for browsing detection failures (doc 5.12). Kept out of the main env on purpose."
+# Why separate (see docs/verification/python_stack.md):
+#  - fiftyone 1.21 hard-requires opencv-python-headless, the main env requires opencv-python (both own cv2);
+#  - it pins starlette<1.4 (the main env's MCP/FastAPI stack is on starlette 1.6), pymongo~=4.9.2,
+#    motor~=3.6, mongoengine~=0.29, strawberry-graphql<0.317 and hypercorn<0.19;
+#  - it launches its own MongoDB (fiftyone-db); the database lives in D:\Sightline\data\fiftyone\db
+#    (FIFTYONE_DATABASE_DIR, set by the caller / tools/verify_stack.py).
+requires-python = "==3.11.*"
+dependencies = [
+    "fiftyone==1.21.0",
+    "pytest>=8.3",
+]
+
+[tool.uv]
+package = false
+environments = ["sys_platform == 'win32' and platform_machine == 'AMD64'"]

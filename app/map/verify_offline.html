@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sightline offline map check</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Everything below is vendored under app/map/vendor; no CDN. Serve with: node app/map/serve.mjs -->
+<link rel="stylesheet" href="vendor/maplibre-gl/maplibre-gl.css">
+<script src="vendor/pmtiles/pmtiles.js"></script>
+<script src="vendor/protomaps-basemaps/basemaps.js"></script>
+<style>
+  html, body { margin: 0; height: 100%; font: 13px system-ui, sans-serif; }
+  #map { position: absolute; inset: 0; }
+  #status { position: absolute; top: 8px; left: 8px; z-index: 2; background: #fffe; padding: 6px 10px;
+            border: 1px solid #999; border-radius: 4px; white-space: pre; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="status">loading...</div>
+<script type="module">
+import * as maplibregl from "./vendor/maplibre-gl/maplibre-gl.mjs";
+
+const origin = location.origin;
+const statusEl = document.getElementById("status");
+const t0 = performance.now();
+
+const protocol = new pmtiles.Protocol();
+maplibregl.addProtocol("pmtiles", protocol.tile);
+
+// Test markers: approximate Chooralmala / Mundakkai valley (CONTEXT.md OriginGeopoint), test data only.
+const markers = {
+  type: "FeatureCollection",
+  features: [
+    { type: "Feature", properties: { id: "T1", cls: "urgent" }, geometry: { type: "Point", coordinates: [76.145, 11.487] } },
+    { type: "Feature", properties: { id: "T2", cls: "delayed" }, geometry: { type: "Point", coordinates: [76.132, 11.498] } },
+    { type: "Feature", properties: { id: "T3", cls: "minor" }, geometry: { type: "Point", coordinates: [76.158, 11.476] } },
+  ],
+};
+
+const style = {
+  version: 8,
+  glyphs: `${origin}/app/map/vendor/basemaps-assets/fonts/{fontstack}/{range}.pbf`,
+  sprite: `${origin}/app/map/vendor/basemaps-assets/sprites/v4/light`,
+  sources: {
+    protomaps: {
+      type: "vector",
+      url: `pmtiles://${origin}/data/basemap/wayanad.pmtiles`,
+      attribution: '<a href="https://protomaps.com">Protomaps</a> &copy; <a href="https://openstreetmap.org">OpenStreetMap</a>',
+    },
+    markers: { type: "geojson", data: markers },
+  },
+  layers: [
+    ...basemaps.layers("protomaps", basemaps.namedFlavor("light"), { lang: "en" }),
+    { id: "marker-ring", type: "circle", source: "markers",
+      paint: { "circle-radius": 14, "circle-color": "rgba(0,0,0,0)", "circle-stroke-width": 3,
+               "circle-stroke-color": ["match", ["get", "cls"], "urgent", "#d7191c", "delayed", "#fdae61", "#1a9641"] } },
+    { id: "marker-dot", type: "circle", source: "markers",
+      paint: { "circle-radius": 7,
+               "circle-color": ["match", ["get", "cls"], "urgent", "#d7191c", "delayed", "#fdae61", "#1a9641"] } },
+    { id: "marker-label", type: "symbol", source: "markers",
+      layout: { "text-field": ["get", "id"], "text-font": ["Noto Sans Medium"], "text-size": 14, "text-offset": [0, 1.6] },
+      paint: { "text-color": "#111", "text-halo-color": "#fff", "text-halo-width": 2 } },
+  ],
+};
+
+const map = new maplibregl.Map({ container: "map", style, center: [76.145, 11.487], zoom: 13.2, attributionControl: { compact: false } });
+map.addControl(new maplibregl.ScaleControl(), "bottom-left");
+
+let reported = false;
+const errors = [];
+map.on("error", (e) => errors.push(String(e.error?.message || e.error || e)));
+
+map.on("idle", () => {
+  if (reported) return;
+  reported = true;
+  const resources = performance.getEntriesByType("resource").map((r) => r.name);
+  const external = resources.filter((u) => !u.startsWith(origin) && !u.startsWith("blob:") && !u.startsWith("data:"));
+  const feats = map.queryRenderedFeatures();
+  const basemapFeats = feats.filter((f) => f.source === "protomaps").length;
+  const markerFeats = feats.filter((f) => f.source === "markers").length;
+  const layersSeen = [...new Set(feats.filter((f) => f.source === "protomaps").map((f) => f.sourceLayer))].sort();
+  const report = {
+    ok: basemapFeats > 0 && markerFeats > 0 && external.length === 0 && errors.length === 0,
+    maplibre: maplibregl.getVersion ? maplibregl.getVersion() : "?",
+    ms_to_idle: Math.round(performance.now() - t0),
+    basemap_features: basemapFeats, marker_features: markerFeats, source_layers: layersSeen,
+    resource_requests: resources.length, external_requests: external, errors,
+  };
+  statusEl.textContent = `${report.ok ? "OFFLINE MAP OK" : "OFFLINE MAP CHECK FAILED"}  maplibre ${report.maplibre}\n` +
+    `basemap features ${basemapFeats}, markers ${markerFeats}, idle in ${report.ms_to_idle} ms\n` +
+    `external requests: ${external.length}, errors: ${errors.length}`;
+  document.title = report.ok ? "MAP_OK" : "MAP_FAIL";
+  fetch("/__report", { method: "POST", body: JSON.stringify(report) }).catch(() => {});
+});
+</script>
+</body>
+</html>

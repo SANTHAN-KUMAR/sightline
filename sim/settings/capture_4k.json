@@ -1,0 +1,47 @@
+{
+  "SettingsVersion": 2.0,
+  "SimMode": "Multirotor",
+  "ClockType": "SteppableClock",
+  "LocalHostIp": "127.0.0.1",
+  "ApiServerPort": 41451,
+  "RpcEnabled": true,
+  "RecordUIVisible": false,
+  "LogMessagesVisible": false,
+  "InitialInstanceSegmentation": true,
+  "EngineSound": false,
+  "ViewMode": "NoDisplay",
+  "OriginGeopoint": { "Latitude": 11.4870, "Longitude": 76.1450, "Altitude": 900 },
+  "Vehicles": {
+    "Drone": {
+      "VehicleType": "SimpleFlight",
+      "DefaultVehicleState": "Armed",
+      "AutoCreate": true,
+      "AllowAPIAlways": true,
+      "RC": { "RemoteControlID": 0, "AllowAPIWhenDisconnected": true },
+      "Cameras": {
+        "survey": {
+          "X": 0.30, "Y": 0.0, "Z": 0.15, "Pitch": -90.0, "Roll": 0.0, "Yaw": 0.0,
+          "Gimbal": { "Stabilization": 1.0, "Pitch": -90.0, "Roll": 0.0, "Yaw": 0.0 },
+          "CaptureSettings": [
+            { "ImageType": 0, "Width": 3840, "Height": 2160, "FOV_Degrees": 75.5, "MotionBlurAmount": 0,
+              "LumenGIEnable": false, "LumenReflectionEnable": false },
+            { "ImageType": 2, "Width": 3840, "Height": 2160, "FOV_Degrees": 75.5 },
+            { "ImageType": 5, "Width": 3840, "Height": 2160, "FOV_Degrees": 75.5 },
+            { "ImageType": 7, "Width": 3840, "Height": 2160, "FOV_Degrees": 75.5 }
+          ]
+        },
+        "survey_hd": {
+          "X": 0.30, "Y": 0.0, "Z": 0.15, "Pitch": -90.0, "Roll": 0.0, "Yaw": 0.0,
+          "Gimbal": { "Stabilization": 1.0, "Pitch": -90.0, "Roll": 0.0, "Yaw": 0.0 },
+          "CaptureSettings": [
+            { "ImageType": 0, "Width": 1920, "Height": 1080, "FOV_Degrees": 75.5, "MotionBlurAmount": 0,
+              "LumenGIEnable": false, "LumenReflectionEnable": false },
+            { "ImageType": 5, "Width": 1920, "Height": 1080, "FOV_Degrees": 75.5 },
+            { "ImageType": 7, "Width": 1920, "Height": 1080, "FOV_Degrees": 75.5 }
+          ]
+        }
+      },
+      "X": 0, "Y": 0, "Z": 0, "Yaw": 0
+    }
+  }
+}
