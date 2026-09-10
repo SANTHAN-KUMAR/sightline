@@ -24,9 +24,10 @@ from __future__ import annotations
 
 import json
 import time
+from collections.abc import Iterable, Sequence
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import Any
 
 import numpy as np
 
@@ -34,22 +35,22 @@ from sightline.detect.tiler import iou_xyxy
 from sightline.schemas import SCHEMA_VERSION, ClassName, Detection, MetricRow, SliceKey
 
 __all__ = [
-    "GroundTruthBox",
-    "FrameEval",
-    "MatchTally",
-    "SweepPoint",
-    "OperatingPoint",
-    "TARGET_RECALL",
     "PRIMARY_IOU",
     "SECONDARY_IOU",
-    "match_frame",
-    "tally",
-    "sweep",
+    "TARGET_RECALL",
+    "FrameEval",
+    "GroundTruthBox",
+    "MatchTally",
+    "OperatingPoint",
+    "SweepPoint",
     "choose_operating_threshold",
     "fp_per_minute",
-    "metric_rows",
     "freeze_operating_point",
     "load_operating_point",
+    "match_frame",
+    "metric_rows",
+    "sweep",
+    "tally",
 ]
 
 #: §5.5: 0.92, a 2-point margin over the 0.90 requirement (R2), so ordinary run-to-run variation cannot cross it.

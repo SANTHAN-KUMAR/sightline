@@ -6,22 +6,73 @@ turns it into GeoJSON and the WebSocket pushes a ``mission`` frame on every upda
 anything — this lane never touches AirSim.
 
     state.update_pose(t)                      # t: sightline.schemas.Telemetry
-    state.set_plan([(lat, lon), ...], name="segment-1 boustrophedon")
+    state.set_route(route.to_dict())          # B6's route JSON (docs/lanes/coverage_plan_eval.md §5.2)
+    state.set_plan([(lat, lon), ...], name="segment-1 boustrophedon")   # fallback when there is no route
     state.set_footprint([[lon, lat], ...])    # from the geo/coverage lane, or derived nadir (below)
+
+The planned pattern comes from the plan lane (B6) as `Route.to_dict()`: ``product == "sightline.plan.route"``,
+``waypoints[i]`` carrying ``seq`` / ``action`` / ``lat`` / ``lon`` / ``alt_asl_m`` / ``agl_m`` / ``speed_ms`` /
+``gimbal_pitch_deg`` / ``segment_id`` / ``pass_id`` / ``reason``. :meth:`MissionState.set_route` keeps every one
+of those fields on the GeoJSON waypoint Features so the map can show *why* a leg exists, and keeps ``pattern``,
+``params`` and ``totals`` on the plan FeatureCollection.
 """
 
 from __future__ import annotations
 
+import json
 import math
 import threading
 import time
 from collections import deque
+from pathlib import Path
 from typing import Any
 
 from sightline.common.geodesy import offset_ne
 from sightline.schemas import Intrinsics, Telemetry
 
-__all__ = ["MissionState", "nadir_footprint"]
+__all__ = ["MissionState", "nadir_footprint", "camera_footprint", "ROUTE_PRODUCT",
+           "route_to_plan_geojson"]
+
+#: The plan lane's route JSON product key (`sightline/plan/waypoints.py`, `Route.to_dict()`).
+ROUTE_PRODUCT = "sightline.plan.route"
+
+#: Waypoint fields carried straight through onto the GeoJSON Feature (B6's contract, §5.2 of its lane report).
+_WAYPOINT_FIELDS = ("seq", "action", "alt_asl_m", "agl_m", "speed_ms", "gimbal_pitch_deg", "yaw_deg",
+                    "dwell_s", "orbit_radius_m", "segment_id", "pass_id", "reason")
+
+
+def route_to_plan_geojson(route: dict[str, Any]) -> dict[str, Any]:
+    """B6 route JSON -> the plan FeatureCollection the map draws (LineString + one Point per waypoint).
+
+    Raises ValueError when the payload is not a route: a silently-empty plan layer is exactly the failure
+    this lane's quality gate exists to catch.
+    """
+    if str(route.get("product") or "") != ROUTE_PRODUCT:
+        raise ValueError(f"not a {ROUTE_PRODUCT} payload: product={route.get('product')!r}")
+    wps = list(route.get("waypoints") or [])
+    if not wps:
+        raise ValueError("route has no waypoints")
+    line = [[float(w["lon"]), float(w["lat"])] for w in wps]
+    params = dict(route.get("params") or {})
+    name = (f"{route.get('pattern', 'route')} · {params.get('agl_m', '?')} m AGL"
+            f" · {params.get('presentation', '?')}")
+    feats: list[dict[str, Any]] = [{
+        "type": "Feature",
+        "properties": {"kind": "plan", "name": name, "pattern": route.get("pattern", ""),
+                       "domain": route.get("domain", ""), "aborted": bool(route.get("aborted", False)),
+                       "abort_reason": route.get("abort_reason", ""),
+                       "totals": route.get("totals", {}), "notes": route.get("notes", [])},
+        "geometry": {"type": "LineString", "coordinates": line},
+    }]
+    for w in wps:
+        props: dict[str, Any] = {"kind": "waypoint"}
+        for f in _WAYPOINT_FIELDS:
+            if f in w:
+                props[f] = w[f]
+        feats.append({"type": "Feature", "properties": props,
+                      "geometry": {"type": "Point", "coordinates": [float(w["lon"]), float(w["lat"])]}})
+    return {"type": "FeatureCollection", "product": ROUTE_PRODUCT, "pattern": route.get("pattern", ""),
+            "params": params, "totals": route.get("totals", {}), "features": feats}
 
 
 def nadir_footprint(lat: float, lon: float, agl_m: float, intr: Intrinsics, yaw_deg: float = 0.0
@@ -44,6 +95,30 @@ def nadir_footprint(lat: float, lon: float, agl_m: float, intr: Intrinsics, yaw_
     return ring
 
 
+def camera_footprint(tel: Telemetry, intr: Intrinsics) -> list[list[float]] | None:
+    """The REAL projected footprint, via the coverage lane's `ground_footprint` — the same function that
+    decides which cells the POD raster credits, so the drawn quadrilateral and the swept cells agree.
+
+    Returns a closed ``[lon, lat]`` ring, or None when the coverage package is unavailable or the ray misses
+    the ground plane (near-horizon). :func:`nadir_footprint` is the fallback and is only exact at pitch -90
+    **and** gimbal yaw 0; the survey gimbal is yawed +90 from the heading, so the fallback is 90 deg out.
+    """
+    try:
+        from sightline.coverage.footprint import ground_footprint
+    except Exception:  # the coverage lane is optional for the API to boot
+        return None
+    fp = ground_footprint(tel, intr)
+    if not fp.valid:
+        return None
+    ring: list[list[float]] = []
+    for north_m, east_m in fp.poly_ne_m:
+        lat, lon = offset_ne(tel.lat, tel.lon, float(north_m), float(east_m))
+        ring.append([lon, lat])
+    if ring:
+        ring.append(ring[0])
+    return ring
+
+
 class MissionState:
     """Drone pose + camera footprint + flight track + planned pattern, as GeoJSON for the map."""
 
@@ -54,6 +129,8 @@ class MissionState:
         self._footprint: list[list[float]] | None = None
         self._plan: list[tuple[float, float]] = []
         self._plan_name = ""
+        self._plan_fc: dict[str, Any] | None = None  # set by set_route(): B6's route, kept whole
+        self._route: dict[str, Any] | None = None
         self.updated_utc = 0.0
         self.intrinsics: Intrinsics | None = None
 
@@ -84,7 +161,8 @@ class MissionState:
             if footprint is not None:
                 self._footprint = footprint
             elif self.intrinsics is not None and t.agl_m > 0:
-                self._footprint = nadir_footprint(t.lat, t.lon, t.agl_m, self.intrinsics, yaw)
+                self._footprint = (camera_footprint(t, self.intrinsics)
+                                   or nadir_footprint(t.lat, t.lon, t.agl_m, self.intrinsics, yaw))
             self.updated_utc = time.time()
 
     def set_footprint(self, ring: list[list[float]]) -> None:
@@ -96,7 +174,28 @@ class MissionState:
         with self._lock:
             self._plan = [(float(a), float(b)) for a, b in waypoints]
             self._plan_name = name
+            self._plan_fc = None
             self.updated_utc = time.time()
+
+    def set_route(self, route: dict[str, Any]) -> dict[str, Any]:
+        """Adopt a plan-lane route JSON (`Route.to_dict()`) as the planned pattern. Returns the plan FC."""
+        fc = route_to_plan_geojson(route)
+        with self._lock:
+            self._route = route
+            self._plan_fc = fc
+            self._plan = [(float(w["lat"]), float(w["lon"])) for w in route["waypoints"]]
+            self._plan_name = fc["features"][0]["properties"]["name"]
+            self.updated_utc = time.time()
+        return fc
+
+    def set_route_file(self, path: str | Path) -> dict[str, Any]:
+        """Load a route JSON the plan lane wrote to disk."""
+        return self.set_route(json.loads(Path(path).read_text(encoding="utf-8")))
+
+    @property
+    def route(self) -> dict[str, Any] | None:
+        with self._lock:
+            return dict(self._route) if self._route else None
 
     # ---- consumer ------------------------------------------------------------------------------------
     def as_geojson(self) -> dict[str, Any]:
@@ -107,6 +206,7 @@ class MissionState:
             fp = list(self._footprint) if self._footprint else None
             plan = list(self._plan)
             plan_name = self._plan_name
+            plan_fc = self._plan_fc
             updated = self.updated_utc
         drone = None
         if pose:
@@ -135,8 +235,7 @@ class MissionState:
         if len(cur) > 1:
             segs.append({"type": "Feature", "properties": {"mode": cur_mode},
                          "geometry": {"type": "LineString", "coordinates": cur}})
-        plan_fc = None
-        if plan:
+        if plan_fc is None and plan:
             plan_fc = {
                 "type": "FeatureCollection",
                 "features": [

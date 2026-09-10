@@ -29,6 +29,8 @@ import cv2
 import numpy as np
 
 REPO = Path(__file__).resolve().parents[2]
+#: the longest a person can plausibly be on the ground, with generous slack for a lying adult
+MAX_HUMAN_M = 3.0
 sys.path.insert(0, str(REPO))
 from tools.capture.labels import actor_index, palette_rgb  # noqa: E402
 
@@ -162,6 +164,20 @@ def main() -> int:
         tiny = int((s < 12).sum())
         if tiny:
             warns.append(f"{tiny} boxes under 12 px (below the section 5.5 >=20 px rule; keep or drop knowingly)")
+        # A box is a PERSON. Convert to metres through the run's own GSD and fail on anything that cannot be
+        # one. This check used to only PRINT the sizes, and so passed a dataset in which a single survivor was
+        # labelled across a whole 3840x2160 frame - 67.8 x 38.1 m of ground - because the segmentation had
+        # collapsed onto shared colours. Printing is not checking.
+        gsd_cm = None
+        card = run / "data_card.json"
+        if card.exists():
+            gsd_cm = json.loads(card.read_text()).get("gsd_cm_px")
+        if gsd_cm:
+            big = [(round(float(x) * gsd_cm / 100.0, 1)) for x in s if float(x) * gsd_cm / 100.0 > MAX_HUMAN_M]
+            if big:
+                fails.append(f"{len(big)} of {len(s)} boxes are larger than {MAX_HUMAN_M} m on the ground "
+                             f"(largest {max(big)} m) - a human cannot be that size, so the instance mask has "
+                             "collapsed onto shared colours")
     missed = sorted(detset - set(seen))
     print(f"G    survivors: {len(set(seen) & detset)}/{len(detset)} detectable seen, {len(missed)} never seen")
     if seen:
@@ -178,6 +194,26 @@ def main() -> int:
         print("     never seen, by pose/submersion/zone:")
         for k, v in agg.most_common(8):
             print(f"        {k:34s} {v}")
+
+    # --- H: is the instance segmentation itself healthy? ---------------------------------------------------
+    if masks:
+        share = 0
+        for mp in masks[:: max(1, len(masks) // 25)]:
+            m = cv2.imread(mp, cv2.IMREAD_COLOR)
+            if m is None:
+                continue
+            cols, cnts = np.unique(m.reshape(-1, 3), axis=0, return_counts=True)
+            frac = cnts / float(m.shape[0] * m.shape[1])
+            lj = run / "labels" / (Path(mp).stem + ".json")
+            labs = json.loads(lj.read_text()) if lj.exists() else []
+            # any colour that covers a huge share of the frame AND is claimed by a survivor label
+            if labs and frac.max() > 0.5 and any(
+                    (L["bbox_px"][2] - L["bbox_px"][0]) > 0.8 * m.shape[1] for L in labs):
+                share += 1
+        if share:
+            fails.append(f"{share} sampled frames have a survivor label spanning most of the frame - the "
+                         "segmentation palette is shared between actors and a large surface (water/terrain)")
+        print(f"H    segmentation health: {share} sampled frames show an actor colour covering the frame")
 
     print()
     for w in warns:

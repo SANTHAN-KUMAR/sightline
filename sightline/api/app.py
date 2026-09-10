@@ -15,10 +15,12 @@ Routes
 ``POST /api/records/{id}/status``          ``{"status": str, "actor": str, "reason": str}``
 ``POST /api/records/{id}/note``            free-text, e.g. "dispatched to Team Bravo" (§7 step 5)
 ``GET  /api/thumbs/{name}``                the evidence crop, as a file
-``GET  /api/coverage/overlay.json``        the B6 search-quality overlay sidecar (see coverage_feed.py)
-``GET  /api/coverage/pod.png``             the POD raster, north-up
+``GET  /api/coverage/overlay.json``        normalised sidecar over B6's ``coverage.json`` (coverage_feed.py)
+``GET  /api/coverage/raster.png?layer=``   one presentation layer's POD raster, north-up
+``GET  /api/coverage/bands.geojson?layer=``that layer's POD band polygons
 ``GET  /api/coverage/cannot_clear.geojson``the "aerial search cannot clear" polygons (hatched on the map)
 ``GET  /api/mission``                      drone / footprint / track / plan
+``GET  /api/plan/route.json``              the plan lane's route JSON, verbatim (404 when none is loaded)
 ``GET  /api/outbox``                       queue depth + link state for the status bar (§7 step 6)
 ``POST /api/upload``                       CLOUD SINK: idempotent upsert keyed by (kind, clip, record, ver)
 ``POST /detect``                           CLOUD FALLBACK: JPEG tile in, detections out (STUB detector)
@@ -58,10 +60,19 @@ from fastapi import (
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
-from sightline.api.coverage_feed import OVERLAY_CONTRACT, read_overlay
+from sightline.api.coverage_feed import (
+    COVERAGE_PRODUCT,
+    SIDECAR_CONTRACT,
+    cannot_clear_geojson,
+    default_layer,
+    layer_file,
+    layer_names,
+    read_coverage,
+    read_manifest,
+)
 from sightline.api.detect_fallback import DETECT_CONTRACT, DetectorPlugin, FrameMerger, StubDetector
 from sightline.api.live import LiveHub
-from sightline.api.mission_feed import MissionState
+from sightline.api.mission_feed import ROUTE_PRODUCT, MissionState
 from sightline.api.wire import feature_to_record
 from sightline.schemas import SCHEMA_VERSION, Record, ce90_m
 from sightline.store import GuardrailError, Outbox, RecordStore, StaleVersionError, Uploader
@@ -139,7 +150,8 @@ def create_app(
             "live_clients": hub.clients,
             "live_seq": hub.seq,
             "detector": {"name": detector.name, "is_stub": getattr(detector, "is_stub", True)},
-            "contracts": {"overlay": OVERLAY_CONTRACT, "detect": DETECT_CONTRACT},
+            "contracts": {"coverage": COVERAGE_PRODUCT, "sidecar": SIDECAR_CONTRACT,
+                          "route": ROUTE_PRODUCT, "detect": DETECT_CONTRACT},
         }
 
     @app.get("/", include_in_schema=False)
@@ -232,36 +244,80 @@ def create_app(
             raise HTTPException(404, f"no thumbnail {name}")
         return FileResponse(p, headers={"Cache-Control": "public, max-age=86400"})
 
-    # ---- coverage (B6 contract) ----------------------------------------------------------------------
-    @app.get("/api/coverage/overlay.json")
-    def coverage_overlay() -> JSONResponse:
+    # ---- coverage (B6's contract, read through coverage_feed.py) --------------------------------------
+    def _sidecar() -> dict[str, Any] | None:
         try:
-            side = read_overlay(cov_dir)
+            return read_coverage(cov_dir)
         except ValueError as e:
             raise HTTPException(500, str(e)) from None
+
+    @app.get("/api/coverage/overlay.json")
+    def coverage_overlay() -> JSONResponse:
+        side = _sidecar()
         if side is None:
-            return JSONResponse({"contract": OVERLAY_CONTRACT, "available": False, "dir": str(cov_dir)}, 404)
-        side["available"] = True
+            return JSONResponse({"contract": SIDECAR_CONTRACT, "available": False, "dir": str(cov_dir)}, 404)
         return JSONResponse(side)
 
-    @app.get("/api/coverage/pod.png")
-    def coverage_png() -> FileResponse:
-        p = cov_dir / "pod.png"
+    def _raster(layer: str | None) -> FileResponse:
+        man = read_manifest(cov_dir)
+        if man is not None:
+            lay = layer or default_layer(man)
+            p = layer_file(cov_dir, man, lay, "image")
+            if p is None:
+                raise HTTPException(404, f"no coverage raster for layer {lay!r};"
+                                         f" have {layer_names(man)}")
+            return FileResponse(p, media_type="image/png", headers={"Cache-Control": "no-cache"})
+        p = cov_dir / "pod.png"  # legacy single-grid overlay
         if not p.is_file():
             raise HTTPException(404, "no coverage raster yet")
         return FileResponse(p, media_type="image/png", headers={"Cache-Control": "no-cache"})
 
-    @app.get("/api/coverage/cannot_clear.geojson")
-    def coverage_cannot_clear() -> Response:
-        p = cov_dir / "cannot_clear.geojson"
-        if not p.is_file():
+    @app.get("/api/coverage/raster.png")
+    def coverage_raster(layer: str | None = Query(None)) -> FileResponse:
+        return _raster(layer)
+
+    @app.get("/api/coverage/pod.png", include_in_schema=False)
+    def coverage_png(layer: str | None = Query(None)) -> FileResponse:
+        """Back-compatible alias for ``raster.png`` (the pre-B6 name)."""
+        return _raster(layer)
+
+    @app.get("/api/coverage/bands.geojson")
+    def coverage_bands(layer: str | None = Query(None)) -> Response:
+        man = read_manifest(cov_dir)
+        if man is None:
             return JSONResponse({"type": "FeatureCollection", "features": []})
+        lay = layer or default_layer(man)
+        p = layer_file(cov_dir, man, lay, "geojson")
+        if p is None:
+            raise HTTPException(404, f"no band polygons for layer {lay!r}; have {layer_names(man)}")
         return Response(p.read_bytes(), media_type="application/geo+json")
+
+    @app.get("/api/coverage/cannot_clear.geojson")
+    def coverage_cannot_clear(layer: str | None = Query(None)) -> JSONResponse:
+        return JSONResponse(cannot_clear_geojson(cov_dir, layer))
 
     # ---- mission -------------------------------------------------------------------------------------
     @app.get("/api/mission")
     def mission_geojson() -> dict[str, Any]:
         return mission.as_geojson()
+
+    @app.get("/api/plan/route.json")
+    def plan_route() -> dict[str, Any]:
+        """The plan lane's route JSON exactly as `Route.to_dict()` produced it (no re-shaping)."""
+        r = mission.route
+        if r is None:
+            raise HTTPException(404, "no route loaded; POST /api/plan/route or call mission.set_route()")
+        return r
+
+    @app.post("/api/plan/route", include_in_schema=False)
+    def set_plan_route(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+        """Ingress for the plan lane while it is out of process. Body is a `Route.to_dict()` payload."""
+        try:
+            fc = mission.set_route(body)
+        except (ValueError, KeyError, TypeError) as e:
+            raise HTTPException(422, f"bad route payload: {e}") from None
+        hub.publish_threadsafe("mission", **mission.as_geojson())
+        return {"ok": True, "waypoints": len(fc["features"]) - 1, "pattern": fc.get("pattern", "")}
 
     # ---- outbox --------------------------------------------------------------------------------------
     @app.get("/api/outbox")
@@ -383,7 +439,8 @@ def create_app(
         await hub.register(ws)
         try:
             await hub.send_to(ws, "hello", server="sightline-api", records=store.stats()["records"],
-                              contracts={"overlay": OVERLAY_CONTRACT, "detect": DETECT_CONTRACT})
+                              contracts={"coverage": COVERAGE_PRODUCT, "sidecar": SIDECAR_CONTRACT,
+                                         "route": ROUTE_PRODUCT, "detect": DETECT_CONTRACT})
             await hub.send_to(
                 ws, "snapshot",
                 records={"type": "FeatureCollection", "schema_version": SCHEMA_VERSION,

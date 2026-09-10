@@ -1,0 +1,38 @@
+{
+ "generated_by": "tools/scene/fetch_env_assets.py + tools/scene/gen_boat.py (env-assets lane, 2026-09-10)",
+ "note": "Source table shared by tools/scene/import_assets.py (editor side) and tools/scene/check_env_assets.py (host side). `source` is relative to _downloads/assets. Trees point at the *_lite.gltf built by tools/scene/gltf_tools.py; the full-resolution originals sit next to them and are 10-11x heavier.",
+ "assets": [
+  {"id": "jacaranda_tree", "role": "tree", "source": "polyhaven/jacaranda_tree/jacaranda_tree_2k_lite.gltf", "full": "polyhaven/jacaranda_tree/jacaranda_tree_2k.gltf", "lods": true, "why": "the mature canopy tree: 19.4 m tall, 24 m crown - the reference photo's dominant element"},
+  {"id": "island_tree_01", "role": "tree", "source": "polyhaven/island_tree_01/island_tree_01_2k_lite.gltf", "full": "polyhaven/island_tree_01/island_tree_01_2k.gltf", "lods": true, "why": "5.0 m broadleaf, stout trunk - yard/roadside tree; scale 2.2-2.6x for second-storey canopy"},
+  {"id": "island_tree_02", "role": "tree", "source": "polyhaven/island_tree_02/island_tree_02_2k_lite.gltf", "full": "polyhaven/island_tree_02/island_tree_02_2k.gltf", "lods": true, "why": "3.4 m leaning multi-stem on a rock base - riverbank"},
+  {"id": "island_tree_03", "role": "tree", "source": "polyhaven/island_tree_03/island_tree_03_2k_lite.gltf", "full": "polyhaven/island_tree_03/island_tree_03_2k.gltf", "lods": true, "why": "2.6 m shrubby clump on a rock slab - riverbank/waterline only"},
+  {"id": "tree_small_02", "role": "tree", "source": "polyhaven/tree_small_02/tree_small_02_2k_lite.gltf", "full": "polyhaven/tree_small_02/tree_small_02_2k.gltf", "lods": true, "why": "4.6 m young single-leader tree, lighter green - garden tree"},
+
+  {"id": "grass_medium_01", "role": "ground_cover", "source": "polyhaven/grass_medium_01/grass_medium_01_2k.gltf", "lods": true, "why": "17 grass clumps, green and dry"},
+  {"id": "grass_medium_02", "role": "ground_cover", "source": "polyhaven/grass_medium_02/grass_medium_02_2k.gltf", "lods": true, "why": "5 lush grass tufts"},
+  {"id": "grass_bermuda_01", "role": "ground_cover", "source": "polyhaven/grass_bermuda_01/grass_bermuda_01_2k.gltf", "lods": false, "why": "21 tiny sprigs, 8-268 tris each - the cheap filler for dense lawn"},
+  {"id": "shrub_01", "role": "ground_cover", "source": "polyhaven/shrub_01/shrub_01_2k.gltf", "lods": true, "why": "2.6 m strip of low flowering plants - verge/hedge; one mesh, 156k tris"},
+  {"id": "shrub_02", "role": "ground_cover", "source": "polyhaven/shrub_02/shrub_02_2k.gltf", "lods": true, "why": "4 sprawling bushes up to 1.7 m"},
+  {"id": "shrub_03", "role": "ground_cover", "source": "polyhaven/shrub_03/shrub_03_2k.gltf", "lods": false, "why": "4 upright leafy sprigs, ~2k tris each"},
+  {"id": "shrub_04", "role": "ground_cover", "source": "polyhaven/shrub_04/shrub_04_2k.gltf", "lods": true, "why": "low red-green ground cover strip"},
+  {"id": "nettle_plant", "role": "ground_cover", "source": "polyhaven/nettle_plant/nettle_plant_2k.gltf", "lods": false, "why": "6 roadside weeds"},
+  {"id": "weed_plant_02", "role": "ground_cover", "source": "polyhaven/weed_plant_02/weed_plant_02_2k.gltf", "lods": false, "why": "5 flat ground-hugging rosettes"},
+  {"id": "anthurium_botany_01", "role": "ground_cover", "source": "polyhaven/anthurium_botany_01/anthurium_botany_01_2k.gltf", "lods": true, "why": "broad glossy tropical leaves - the Kerala understorey read"},
+  {"id": "calathea_orbifolia_01", "role": "ground_cover", "source": "polyhaven/calathea_orbifolia_01/calathea_orbifolia_01_2k.gltf", "lods": false, "why": "broad tropical leaves, 5 variants"},
+  {"id": "pachira_aquatica_01", "role": "ground_cover", "source": "polyhaven/pachira_aquatica_01/pachira_aquatica_01_2k.gltf", "lods": true, "why": "Malabar chestnut saplings, a wetland species - bark and leaves are SEPARATE meshes and must be placed on the same transform"},
+
+  {"id": "modular_electricity_poles", "role": "utility", "source": "polyhaven/modular_electricity_poles/modular_electricity_poles_2k.gltf", "lods": true, "why": "103-part kit: 3 assembled poles with crossarms plus loose crossarms, insulators, transformers, bare shafts"},
+  {"id": "modular_electric_cables", "role": "utility", "source": "polyhaven/modular_electric_cables/modular_electric_cables_2k.gltf", "lods": false, "why": "49-part kit of conduit, junction and meter boxes for house walls - NOT overhead spans"},
+
+  {"id": "country_boat_01", "role": "boat", "source": "generated/country_boat_01/country_boat_01.gltf", "lods": false, "why": "procedural Kerala vallam, 7.5 x 1.55 x 0.99 m, 2340 tris - Poly Haven has no small boat"},
+
+  {"id": "modular_wooden_pier", "role": "waterfront", "source": "polyhaven/modular_wooden_pier/modular_wooden_pier_2k.gltf", "lods": true, "why": "plank jetty on poles, 7 parts"},
+  {"id": "lifebuoy", "role": "waterfront", "source": "polyhaven/lifebuoy/lifebuoy_2k.gltf", "lods": false, "why": "0.78 m ring buoy - flood-rescue dressing"},
+  {"id": "life_jacket", "role": "waterfront", "source": "polyhaven/life_jacket/life_jacket_2k.gltf", "lods": false, "why": "0.99 m life jacket - flood-rescue dressing"},
+
+  {"id": "bark_debris_01", "role": "debris_bark", "source": "polyhaven/bark_debris_01/bark_debris_01_2k_lite.gltf", "full": "polyhaven/bark_debris_01/bark_debris_01_2k.gltf", "lods": true, "why": "4 bark slabs ~0.6 m for the wrack line. DELIBERATELY not role 'woody': filing it under woody was measured to cut the debris layout from 919 items / 4.15M tris to 553 items / 6.50M tris (budget exhausted, vehicles and hillslope vegetation never placed) because gen_props.py's pick() biases towards the cheapest 70% of a role's pool. Merge it into 'woody' only together with a budget review."}
+ ],
+ "not_used": [
+  {"id": "ship_pinnace", "reason": "downloaded and inspected: a three-masted square-rigged ship, 39.8 m long and 32.6 m tall with masts. Not a village boat at any scale. Replaced by the procedural country_boat_01."}
+ ]
+}

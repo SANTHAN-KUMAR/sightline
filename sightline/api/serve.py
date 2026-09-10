@@ -7,10 +7,13 @@ Flags
 -----
 ``--port``       TCP port on 127.0.0.1 (default 8781; **never** 8000 — that is the Unreal MCP server).
 ``--db``         record log path (default ``_artifacts/store/records.db``)
-``--demo``       seed the store, the coverage overlay and the mission with SIMULATED data (labelled)
+``--demo``       load the SIMULATED FloodValley scenario: synthetic records, plus a real plan-lane route,
+                 its flown telemetry and a real `sightline.coverage` export written into ``--coverage``
 ``--fresh``      start the demo from an empty database file (a new file; nothing is ever deleted)
-``--outbox``     also run the outbox + uploader against ``--cloud-url`` (default: this same server)
-``--coverage``   directory holding the B6 overlay contract (default ``_artifacts/coverage/live``)
+``--outbox``     also run the outbox + uploader against ``--cloud-url`` (default: this same server).
+                 Point ``--cloud-url`` at a port with nothing on it to demonstrate the offline queue.
+``--coverage``   directory holding the coverage lane's export (``coverage.json`` + per-layer PNG/GeoJSON;
+                 default ``_artifacts/coverage/live``)
 """
 
 from __future__ import annotations

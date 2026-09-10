@@ -36,26 +36,26 @@ part of the detector that can be tested exactly (``tests/test_detect.py``).
 from __future__ import annotations
 
 import math
+from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass, replace
-from typing import Iterable, Iterator, Sequence
 
 import numpy as np
 
 from sightline.schemas import Detection
 
 __all__ = [
+    "DEFAULT_OVERLAP",
+    "DEFAULT_TILE_PX",
     "Tile",
     "TileGrid",
-    "DEFAULT_TILE_PX",
-    "DEFAULT_OVERLAP",
     "box_area",
+    "containment_xyxy",
     "intersection_area",
     "iou_xyxy",
-    "containment_xyxy",
     "map_box_to_frame",
-    "to_frame",
     "merge_tile_detections",
     "tile_batches",
+    "to_frame",
 ]
 
 #: Native tile size and overlap. 1024² matches the §5.5c training resolution exactly, so inference introduces no
@@ -168,7 +168,7 @@ class TileGrid:
         frame_h: int,
         tile_px: tuple[int, int] = DEFAULT_TILE_PX,
         overlap: float = DEFAULT_OVERLAP,
-    ) -> "TileGrid":
+    ) -> TileGrid:
         tw, th = int(tile_px[0]), int(tile_px[1])
         xs, tw = cls._starts(int(frame_w), tw, overlap)
         ys, th = cls._starts(int(frame_h), th, overlap)
@@ -180,7 +180,7 @@ class TileGrid:
 
     @classmethod
     def for_frame(cls, frame: np.ndarray, tile_px: tuple[int, int] = DEFAULT_TILE_PX,
-                  overlap: float = DEFAULT_OVERLAP) -> "TileGrid":
+                  overlap: float = DEFAULT_OVERLAP) -> TileGrid:
         h, w = frame.shape[:2]
         return cls.build(int(w), int(h), tile_px, overlap)
 

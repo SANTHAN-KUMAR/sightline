@@ -103,7 +103,20 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--time", choices=("day", "dusk", "night"), default="day")
     ap.add_argument("--verify", action="store_true", default=True)
+    ap.add_argument("--i-know-this-destroys-instance-segmentation", action="store_true",
+                    help="required: this script assigns SHARED ids and makes the scene uncapturable")
     a = ap.parse_args()
+
+    if not a.i_know_this_destroys_instance_segmentation:
+        print("REFUSING TO RUN.\n\n"
+              "This script encodes temperature as the SEGMENTATION id, so every object sharing a temperature\n"
+              "shares a colour (331 objects got a single id). That destroys instance segmentation: the flood\n"
+              "plane renders in a survivor's colour and the auto-labels become physically impossible. Run\n"
+              "mid-flight on 2026-09-10 it silently ruined a 336-frame dataset - 78 % of boxes were larger\n"
+              "than 3 m on the ground, one 'person' spanned the whole 4K frame.\n\n"
+              "Use it only on a PIE session you will NOT capture from, and restart PIE before capturing.\n"
+              "Pass --i-know-this-destroys-instance-segmentation to proceed.")
+        return 2
 
     truth = json.loads((REPO / "data/scene/actors.json").read_text())
     sub_by_id = {f"Human_{x['id']:03d}": x["submersion"] for x in truth["actors"]}

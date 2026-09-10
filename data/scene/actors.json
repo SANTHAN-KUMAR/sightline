@@ -46,15 +46,15 @@
    "north_m": -240.77,
    "base_asl_m": 1064.817,
    "yaw_deg": 163.9,
-   "ground_offset_cm": -21.63,
+   "ground_offset_cm": -64.46,
    "zone": "settlement",
    "submersion": "dry",
    "occlusion": 0,
    "flood_depth_m": 0.0,
-   "height_cm": 132.4,
+   "height_cm": 89.4,
    "footprint_cm": [
-    96.4,
-    56.1
+    68.0,
+    103.5
    ],
    "aerially_detectable": true,
    "group": "roof23",
@@ -72,15 +72,15 @@
    "north_m": -236.15,
    "base_asl_m": 1064.817,
    "yaw_deg": 281.7,
-   "ground_offset_cm": -21.63,
+   "ground_offset_cm": -64.46,
    "zone": "settlement",
    "submersion": "dry",
    "occlusion": 0,
    "flood_depth_m": 0.0,
-   "height_cm": 132.4,
+   "height_cm": 89.4,
    "footprint_cm": [
-    96.4,
-    56.1
+    68.0,
+    103.5
    ],
    "aerially_detectable": true,
    "group": "roof23",
@@ -105,8 +105,8 @@
    "flood_depth_m": 0.0,
    "height_cm": 134.2,
    "footprint_cm": [
-    82.4,
-    27.1
+    35.2,
+    17.3
    ],
    "aerially_detectable": true,
    "group": "roof23",
@@ -131,8 +131,8 @@
    "flood_depth_m": 0.0,
    "height_cm": 162.5,
    "footprint_cm": [
-    82.9,
-    35.6
+    131.3,
+    33.2
    ],
    "aerially_detectable": true,
    "group": "roof23",
@@ -157,8 +157,8 @@
    "flood_depth_m": 0.0,
    "height_cm": 134.0,
    "footprint_cm": [
-    63.1,
-    32.1
+    100.1,
+    30.9
    ],
    "aerially_detectable": true,
    "group": null,
@@ -176,15 +176,15 @@
    "north_m": 77.02,
    "base_asl_m": 1063.155,
    "yaw_deg": 268.6,
-   "ground_offset_cm": -21.63,
+   "ground_offset_cm": -64.46,
    "zone": "settlement",
    "submersion": "dry",
    "occlusion": 0,
    "flood_depth_m": 0.0,
-   "height_cm": 132.4,
+   "height_cm": 89.4,
    "footprint_cm": [
-    96.4,
-    56.1
+    68.0,
+    103.5
    ],
    "aerially_detectable": true,
    "group": null,
@@ -209,8 +209,8 @@
    "flood_depth_m": 0.0,
    "height_cm": 169.9,
    "footprint_cm": [
-    104.3,
-    34.3
+    44.5,
+    21.9
    ],
    "aerially_detectable": true,
    "group": null,
@@ -228,15 +228,15 @@
    "north_m": 415.73,
    "base_asl_m": 1064.431,
    "yaw_deg": 174.8,
-   "ground_offset_cm": -24.23,
+   "ground_offset_cm": -66.44,
    "zone": "settlement",
    "submersion": "dry",
    "occlusion": 0,
    "flood_depth_m": 0.0,
-   "height_cm": 138.0,
+   "height_cm": 96.7,
    "footprint_cm": [
-    103.8,
-    50.2
+    66.3,
+    96.4
    ],
    "aerially_detectable": true,
    "group": "roof52",
@@ -254,15 +254,15 @@
    "north_m": 418.98,
    "base_asl_m": 1064.431,
    "yaw_deg": 240.3,
-   "ground_offset_cm": -17.25,
+   "ground_offset_cm": -50.59,
    "zone": "settlement",
    "submersion": "dry",
    "occlusion": 0,
    "flood_depth_m": 0.0,
-   "height_cm": 109.0,
+   "height_cm": 76.4,
    "footprint_cm": [
-    82.0,
-    39.6
+    52.3,
+    76.2
    ],
    "aerially_detectable": true,
    "group": "roof52",
@@ -287,8 +287,8 @@
    "flood_depth_m": 0.0,
    "height_cm": 134.0,
    "footprint_cm": [
-    63.1,
-    32.1
+    100.1,
+    30.9
    ],
    "aerially_detectable": true,
    "group": null,
@@ -306,15 +306,15 @@
    "north_m": 64.0,
    "base_asl_m": 1066.204,
    "yaw_deg": 279.6,
-   "ground_offset_cm": -16.33,
+   "ground_offset_cm": -51.17,
    "zone": "settlement",
    "submersion": "dry",
    "occlusion": 1,
    "flood_depth_m": 0.0,
-   "height_cm": 109.1,
+   "height_cm": 74.1,
    "footprint_cm": [
-    75.4,
-    45.3
+    56.1,
+    84.8
    ],
    "aerially_detectable": true,
    "group": null,
@@ -332,15 +332,15 @@
    "north_m": 325.2,
    "base_asl_m": 1064.178,
    "yaw_deg": 108.3,
-   "ground_offset_cm": -24.23,
+   "ground_offset_cm": -66.44,
    "zone": "settlement",
    "submersion": "dry",
    "occlusion": 0,
    "flood_depth_m": 0.0,
-   "height_cm": 138.0,
+   "height_cm": 96.7,
    "footprint_cm": [
-    103.8,
-    50.2
+    66.3,
+    96.4
    ],
    "aerially_detectable": true,
    "group": null,
@@ -365,8 +365,8 @@
    "flood_depth_m": 0.0,
    "height_cm": 169.9,
    "footprint_cm": [
-    91.9,
-    44.6
+    141.8,
+    41.4
    ],
    "aerially_detectable": true,
    "group": "roof59",
@@ -391,7 +391,7 @@
    "flood_depth_m": 0.0,
    "height_cm": 162.5,
    "footprint_cm": [
-    95.7,
+    40.9,
     26.8
    ],
    "aerially_detectable": true,
@@ -417,8 +417,8 @@
    "flood_depth_m": 0.0,
    "height_cm": 169.9,
    "footprint_cm": [
-    91.9,
-    44.6
+    141.8,
+    41.4
    ],
    "aerially_detectable": true,
    "group": "roof59",
@@ -436,15 +436,15 @@
    "north_m": 218.08,
    "base_asl_m": 1066.799,
    "yaw_deg": 351.1,
-   "ground_offset_cm": -21.63,
+   "ground_offset_cm": -64.46,
    "zone": "settlement",
    "submersion": "dry",
    "occlusion": 1,
    "flood_depth_m": 0.0,
-   "height_cm": 132.4,
+   "height_cm": 89.4,
    "footprint_cm": [
-    96.4,
-    56.1
+    68.0,
+    103.5
    ],
    "aerially_detectable": true,
    "group": null,
@@ -462,15 +462,15 @@
    "north_m": 129.53,
    "base_asl_m": 1066.29,
    "yaw_deg": 314.8,
-   "ground_offset_cm": -24.23,
+   "ground_offset_cm": -66.44,
    "zone": "settlement",
    "submersion": "dry",
    "occlusion": 0,
    "flood_depth_m": 0.0,
-   "height_cm": 138.0,
+   "height_cm": 96.7,
    "footprint_cm": [
-    103.8,
-    50.2
+    66.3,
+    96.4
    ],
    "aerially_detectable": true,
    "group": null,
@@ -488,15 +488,15 @@
    "north_m": 377.48,
    "base_asl_m": 1067.275,
    "yaw_deg": 68.3,
-   "ground_offset_cm": -16.33,
+   "ground_offset_cm": -51.17,
    "zone": "settlement",
    "submersion": "dry",
    "occlusion": 0,
    "flood_depth_m": 0.0,
-   "height_cm": 109.1,
+   "height_cm": 74.1,
    "footprint_cm": [
-    75.4,
-    45.3
+    56.1,
+    84.8
    ],
    "aerially_detectable": true,
    "group": null,
@@ -514,15 +514,15 @@
    "north_m": 105.48,
    "base_asl_m": 1066.171,
    "yaw_deg": 249.8,
-   "ground_offset_cm": -21.63,
+   "ground_offset_cm": -64.46,
    "zone": "settlement",
    "submersion": "dry",
    "occlusion": 0,
    "flood_depth_m": 0.0,
-   "height_cm": 132.4,
+   "height_cm": 89.4,
    "footprint_cm": [
-    96.4,
-    56.1
+    68.0,
+    103.5
    ],
    "aerially_detectable": true,
    "group": "roof10",
@@ -540,15 +540,15 @@
    "north_m": 110.28,
    "base_asl_m": 1066.171,
    "yaw_deg": 260.6,
-   "ground_offset_cm": -21.63,
+   "ground_offset_cm": -64.46,
    "zone": "settlement",
    "submersion": "dry",
    "occlusion": 0,
    "flood_depth_m": 0.0,
-   "height_cm": 132.4,
+   "height_cm": 89.4,
    "footprint_cm": [
-    96.4,
-    56.1
+    68.0,
+    103.5
    ],
    "aerially_detectable": true,
    "group": "roof10",
@@ -573,8 +573,8 @@
    "flood_depth_m": 0.0,
    "height_cm": 134.2,
    "footprint_cm": [
-    82.4,
-    27.1
+    35.2,
+    17.3
    ],
    "aerially_detectable": true,
    "group": null,
@@ -592,15 +592,15 @@
    "north_m": 194.86,
    "base_asl_m": 1063.636,
    "yaw_deg": 126.8,
-   "ground_offset_cm": -24.23,
+   "ground_offset_cm": -66.44,
    "zone": "settlement",
    "submersion": "dry",
    "occlusion": 1,
    "flood_depth_m": 0.0,
-   "height_cm": 138.0,
+   "height_cm": 96.7,
    "footprint_cm": [
-    103.8,
-    50.2
+    66.3,
+    96.4
    ],
    "aerially_detectable": true,
    "group": null,
@@ -618,15 +618,15 @@
    "north_m": -10.21,
    "base_asl_m": 1065.879,
    "yaw_deg": 7.3,
-   "ground_offset_cm": -24.23,
+   "ground_offset_cm": -66.44,
    "zone": "settlement",
    "submersion": "dry",
    "occlusion": 1,
    "flood_depth_m": 0.0,
-   "height_cm": 138.0,
+   "height_cm": 96.7,
    "footprint_cm": [
-    103.8,
-    50.2
+    66.3,
+    96.4
    ],
    "aerially_detectable": true,
    "group": null,
@@ -651,8 +651,8 @@
    "flood_depth_m": 0.0,
    "height_cm": 134.0,
    "footprint_cm": [
-    63.1,
-    32.1
+    100.1,
+    30.9
    ],
    "aerially_detectable": true,
    "group": "roof63",
@@ -677,8 +677,8 @@
    "flood_depth_m": 0.0,
    "height_cm": 169.9,
    "footprint_cm": [
-    104.3,
-    34.3
+    44.5,
+    21.9
    ],
    "aerially_detectable": true,
    "group": "roof63",
@@ -696,15 +696,15 @@
    "north_m": 315.37,
    "base_asl_m": 1064.087,
    "yaw_deg": 350.1,
-   "ground_offset_cm": -24.23,
+   "ground_offset_cm": -66.44,
    "zone": "settlement",
    "submersion": "dry",
    "occlusion": 0,
    "flood_depth_m": 0.0,
-   "height_cm": 138.0,
+   "height_cm": 96.7,
    "footprint_cm": [
-    103.8,
-    50.2
+    66.3,
+    96.4
    ],
    "aerially_detectable": true,
    "group": null,
@@ -722,15 +722,15 @@
    "north_m": -82.55,
    "base_asl_m": 1065.524,
    "yaw_deg": 207.3,
-   "ground_offset_cm": -24.23,
+   "ground_offset_cm": -66.44,
    "zone": "settlement",
    "submersion": "dry",
    "occlusion": 0,
    "flood_depth_m": 0.0,
-   "height_cm": 138.0,
+   "height_cm": 96.7,
    "footprint_cm": [
-    103.8,
-    50.2
+    66.3,
+    96.4
    ],
    "aerially_detectable": true,
    "group": null,
@@ -748,15 +748,15 @@
    "north_m": 293.41,
    "base_asl_m": 1063.991,
    "yaw_deg": 285.6,
-   "ground_offset_cm": -16.33,
+   "ground_offset_cm": -51.17,
    "zone": "settlement",
    "submersion": "dry",
    "occlusion": 0,
    "flood_depth_m": 0.0,
-   "height_cm": 109.1,
+   "height_cm": 74.1,
    "footprint_cm": [
-    75.4,
-    45.3
+    56.1,
+    84.8
    ],
    "aerially_detectable": true,
    "group": null,
@@ -774,15 +774,15 @@
    "north_m": 239.02,
    "base_asl_m": 1066.767,
    "yaw_deg": 199.3,
-   "ground_offset_cm": -24.23,
+   "ground_offset_cm": -66.44,
    "zone": "settlement",
    "submersion": "dry",
    "occlusion": 1,
    "flood_depth_m": 0.0,
-   "height_cm": 138.0,
+   "height_cm": 96.7,
    "footprint_cm": [
-    103.8,
-    50.2
+    66.3,
+    96.4
    ],
    "aerially_detectable": true,
    "group": "roof66",
@@ -800,15 +800,15 @@
    "north_m": 234.83,
    "base_asl_m": 1066.767,
    "yaw_deg": 168.4,
-   "ground_offset_cm": -24.23,
+   "ground_offset_cm": -66.44,
    "zone": "settlement",
    "submersion": "dry",
    "occlusion": 1,
    "flood_depth_m": 0.0,
-   "height_cm": 138.0,
+   "height_cm": 96.7,
    "footprint_cm": [
-    103.8,
-    50.2
+    66.3,
+    96.4
    ],
    "aerially_detectable": true,
    "group": "roof66",
@@ -833,7 +833,7 @@
    "flood_depth_m": 0.0,
    "height_cm": 162.5,
    "footprint_cm": [
-    95.7,
+    40.9,
     26.8
    ],
    "aerially_detectable": true,
@@ -859,7 +859,7 @@
    "flood_depth_m": 0.0,
    "height_cm": 162.5,
    "footprint_cm": [
-    95.7,
+    40.9,
     26.8
    ],
    "aerially_detectable": true,
@@ -885,8 +885,8 @@
    "flood_depth_m": 0.0,
    "height_cm": 162.5,
    "footprint_cm": [
-    82.9,
-    35.6
+    131.3,
+    33.2
    ],
    "aerially_detectable": true,
    "group": null,
@@ -911,8 +911,8 @@
    "flood_depth_m": 0.0,
    "height_cm": 134.2,
    "footprint_cm": [
-    82.4,
-    27.1
+    35.2,
+    17.3
    ],
    "aerially_detectable": true,
    "group": null,
@@ -937,8 +937,8 @@
    "flood_depth_m": 0.0,
    "height_cm": 162.5,
    "footprint_cm": [
-    82.9,
-    35.6
+    131.3,
+    33.2
    ],
    "aerially_detectable": true,
    "group": null,
@@ -956,15 +956,15 @@
    "north_m": 231.14,
    "base_asl_m": 1064.059,
    "yaw_deg": 79.6,
-   "ground_offset_cm": -24.23,
+   "ground_offset_cm": -66.44,
    "zone": "settlement",
    "submersion": "dry",
    "occlusion": 0,
    "flood_depth_m": 0.0,
-   "height_cm": 138.0,
+   "height_cm": 96.7,
    "footprint_cm": [
-    103.8,
-    50.2
+    66.3,
+    96.4
    ],
    "aerially_detectable": true,
    "group": "roof62",
@@ -989,7 +989,7 @@
    "flood_depth_m": 0.0,
    "height_cm": 162.5,
    "footprint_cm": [
-    95.7,
+    40.9,
     26.8
    ],
    "aerially_detectable": true,
@@ -1015,8 +1015,8 @@
    "flood_depth_m": 0.0,
    "height_cm": 162.5,
    "footprint_cm": [
-    82.9,
-    35.6
+    131.3,
+    33.2
    ],
    "aerially_detectable": true,
    "group": "roof62",
@@ -1034,15 +1034,15 @@
    "north_m": -137.94,
    "base_asl_m": 1065.284,
    "yaw_deg": 348.3,
-   "ground_offset_cm": -17.25,
+   "ground_offset_cm": -50.59,
    "zone": "settlement",
    "submersion": "dry",
    "occlusion": 0,
    "flood_depth_m": 0.0,
-   "height_cm": 109.0,
+   "height_cm": 76.4,
    "footprint_cm": [
-    82.0,
-    39.6
+    52.3,
+    76.2
    ],
    "aerially_detectable": true,
    "group": null,
@@ -1067,7 +1067,7 @@
    "flood_depth_m": 1.09,
    "height_cm": 161.5,
    "footprint_cm": [
-    89.3,
+    75.5,
     38.5
    ],
    "aerially_detectable": true,
@@ -1093,7 +1093,7 @@
    "flood_depth_m": 1.46,
    "height_cm": 161.5,
    "footprint_cm": [
-    89.3,
+    75.5,
     38.5
    ],
    "aerially_detectable": true,
@@ -1119,8 +1119,8 @@
    "flood_depth_m": 1.27,
    "height_cm": 167.2,
    "footprint_cm": [
-    95.6,
-    41.6
+    80.1,
+    38.6
    ],
    "aerially_detectable": true,
    "group": null,
@@ -1145,8 +1145,8 @@
    "flood_depth_m": 1.54,
    "height_cm": 167.2,
    "footprint_cm": [
-    95.6,
-    41.6
+    80.1,
+    38.6
    ],
    "aerially_detectable": true,
    "group": null,
@@ -1171,8 +1171,8 @@
    "flood_depth_m": 0.95,
    "height_cm": 167.2,
    "footprint_cm": [
-    95.6,
-    41.6
+    80.1,
+    38.6
    ],
    "aerially_detectable": true,
    "group": null,
@@ -1197,7 +1197,7 @@
    "flood_depth_m": 1.47,
    "height_cm": 161.5,
    "footprint_cm": [
-    89.3,
+    75.5,
     38.5
    ],
    "aerially_detectable": true,
@@ -1223,7 +1223,7 @@
    "flood_depth_m": 1.45,
    "height_cm": 161.5,
    "footprint_cm": [
-    89.3,
+    75.5,
     38.5
    ],
    "aerially_detectable": true,
@@ -1249,8 +1249,8 @@
    "flood_depth_m": 1.43,
    "height_cm": 167.2,
    "footprint_cm": [
-    95.6,
-    41.6
+    80.1,
+    38.6
    ],
    "aerially_detectable": true,
    "group": null,
@@ -1275,7 +1275,7 @@
    "flood_depth_m": 1.14,
    "height_cm": 161.5,
    "footprint_cm": [
-    89.3,
+    75.5,
     38.5
    ],
    "aerially_detectable": true,
@@ -1301,8 +1301,8 @@
    "flood_depth_m": 1.29,
    "height_cm": 167.2,
    "footprint_cm": [
-    95.6,
-    41.6
+    80.1,
+    38.6
    ],
    "aerially_detectable": true,
    "group": null,
@@ -1320,15 +1320,15 @@
    "north_m": 444.0,
    "base_asl_m": 1063.079,
    "yaw_deg": 239.1,
-   "ground_offset_cm": -68.46,
+   "ground_offset_cm": -76.2,
    "zone": "fan",
    "submersion": "dry",
    "occlusion": 1,
    "flood_depth_m": 0.0,
-   "height_cm": 46.0,
+   "height_cm": 29.3,
    "footprint_cm": [
-    103.8,
-    170.9
+    58.3,
+    167.2
    ],
    "aerially_detectable": true,
    "group": null,
@@ -1351,10 +1351,10 @@
    "submersion": "dry",
    "occlusion": 0,
    "flood_depth_m": 0.0,
-   "height_cm": 42.2,
+   "height_cm": 32.2,
    "footprint_cm": [
-    96.4,
-    162.8
+    55.0,
+    160.5
    ],
    "aerially_detectable": true,
    "group": null,
@@ -1379,7 +1379,7 @@
    "flood_depth_m": 0.0,
    "height_cm": 62.8,
    "footprint_cm": [
-    77.7,
+    58.2,
     125.6
    ],
    "aerially_detectable": true,
@@ -1398,15 +1398,15 @@
    "north_m": 508.0,
    "base_asl_m": 1096.28,
    "yaw_deg": 271.4,
-   "ground_offset_cm": -46.54,
+   "ground_offset_cm": -55.58,
    "zone": "fan",
    "submersion": "dry",
    "occlusion": 0,
    "flood_depth_m": 0.0,
-   "height_cm": 46.0,
+   "height_cm": 29.3,
    "footprint_cm": [
-    103.8,
-    170.9
+    58.3,
+    167.2
    ],
    "aerially_detectable": true,
    "group": null,
@@ -1424,15 +1424,15 @@
    "north_m": 756.0,
    "base_asl_m": 1062.442,
    "yaw_deg": 155.3,
-   "ground_offset_cm": -46.54,
+   "ground_offset_cm": -55.58,
    "zone": "fan",
    "submersion": "dry",
    "occlusion": 1,
    "flood_depth_m": 0.0,
-   "height_cm": 46.0,
+   "height_cm": 29.3,
    "footprint_cm": [
-    103.8,
-    170.9
+    58.3,
+    167.2
    ],
    "aerially_detectable": true,
    "group": null,
@@ -1457,7 +1457,7 @@
    "flood_depth_m": 0.0,
    "height_cm": 66.7,
    "footprint_cm": [
-    66.8,
+    49.8,
     116.6
    ],
    "aerially_detectable": true,
@@ -1483,7 +1483,7 @@
    "flood_depth_m": 0.0,
    "height_cm": 62.8,
    "footprint_cm": [
-    77.7,
+    58.2,
     125.6
    ],
    "aerially_detectable": false,
@@ -1502,15 +1502,15 @@
    "north_m": 668.0,
    "base_asl_m": 1117.922,
    "yaw_deg": 281.5,
-   "ground_offset_cm": -68.46,
+   "ground_offset_cm": -76.2,
    "zone": "fan",
    "submersion": "dry",
    "occlusion": 1,
    "flood_depth_m": 0.0,
-   "height_cm": 46.0,
+   "height_cm": 29.3,
    "footprint_cm": [
-    103.8,
-    170.9
+    58.3,
+    167.2
    ],
    "aerially_detectable": true,
    "group": null,
@@ -1535,7 +1535,7 @@
    "flood_depth_m": 0.0,
    "height_cm": 66.7,
    "footprint_cm": [
-    66.8,
+    49.8,
     116.6
    ],
    "aerially_detectable": true,
@@ -1554,15 +1554,15 @@
    "north_m": 500.0,
    "base_asl_m": 1166.911,
    "yaw_deg": 94.7,
-   "ground_offset_cm": -46.54,
+   "ground_offset_cm": -55.58,
    "zone": "fan",
    "submersion": "dry",
    "occlusion": 1,
    "flood_depth_m": 0.0,
-   "height_cm": 46.0,
+   "height_cm": 29.3,
    "footprint_cm": [
-    103.8,
-    170.9
+    58.3,
+    167.2
    ],
    "aerially_detectable": true,
    "group": null,
@@ -1585,10 +1585,10 @@
    "submersion": "dry",
    "occlusion": 0,
    "flood_depth_m": 0.0,
-   "height_cm": 42.2,
+   "height_cm": 32.2,
    "footprint_cm": [
-    96.4,
-    162.8
+    55.0,
+    160.5
    ],
    "aerially_detectable": true,
    "group": null,
@@ -1613,7 +1613,7 @@
    "flood_depth_m": 0.0,
    "height_cm": 66.7,
    "footprint_cm": [
-    66.8,
+    49.8,
     116.6
    ],
    "aerially_detectable": true,
@@ -1637,10 +1637,10 @@
    "submersion": "dry",
    "occlusion": 0,
    "flood_depth_m": 0.0,
-   "height_cm": 42.2,
+   "height_cm": 32.2,
    "footprint_cm": [
-    96.4,
-    162.8
+    55.0,
+    160.5
    ],
    "aerially_detectable": true,
    "group": null,
@@ -1665,7 +1665,7 @@
    "flood_depth_m": 0.0,
    "height_cm": 62.8,
    "footprint_cm": [
-    77.7,
+    58.2,
     125.6
    ],
    "aerially_detectable": false,
@@ -1691,8 +1691,8 @@
    "flood_depth_m": 0.0,
    "height_cm": 162.5,
    "footprint_cm": [
-    82.9,
-    35.6
+    131.3,
+    33.2
    ],
    "aerially_detectable": true,
    "group": null,
@@ -1717,8 +1717,8 @@
    "flood_depth_m": 0.12,
    "height_cm": 169.9,
    "footprint_cm": [
-    91.9,
-    44.6
+    141.8,
+    41.4
    ],
    "aerially_detectable": true,
    "group": null,
@@ -1743,7 +1743,7 @@
    "flood_depth_m": 0.0,
    "height_cm": 162.5,
    "footprint_cm": [
-    95.7,
+    40.9,
     26.8
    ],
    "aerially_detectable": true,
@@ -1769,8 +1769,8 @@
    "flood_depth_m": 0.0,
    "height_cm": 169.9,
    "footprint_cm": [
-    104.3,
-    34.3
+    44.5,
+    21.9
    ],
    "aerially_detectable": true,
    "group": null,
@@ -1795,7 +1795,7 @@
    "flood_depth_m": 0.0,
    "height_cm": 162.5,
    "footprint_cm": [
-    95.7,
+    40.9,
     26.8
    ],
    "aerially_detectable": true,
@@ -1821,7 +1821,7 @@
    "flood_depth_m": 0.0,
    "height_cm": 162.5,
    "footprint_cm": [
-    95.7,
+    40.9,
     26.8
    ],
    "aerially_detectable": true,
@@ -1847,8 +1847,8 @@
    "flood_depth_m": 0.0,
    "height_cm": 162.5,
    "footprint_cm": [
-    82.9,
-    35.6
+    131.3,
+    33.2
    ],
    "aerially_detectable": true,
    "group": null,
@@ -1873,8 +1873,8 @@
    "flood_depth_m": 0.0,
    "height_cm": 169.9,
    "footprint_cm": [
-    104.3,
-    34.3
+    44.5,
+    21.9
    ],
    "aerially_detectable": true,
    "group": null,

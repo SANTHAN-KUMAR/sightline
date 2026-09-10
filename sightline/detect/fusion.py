@@ -26,8 +26,8 @@ from __future__ import annotations
 
 import bisect
 import math
+from collections.abc import Sequence
 from dataclasses import dataclass, field, replace
-from typing import Sequence
 
 import numpy as np
 
@@ -35,18 +35,18 @@ from sightline.detect.tiler import iou_xyxy
 from sightline.schemas import Detection, FrameBundle, Intrinsics
 
 __all__ = [
-    "Registration",
-    "FusionResult",
-    "AltitudeHomographyTable",
     "DEFAULT_IOU_THR",
     "DEFAULT_SKIP_BOX_THR",
     "MAX_RESIDUAL_PX",
+    "AltitudeHomographyTable",
+    "FusionResult",
+    "Registration",
+    "fuse_detections",
     "homography_from_intrinsics",
-    "warp_points",
-    "warp_boxes",
     "register_thermal",
     "thermal_weight",
-    "fuse_detections",
+    "warp_boxes",
+    "warp_points",
 ]
 
 #: §5.5's inference sketch: `weighted_boxes_fusion(..., iou_thr=0.5, skip_box_thr=0.05)`.

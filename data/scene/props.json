@@ -602,6 +602,2484 @@
           ]
         }
       ]
+    },
+    "jacaranda_tree": {
+      "role": "tree",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/jacaranda_tree/jacaranda_tree_2k_lite/StaticMeshes/jacaranda_tree_2k_lite",
+          "tris": 352726,
+          "size_m": [
+            24.61,
+            18.785,
+            19.397
+          ]
+        }
+      ],
+      "source": "polyhaven/jacaranda_tree/jacaranda_tree_2k_lite.gltf",
+      "lods": true,
+      "measured_by": "tools/scene/check_env_assets.py"
+    },
+    "island_tree_01": {
+      "role": "tree",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/island_tree_01/island_tree_01_2k_lite/StaticMeshes/island_tree_01_2k_lite",
+          "tris": 162400,
+          "size_m": [
+            4.648,
+            4.613,
+            5.014
+          ]
+        }
+      ],
+      "source": "polyhaven/island_tree_01/island_tree_01_2k_lite.gltf",
+      "lods": true,
+      "measured_by": "tools/scene/check_env_assets.py"
+    },
+    "island_tree_02": {
+      "role": "tree",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/island_tree_02/island_tree_02_2k_lite/StaticMeshes/island_tree_02_2k_lite",
+          "tris": 106821,
+          "size_m": [
+            4.016,
+            4.097,
+            3.343
+          ]
+        }
+      ],
+      "source": "polyhaven/island_tree_02/island_tree_02_2k_lite.gltf",
+      "lods": true,
+      "measured_by": "tools/scene/check_env_assets.py"
+    },
+    "island_tree_03": {
+      "role": "tree",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/island_tree_03/island_tree_03_2k_lite/StaticMeshes/island_tree_03_2k_lite",
+          "tris": 111522,
+          "size_m": [
+            2.942,
+            2.913,
+            2.515
+          ]
+        }
+      ],
+      "source": "polyhaven/island_tree_03/island_tree_03_2k_lite.gltf",
+      "lods": true,
+      "measured_by": "tools/scene/check_env_assets.py"
+    },
+    "tree_small_02": {
+      "role": "tree",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/tree_small_02/tree_small_02_2k_lite/StaticMeshes/tree_small_02_2k_lite",
+          "tris": 156172,
+          "size_m": [
+            2.94,
+            4.258,
+            4.533
+          ]
+        }
+      ],
+      "source": "polyhaven/tree_small_02/tree_small_02_2k_lite.gltf",
+      "lods": true,
+      "measured_by": "tools/scene/check_env_assets.py"
+    },
+    "grass_medium_01": {
+      "role": "ground_cover",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/grass_medium_01/grass_medium_01_2k/StaticMeshes/grass_medium_01_small_a_LOD0",
+          "tris": 833,
+          "size_m": [
+            0.185,
+            0.162,
+            0.14
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_medium_01/grass_medium_01_2k/StaticMeshes/grass_medium_01_large_b_LOD0",
+          "tris": 4626,
+          "size_m": [
+            0.284,
+            0.276,
+            0.169
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_medium_01/grass_medium_01_2k/StaticMeshes/grass_medium_01_mid_b_LOD0",
+          "tris": 1257,
+          "size_m": [
+            0.188,
+            0.201,
+            0.178
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_medium_01/grass_medium_01_2k/StaticMeshes/grass_medium_01_tall_b_LOD0",
+          "tris": 310,
+          "size_m": [
+            0.15,
+            0.135,
+            0.286
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_medium_01/grass_medium_01_2k/StaticMeshes/grass_medium_01_tall_a_LOD0",
+          "tris": 290,
+          "size_m": [
+            0.161,
+            0.159,
+            0.323
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_medium_01/grass_medium_01_2k/StaticMeshes/grass_medium_01_tall_c_LOD0",
+          "tris": 340,
+          "size_m": [
+            0.153,
+            0.128,
+            0.236
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_medium_01/grass_medium_01_2k/StaticMeshes/grass_medium_01_small_b_LOD0",
+          "tris": 653,
+          "size_m": [
+            0.166,
+            0.19,
+            0.1
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_medium_01/grass_medium_01_2k/StaticMeshes/grass_medium_01_mid_c_LOD0",
+          "tris": 1466,
+          "size_m": [
+            0.192,
+            0.203,
+            0.145
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_medium_01/grass_medium_01_2k/StaticMeshes/grass_medium_01_mid_a_LOD0",
+          "tris": 2287,
+          "size_m": [
+            0.216,
+            0.221,
+            0.218
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_medium_01/grass_medium_01_2k/StaticMeshes/grass_medium_01_large_a_LOD0",
+          "tris": 6422,
+          "size_m": [
+            0.317,
+            0.327,
+            0.147
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_medium_01/grass_medium_01_2k/StaticMeshes/grass_medium_01_large_c_LOD0",
+          "tris": 5945,
+          "size_m": [
+            0.279,
+            0.255,
+            0.142
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_medium_01/grass_medium_01_2k/StaticMeshes/grass_medium_01_tiny_c_LOD0",
+          "tris": 40,
+          "size_m": [
+            0.016,
+            0.029,
+            0.082
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_medium_01/grass_medium_01_2k/StaticMeshes/grass_medium_01_tiny_a_LOD0",
+          "tris": 79,
+          "size_m": [
+            0.067,
+            0.074,
+            0.112
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_medium_01/grass_medium_01_2k/StaticMeshes/grass_medium_01_tiny_b_LOD0",
+          "tris": 28,
+          "size_m": [
+            0.024,
+            0.034,
+            0.06
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_medium_01/grass_medium_01_2k/StaticMeshes/grass_medium_01_tiny_d_LOD0",
+          "tris": 32,
+          "size_m": [
+            0.043,
+            0.089,
+            0.048
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_medium_01/grass_medium_01_2k/StaticMeshes/grass_medium_01_tiny_e_LOD0",
+          "tris": 62,
+          "size_m": [
+            0.085,
+            0.074,
+            0.049
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_medium_01/grass_medium_01_2k/StaticMeshes/grass_medium_01_tiny_f_LOD0",
+          "tris": 60,
+          "size_m": [
+            0.055,
+            0.069,
+            0.047
+          ]
+        }
+      ],
+      "source": "polyhaven/grass_medium_01/grass_medium_01_2k.gltf",
+      "lods": true,
+      "measured_by": "tools/scene/check_env_assets.py"
+    },
+    "grass_medium_02": {
+      "role": "ground_cover",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/grass_medium_02/grass_medium_02_2k/StaticMeshes/grass_medium_02_a",
+          "tris": 714,
+          "size_m": [
+            0.119,
+            0.12,
+            0.157
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_medium_02/grass_medium_02_2k/StaticMeshes/grass_medium_02_b",
+          "tris": 1760,
+          "size_m": [
+            0.179,
+            0.199,
+            0.18
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_medium_02/grass_medium_02_2k/StaticMeshes/grass_medium_02_c",
+          "tris": 1215,
+          "size_m": [
+            0.262,
+            0.25,
+            0.232
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_medium_02/grass_medium_02_2k/StaticMeshes/grass_medium_02_d",
+          "tris": 2489,
+          "size_m": [
+            0.317,
+            0.362,
+            0.26
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_medium_02/grass_medium_02_2k/StaticMeshes/grass_medium_02_e",
+          "tris": 1664,
+          "size_m": [
+            0.356,
+            0.433,
+            0.403
+          ]
+        }
+      ],
+      "source": "polyhaven/grass_medium_02/grass_medium_02_2k.gltf",
+      "lods": true,
+      "measured_by": "tools/scene/check_env_assets.py"
+    },
+    "grass_bermuda_01": {
+      "role": "ground_cover",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/grass_bermuda_01/grass_bermuda_01_2k/StaticMeshes/grass_bermuda_01_dead_a",
+          "tris": 12,
+          "size_m": [
+            0.068,
+            0.084,
+            0.025
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_bermuda_01/grass_bermuda_01_2k/StaticMeshes/grass_bermuda_01_dead_b",
+          "tris": 12,
+          "size_m": [
+            0.07,
+            0.055,
+            0.043
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_bermuda_01/grass_bermuda_01_2k/StaticMeshes/grass_bermuda_01_flattened_a",
+          "tris": 19,
+          "size_m": [
+            0.044,
+            0.069,
+            0.044
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_bermuda_01/grass_bermuda_01_2k/StaticMeshes/grass_bermuda_01_medium_a",
+          "tris": 17,
+          "size_m": [
+            0.039,
+            0.029,
+            0.098
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_bermuda_01/grass_bermuda_01_2k/StaticMeshes/grass_bermuda_01_medium_b",
+          "tris": 8,
+          "size_m": [
+            0.051,
+            0.022,
+            0.075
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_bermuda_01/grass_bermuda_01_2k/StaticMeshes/grass_bermuda_01_medium_c",
+          "tris": 20,
+          "size_m": [
+            0.057,
+            0.092,
+            0.067
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_bermuda_01/grass_bermuda_01_2k/StaticMeshes/grass_bermuda_01_medium_d",
+          "tris": 14,
+          "size_m": [
+            0.055,
+            0.016,
+            0.102
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_bermuda_01/grass_bermuda_01_2k/StaticMeshes/grass_bermuda_01_medium_e",
+          "tris": 24,
+          "size_m": [
+            0.066,
+            0.037,
+            0.083
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_bermuda_01/grass_bermuda_01_2k/StaticMeshes/grass_bermuda_01_medium_f",
+          "tris": 30,
+          "size_m": [
+            0.041,
+            0.026,
+            0.113
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_bermuda_01/grass_bermuda_01_2k/StaticMeshes/grass_bermuda_01_seedling_a",
+          "tris": 147,
+          "size_m": [
+            0.068,
+            0.046,
+            0.151
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_bermuda_01/grass_bermuda_01_2k/StaticMeshes/grass_bermuda_01_seedling_b",
+          "tris": 140,
+          "size_m": [
+            0.077,
+            0.049,
+            0.127
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_bermuda_01/grass_bermuda_01_2k/StaticMeshes/grass_bermuda_01_seedling_c",
+          "tris": 128,
+          "size_m": [
+            0.037,
+            0.045,
+            0.092
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_bermuda_01/grass_bermuda_01_2k/StaticMeshes/grass_bermuda_01_seedling_d",
+          "tris": 268,
+          "size_m": [
+            0.07,
+            0.083,
+            0.152
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_bermuda_01/grass_bermuda_01_2k/StaticMeshes/grass_bermuda_01_single_a",
+          "tris": 15,
+          "size_m": [
+            0.004,
+            0.014,
+            0.149
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_bermuda_01/grass_bermuda_01_2k/StaticMeshes/grass_bermuda_01_single_b",
+          "tris": 15,
+          "size_m": [
+            0.004,
+            0.014,
+            0.149
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_bermuda_01/grass_bermuda_01_2k/StaticMeshes/grass_bermuda_01_small_a",
+          "tris": 12,
+          "size_m": [
+            0.08,
+            0.028,
+            0.032
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_bermuda_01/grass_bermuda_01_2k/StaticMeshes/grass_bermuda_01_small_b",
+          "tris": 12,
+          "size_m": [
+            0.083,
+            0.036,
+            0.046
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_bermuda_01/grass_bermuda_01_2k/StaticMeshes/grass_bermuda_01_small_c",
+          "tris": 18,
+          "size_m": [
+            0.054,
+            0.041,
+            0.055
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_bermuda_01/grass_bermuda_01_2k/StaticMeshes/grass_bermuda_01_small_d",
+          "tris": 10,
+          "size_m": [
+            0.058,
+            0.033,
+            0.055
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_bermuda_01/grass_bermuda_01_2k/StaticMeshes/grass_bermuda_01_small_e",
+          "tris": 10,
+          "size_m": [
+            0.029,
+            0.018,
+            0.091
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/grass_bermuda_01/grass_bermuda_01_2k/StaticMeshes/grass_bermuda_01_small_f",
+          "tris": 10,
+          "size_m": [
+            0.036,
+            0.025,
+            0.069
+          ]
+        }
+      ],
+      "source": "polyhaven/grass_bermuda_01/grass_bermuda_01_2k.gltf",
+      "lods": false,
+      "measured_by": "tools/scene/check_env_assets.py"
+    },
+    "shrub_01": {
+      "role": "ground_cover",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/shrub_01/shrub_01_2k/StaticMeshes/shrub_01_2k",
+          "tris": 156012,
+          "size_m": [
+            2.587,
+            0.219,
+            0.396
+          ]
+        }
+      ],
+      "source": "polyhaven/shrub_01/shrub_01_2k.gltf",
+      "lods": true,
+      "measured_by": "tools/scene/check_env_assets.py"
+    },
+    "shrub_02": {
+      "role": "ground_cover",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/shrub_02/shrub_02_2k/StaticMeshes/shrub_02_a",
+          "tris": 7590,
+          "size_m": [
+            1.56,
+            1.29,
+            1.712
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/shrub_02/shrub_02_2k/StaticMeshes/shrub_02_b",
+          "tris": 5242,
+          "size_m": [
+            1.369,
+            1.386,
+            1.187
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/shrub_02/shrub_02_2k/StaticMeshes/shrub_02_c",
+          "tris": 9234,
+          "size_m": [
+            2.179,
+            1.468,
+            1.167
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/shrub_02/shrub_02_2k/StaticMeshes/shrub_02_d",
+          "tris": 5188,
+          "size_m": [
+            1.28,
+            0.985,
+            1.243
+          ]
+        }
+      ],
+      "source": "polyhaven/shrub_02/shrub_02_2k.gltf",
+      "lods": true,
+      "measured_by": "tools/scene/check_env_assets.py"
+    },
+    "shrub_03": {
+      "role": "ground_cover",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/shrub_03/shrub_03_2k/StaticMeshes/shrub_03_a",
+          "tris": 2385,
+          "size_m": [
+            0.201,
+            0.151,
+            0.403
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/shrub_03/shrub_03_2k/StaticMeshes/shrub_03_b",
+          "tris": 2134,
+          "size_m": [
+            0.184,
+            0.123,
+            0.353
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/shrub_03/shrub_03_2k/StaticMeshes/shrub_03_c",
+          "tris": 1790,
+          "size_m": [
+            0.096,
+            0.113,
+            0.304
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/shrub_03/shrub_03_2k/StaticMeshes/shrub_03_d",
+          "tris": 1978,
+          "size_m": [
+            0.113,
+            0.089,
+            0.256
+          ]
+        }
+      ],
+      "source": "polyhaven/shrub_03/shrub_03_2k.gltf",
+      "lods": false,
+      "measured_by": "tools/scene/check_env_assets.py"
+    },
+    "shrub_04": {
+      "role": "ground_cover",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/shrub_04/shrub_04_2k/StaticMeshes/shrub_04_2k",
+          "tris": 27327,
+          "size_m": [
+            0.584,
+            0.146,
+            0.219
+          ]
+        }
+      ],
+      "source": "polyhaven/shrub_04/shrub_04_2k.gltf",
+      "lods": true,
+      "measured_by": "tools/scene/check_env_assets.py"
+    },
+    "nettle_plant": {
+      "role": "ground_cover",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/nettle_plant/nettle_plant_2k/StaticMeshes/nettle_plant_medium_a_LOD0",
+          "tris": 5896,
+          "size_m": [
+            0.077,
+            0.089,
+            0.131
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/nettle_plant/nettle_plant_2k/StaticMeshes/nettle_plant_medium_b_LOD0",
+          "tris": 5664,
+          "size_m": [
+            0.065,
+            0.066,
+            0.105
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/nettle_plant/nettle_plant_2k/StaticMeshes/nettle_plant_small_a_LOD0",
+          "tris": 3592,
+          "size_m": [
+            0.064,
+            0.043,
+            0.063
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/nettle_plant/nettle_plant_2k/StaticMeshes/nettle_plant_small_b_LOD0",
+          "tris": 1088,
+          "size_m": [
+            0.06,
+            0.039,
+            0.022
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/nettle_plant/nettle_plant_2k/StaticMeshes/nettle_plant_tall_a_LOD0",
+          "tris": 6984,
+          "size_m": [
+            0.104,
+            0.09,
+            0.217
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/nettle_plant/nettle_plant_2k/StaticMeshes/nettle_plant_tall_b_LOD0",
+          "tris": 8080,
+          "size_m": [
+            0.082,
+            0.095,
+            0.193
+          ]
+        }
+      ],
+      "source": "polyhaven/nettle_plant/nettle_plant_2k.gltf",
+      "lods": false,
+      "measured_by": "tools/scene/check_env_assets.py"
+    },
+    "weed_plant_02": {
+      "role": "ground_cover",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/weed_plant_02/weed_plant_02_2k/StaticMeshes/weed_plant_02_a_LOD0",
+          "tris": 2967,
+          "size_m": [
+            0.219,
+            0.291,
+            0.072
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/weed_plant_02/weed_plant_02_2k/StaticMeshes/weed_plant_02_b_LOD0",
+          "tris": 2273,
+          "size_m": [
+            0.188,
+            0.199,
+            0.068
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/weed_plant_02/weed_plant_02_2k/StaticMeshes/weed_plant_02_c_LOD0",
+          "tris": 1766,
+          "size_m": [
+            0.142,
+            0.143,
+            0.055
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/weed_plant_02/weed_plant_02_2k/StaticMeshes/weed_plant_02_d_LOD0",
+          "tris": 1928,
+          "size_m": [
+            0.154,
+            0.108,
+            0.039
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/weed_plant_02/weed_plant_02_2k/StaticMeshes/weed_plant_02_e_LOD0",
+          "tris": 2182,
+          "size_m": [
+            0.119,
+            0.061,
+            0.04
+          ]
+        }
+      ],
+      "source": "polyhaven/weed_plant_02/weed_plant_02_2k.gltf",
+      "lods": false,
+      "measured_by": "tools/scene/check_env_assets.py"
+    },
+    "anthurium_botany_01": {
+      "role": "ground_cover",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/anthurium_botany_01/anthurium_botany_01_2k/StaticMeshes/anthurium_botany_01_a",
+          "tris": 15808,
+          "size_m": [
+            0.896,
+            1.142,
+            0.5
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/anthurium_botany_01/anthurium_botany_01_2k/StaticMeshes/anthurium_botany_01_b",
+          "tris": 15544,
+          "size_m": [
+            0.757,
+            0.572,
+            0.472
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/anthurium_botany_01/anthurium_botany_01_2k/StaticMeshes/anthurium_botany_04_d",
+          "tris": 10360,
+          "size_m": [
+            0.481,
+            0.351,
+            0.301
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/anthurium_botany_01/anthurium_botany_01_2k/StaticMeshes/anthurium_botany_01_c",
+          "tris": 9072,
+          "size_m": [
+            0.601,
+            0.657,
+            0.359
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/anthurium_botany_01/anthurium_botany_01_2k/StaticMeshes/anthurium_botany_05_e",
+          "tris": 7664,
+          "size_m": [
+            0.32,
+            0.29,
+            0.159
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/anthurium_botany_01/anthurium_botany_01_2k/StaticMeshes/anthurium_botany_06_f",
+          "tris": 8704,
+          "size_m": [
+            0.313,
+            0.279,
+            0.139
+          ]
+        }
+      ],
+      "source": "polyhaven/anthurium_botany_01/anthurium_botany_01_2k.gltf",
+      "lods": true,
+      "measured_by": "tools/scene/check_env_assets.py"
+    },
+    "calathea_orbifolia_01": {
+      "role": "ground_cover",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/calathea_orbifolia_01/calathea_orbifolia_01_2k/StaticMeshes/calathea_orbifolia_01_a",
+          "tris": 5904,
+          "size_m": [
+            0.601,
+            0.526,
+            0.424
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/calathea_orbifolia_01/calathea_orbifolia_01_2k/StaticMeshes/calathea_orbifolia_01_b",
+          "tris": 3446,
+          "size_m": [
+            0.347,
+            0.44,
+            0.303
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/calathea_orbifolia_01/calathea_orbifolia_01_2k/StaticMeshes/calathea_orbifolia_01_c",
+          "tris": 3542,
+          "size_m": [
+            0.375,
+            0.384,
+            0.284
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/calathea_orbifolia_01/calathea_orbifolia_01_2k/StaticMeshes/calathea_orbifolia_01_d",
+          "tris": 1802,
+          "size_m": [
+            0.226,
+            0.163,
+            0.13
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/calathea_orbifolia_01/calathea_orbifolia_01_2k/StaticMeshes/calathea_orbifolia_01_e",
+          "tris": 1994,
+          "size_m": [
+            0.213,
+            0.252,
+            0.152
+          ]
+        }
+      ],
+      "source": "polyhaven/calathea_orbifolia_01/calathea_orbifolia_01_2k.gltf",
+      "lods": false,
+      "measured_by": "tools/scene/check_env_assets.py"
+    },
+    "pachira_aquatica_01": {
+      "role": "ground_cover",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/pachira_aquatica_01/pachira_aquatica_01_2k/StaticMeshes/pachira_aquatica_01_bark_a",
+          "tris": 13453,
+          "size_m": [
+            0.233,
+            0.241,
+            0.851
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/pachira_aquatica_01/pachira_aquatica_01_2k/StaticMeshes/pachira_aquatica_01_bark_b",
+          "tris": 584,
+          "size_m": [
+            0.155,
+            0.23,
+            0.584
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/pachira_aquatica_01/pachira_aquatica_01_2k/StaticMeshes/pachira_aquatica_01_bark_c",
+          "tris": 3496,
+          "size_m": [
+            0.593,
+            0.495,
+            1.002
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/pachira_aquatica_01/pachira_aquatica_01_2k/StaticMeshes/pachira_aquatica_01_bark_d",
+          "tris": 3764,
+          "size_m": [
+            0.601,
+            0.432,
+            1.627
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/pachira_aquatica_01/pachira_aquatica_01_2k/StaticMeshes/pachira_aquatica_01_leaves_a",
+          "tris": 9714,
+          "size_m": [
+            0.744,
+            0.647,
+            0.74
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/pachira_aquatica_01/pachira_aquatica_01_2k/StaticMeshes/pachira_aquatica_01_leaves_b",
+          "tris": 4507,
+          "size_m": [
+            0.503,
+            0.607,
+            0.518
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/pachira_aquatica_01/pachira_aquatica_01_2k/StaticMeshes/pachira_aquatica_01_leaves_c",
+          "tris": 17055,
+          "size_m": [
+            0.975,
+            0.924,
+            0.894
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/pachira_aquatica_01/pachira_aquatica_01_2k/StaticMeshes/pachira_aquatica_01_leaves_d",
+          "tris": 24341,
+          "size_m": [
+            1.054,
+            0.997,
+            1.649
+          ]
+        }
+      ],
+      "source": "polyhaven/pachira_aquatica_01/pachira_aquatica_01_2k.gltf",
+      "lods": true,
+      "measured_by": "tools/scene/check_env_assets.py"
+    },
+    "modular_electricity_poles": {
+      "role": "utility",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/bolt_large",
+          "tris": 122,
+          "size_m": [
+            0.02,
+            0.218,
+            0.023
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/bolt_small",
+          "tris": 92,
+          "size_m": [
+            0.02,
+            0.09,
+            0.023
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/cap",
+          "tris": 164,
+          "size_m": [
+            0.191,
+            0.03,
+            0.32
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/connection_large_01",
+          "tris": 13376,
+          "size_m": [
+            1.2,
+            0.852,
+            0.503
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/connection_large_02",
+          "tris": 7736,
+          "size_m": [
+            1.2,
+            0.516,
+            0.503
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/connection_large_offset_01",
+          "tris": 13778,
+          "size_m": [
+            1.2,
+            0.852,
+            0.503
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/connection_large_offset_02",
+          "tris": 7736,
+          "size_m": [
+            1.2,
+            0.516,
+            0.503
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/connection_single_01",
+          "tris": 954,
+          "size_m": [
+            0.156,
+            0.266,
+            0.107
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/connection_single_02",
+          "tris": 954,
+          "size_m": [
+            0.156,
+            0.266,
+            0.107
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/connection_single_03",
+          "tris": 1158,
+          "size_m": [
+            0.08,
+            0.124,
+            0.126
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/connection_small_01",
+          "tris": 9818,
+          "size_m": [
+            0.7,
+            0.852,
+            0.503
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/connection_small_02",
+          "tris": 5620,
+          "size_m": [
+            0.7,
+            0.516,
+            0.503
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/fastener",
+          "tris": 1802,
+          "size_m": [
+            1.446,
+            0.039,
+            3.058
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/fastener_bolt",
+          "tris": 164,
+          "size_m": [
+            0.041,
+            0.014,
+            0.042
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/fastener_connection",
+          "tris": 366,
+          "size_m": [
+            0.188,
+            0.156,
+            0.03
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/fastener_loop",
+          "tris": 144,
+          "size_m": [
+            0.046,
+            0.015,
+            0.073
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/fastener_nut",
+          "tris": 238,
+          "size_m": [
+            0.041,
+            0.025,
+            0.042
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/fuse_01",
+          "tris": 2392,
+          "size_m": [
+            0.437,
+            0.352,
+            0.403
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/fuse_02",
+          "tris": 3660,
+          "size_m": [
+            0.937,
+            0.355,
+            0.475
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/insulator_01",
+          "tris": 2116,
+          "size_m": [
+            0.07,
+            0.343,
+            0.248
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/insulator_02",
+          "tris": 2116,
+          "size_m": [
+            0.078,
+            0.343,
+            0.294
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/insulator_03",
+          "tris": 2116,
+          "size_m": [
+            0.084,
+            0.343,
+            0.36
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/insulator_cable_01",
+          "tris": 248,
+          "size_m": [
+            0.046,
+            0.524,
+            0.219
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/insulator_cable_02",
+          "tris": 232,
+          "size_m": [
+            0.067,
+            0.524,
+            0.326
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/insulator_cable_03",
+          "tris": 248,
+          "size_m": [
+            0.053,
+            0.524,
+            0.284
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/insulators_large",
+          "tris": 6348,
+          "size_m": [
+            0.97,
+            0.343,
+            0.36
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/insulators_small",
+          "tris": 4232,
+          "size_m": [
+            0.47,
+            0.343,
+            0.36
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/nail",
+          "tris": 114,
+          "size_m": [
+            0.017,
+            0.022,
+            0.017
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/nail_bent",
+          "tris": 198,
+          "size_m": [
+            0.019,
+            0.028,
+            0.048
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/nut",
+          "tris": 96,
+          "size_m": [
+            0.02,
+            0.009,
+            0.023
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/pole",
+          "tris": 360,
+          "size_m": [
+            0.14,
+            0.14,
+            6.0
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/pole_large",
+          "tris": 400,
+          "size_m": [
+            0.138,
+            0.138,
+            7.0
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/pole_small",
+          "tris": 288,
+          "size_m": [
+            0.14,
+            0.14,
+            5.0
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/ring_large",
+          "tris": 120,
+          "size_m": [
+            0.154,
+            0.154,
+            0.04
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/ring_small",
+          "tris": 120,
+          "size_m": [
+            0.15,
+            0.15,
+            0.02
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/support_large_01",
+          "tris": 2130,
+          "size_m": [
+            1.2,
+            0.283,
+            0.392
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/support_large_02",
+          "tris": 1388,
+          "size_m": [
+            1.2,
+            0.241,
+            0.392
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/support_large_offset_01",
+          "tris": 2130,
+          "size_m": [
+            1.2,
+            0.283,
+            0.392
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/support_large_offset_02",
+          "tris": 1388,
+          "size_m": [
+            1.2,
+            0.241,
+            0.392
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/support_small_01",
+          "tris": 2042,
+          "size_m": [
+            0.7,
+            0.28,
+            0.392
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/support_small_02",
+          "tris": 1388,
+          "size_m": [
+            0.7,
+            0.241,
+            0.392
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/transformer_01",
+          "tris": 6076,
+          "size_m": [
+            0.547,
+            0.299,
+            0.612
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/transformer_02",
+          "tris": 1032,
+          "size_m": [
+            0.175,
+            0.22,
+            0.298
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_03_bolt_small_01",
+          "tris": 92,
+          "size_m": [
+            0.02,
+            0.09,
+            0.023
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_03_bolt_small_02",
+          "tris": 92,
+          "size_m": [
+            0.02,
+            0.09,
+            0.023
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_03_bolt_small_03",
+          "tris": 92,
+          "size_m": [
+            0.02,
+            0.09,
+            0.023
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_03_bolt_small_04",
+          "tris": 92,
+          "size_m": [
+            0.02,
+            0.09,
+            0.023
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_03_bolt_small_05",
+          "tris": 92,
+          "size_m": [
+            0.02,
+            0.09,
+            0.023
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_03_bolt_small_06",
+          "tris": 92,
+          "size_m": [
+            0.02,
+            0.09,
+            0.023
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_03_cap",
+          "tris": 164,
+          "size_m": [
+            0.191,
+            0.03,
+            0.32
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_03_connection_large_offset_01",
+          "tris": 13778,
+          "size_m": [
+            1.2,
+            0.852,
+            0.503
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_03_connection_single_01",
+          "tris": 954,
+          "size_m": [
+            0.156,
+            0.266,
+            0.107
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_03_connection_small_01_02",
+          "tris": 9818,
+          "size_m": [
+            0.7,
+            0.852,
+            0.503
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_03_fuse_01",
+          "tris": 2392,
+          "size_m": [
+            0.437,
+            0.352,
+            0.403
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_03_nail_bent",
+          "tris": 198,
+          "size_m": [
+            0.019,
+            0.028,
+            0.048
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_03_pole",
+          "tris": 360,
+          "size_m": [
+            0.14,
+            0.14,
+            6.0
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_03_ring_large_01",
+          "tris": 120,
+          "size_m": [
+            0.154,
+            0.154,
+            0.04
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_03_ring_large_02",
+          "tris": 120,
+          "size_m": [
+            0.154,
+            0.154,
+            0.04
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_03_ring_small_01",
+          "tris": 120,
+          "size_m": [
+            0.15,
+            0.15,
+            0.02
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_03_ring_small_02",
+          "tris": 120,
+          "size_m": [
+            0.15,
+            0.15,
+            0.02
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_03_ring_small_03",
+          "tris": 120,
+          "size_m": [
+            0.15,
+            0.15,
+            0.02
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_03_ring_small_04",
+          "tris": 120,
+          "size_m": [
+            0.15,
+            0.15,
+            0.02
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_03_transformer_01",
+          "tris": 6076,
+          "size_m": [
+            0.547,
+            0.299,
+            0.612
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_02_cap",
+          "tris": 164,
+          "size_m": [
+            0.191,
+            0.03,
+            0.32
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_02_connection_large_01",
+          "tris": 13376,
+          "size_m": [
+            1.2,
+            0.852,
+            0.503
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_02_connection_single_01",
+          "tris": 954,
+          "size_m": [
+            0.156,
+            0.266,
+            0.107
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_02_connection_single_01_02",
+          "tris": 954,
+          "size_m": [
+            0.156,
+            0.266,
+            0.107
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_02_connection_small_01",
+          "tris": 9818,
+          "size_m": [
+            0.7,
+            0.852,
+            0.503
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_02_pole",
+          "tris": 360,
+          "size_m": [
+            0.14,
+            0.14,
+            6.0
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_02_ring_large",
+          "tris": 120,
+          "size_m": [
+            0.154,
+            0.154,
+            0.04
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_02_ring_large_02",
+          "tris": 120,
+          "size_m": [
+            0.154,
+            0.154,
+            0.04
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_02_ring_small_01",
+          "tris": 120,
+          "size_m": [
+            0.15,
+            0.15,
+            0.02
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_02_ring_small_02",
+          "tris": 120,
+          "size_m": [
+            0.15,
+            0.15,
+            0.02
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_02_ring_small_03",
+          "tris": 120,
+          "size_m": [
+            0.15,
+            0.15,
+            0.02
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_02_ring_small_04",
+          "tris": 120,
+          "size_m": [
+            0.15,
+            0.15,
+            0.02
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_02_ring_small_05",
+          "tris": 120,
+          "size_m": [
+            0.15,
+            0.15,
+            0.02
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_01_bolt_small_01",
+          "tris": 92,
+          "size_m": [
+            0.02,
+            0.09,
+            0.023
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_01_bolt_small_02",
+          "tris": 92,
+          "size_m": [
+            0.02,
+            0.09,
+            0.023
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_01_bolt_small_03",
+          "tris": 92,
+          "size_m": [
+            0.02,
+            0.09,
+            0.023
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_01_bolt_small_04",
+          "tris": 92,
+          "size_m": [
+            0.02,
+            0.09,
+            0.023
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_01_bolt_small_05",
+          "tris": 92,
+          "size_m": [
+            0.02,
+            0.09,
+            0.023
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_01_bolt_small_06",
+          "tris": 92,
+          "size_m": [
+            0.02,
+            0.09,
+            0.023
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_01_bolt_small_07",
+          "tris": 92,
+          "size_m": [
+            0.02,
+            0.09,
+            0.023
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_01_bolt_small_08",
+          "tris": 92,
+          "size_m": [
+            0.02,
+            0.09,
+            0.023
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_01_bolt_small_09",
+          "tris": 92,
+          "size_m": [
+            0.02,
+            0.09,
+            0.023
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_01_cap",
+          "tris": 164,
+          "size_m": [
+            0.191,
+            0.03,
+            0.32
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_01_connection_large_02",
+          "tris": 7736,
+          "size_m": [
+            1.2,
+            0.516,
+            0.503
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_01_connection_single_01",
+          "tris": 954,
+          "size_m": [
+            0.156,
+            0.266,
+            0.107
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_01_connection_small_02",
+          "tris": 5620,
+          "size_m": [
+            0.7,
+            0.516,
+            0.503
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_01_fastener",
+          "tris": 1802,
+          "size_m": [
+            1.446,
+            0.039,
+            3.058
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_01_fastener_connection",
+          "tris": 366,
+          "size_m": [
+            0.188,
+            0.156,
+            0.03
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_01_fastener_loop",
+          "tris": 144,
+          "size_m": [
+            0.046,
+            0.015,
+            0.073
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_01_fuse_01",
+          "tris": 2392,
+          "size_m": [
+            0.437,
+            0.352,
+            0.403
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_01_fuse_02",
+          "tris": 3660,
+          "size_m": [
+            0.937,
+            0.355,
+            0.475
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_01_nail_bent",
+          "tris": 198,
+          "size_m": [
+            0.019,
+            0.028,
+            0.048
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_01_pole",
+          "tris": 360,
+          "size_m": [
+            0.14,
+            0.14,
+            6.0
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_01_ring_large",
+          "tris": 120,
+          "size_m": [
+            0.154,
+            0.154,
+            0.04
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_01_ring_small",
+          "tris": 120,
+          "size_m": [
+            0.15,
+            0.15,
+            0.02
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_01_ring_small_01",
+          "tris": 120,
+          "size_m": [
+            0.15,
+            0.15,
+            0.02
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_01_ring_small_02",
+          "tris": 120,
+          "size_m": [
+            0.15,
+            0.15,
+            0.02
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_01_ring_small_03",
+          "tris": 120,
+          "size_m": [
+            0.15,
+            0.15,
+            0.02
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_01_transformer_01",
+          "tris": 6076,
+          "size_m": [
+            0.547,
+            0.299,
+            0.612
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electricity_poles/modular_electricity_poles_2k/StaticMeshes/preset_01_transformer_02",
+          "tris": 1032,
+          "size_m": [
+            0.175,
+            0.22,
+            0.298
+          ]
+        }
+      ],
+      "source": "polyhaven/modular_electricity_poles/modular_electricity_poles_2k.gltf",
+      "lods": true,
+      "measured_by": "tools/scene/check_env_assets.py"
+    },
+    "modular_electric_cables": {
+      "role": "utility",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_straight_medium",
+          "tris": 356,
+          "size_m": [
+            0.026,
+            0.042,
+            0.207
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_straight_short",
+          "tris": 356,
+          "size_m": [
+            0.026,
+            0.042,
+            0.107
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_mount",
+          "tris": 332,
+          "size_m": [
+            0.026,
+            0.042,
+            0.015
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_end",
+          "tris": 304,
+          "size_m": [
+            0.025,
+            0.017,
+            0.104
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_straight_long",
+          "tris": 1044,
+          "size_m": [
+            0.026,
+            0.042,
+            0.607
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_scurve_1",
+          "tris": 548,
+          "size_m": [
+            0.026,
+            0.126,
+            0.107
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_scurve_4",
+          "tris": 548,
+          "size_m": [
+            0.026,
+            0.076,
+            0.107
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_turn_long",
+          "tris": 596,
+          "size_m": [
+            0.026,
+            0.221,
+            0.213
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_turn_short",
+          "tris": 512,
+          "size_m": [
+            0.026,
+            0.112,
+            0.121
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_corner_towards",
+          "tris": 512,
+          "size_m": [
+            0.103,
+            0.042,
+            0.1
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_10cm",
+          "tris": 24,
+          "size_m": [
+            0.011,
+            0.01,
+            0.1
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_5cm",
+          "tris": 12,
+          "size_m": [
+            0.011,
+            0.01,
+            0.05
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_2cm",
+          "tris": 12,
+          "size_m": [
+            0.011,
+            0.01,
+            0.02
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_scurve_2",
+          "tris": 548,
+          "size_m": [
+            0.026,
+            0.126,
+            0.207
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_scurve_3",
+          "tris": 548,
+          "size_m": [
+            0.026,
+            0.076,
+            0.207
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_bridge_2",
+          "tris": 524,
+          "size_m": [
+            0.029,
+            0.042,
+            0.207
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_bridge_3",
+          "tris": 524,
+          "size_m": [
+            0.027,
+            0.042,
+            0.107
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_bridge_1",
+          "tris": 524,
+          "size_m": [
+            0.046,
+            0.042,
+            0.207
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_corner_away",
+          "tris": 512,
+          "size_m": [
+            0.122,
+            0.042,
+            0.126
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_3way_junction",
+          "tris": 1464,
+          "size_m": [
+            0.029,
+            0.187,
+            0.209
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_double",
+          "tris": 412,
+          "size_m": [
+            0.026,
+            0.056,
+            0.207
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_double_10cm",
+          "tris": 48,
+          "size_m": [
+            0.011,
+            0.03,
+            0.1
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_double_alt_long",
+          "tris": 1620,
+          "size_m": [
+            0.022,
+            0.1,
+            0.614
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_double_alt_short",
+          "tris": 604,
+          "size_m": [
+            0.022,
+            0.097,
+            0.214
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_double_alt_turn",
+          "tris": 796,
+          "size_m": [
+            0.022,
+            0.119,
+            0.149
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_double_end",
+          "tris": 608,
+          "size_m": [
+            0.025,
+            0.037,
+            0.104
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_double_junction",
+          "tris": 988,
+          "size_m": [
+            0.026,
+            0.148,
+            0.207
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_double_mount",
+          "tris": 364,
+          "size_m": [
+            0.026,
+            0.056,
+            0.015
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_double_scurve",
+          "tris": 748,
+          "size_m": [
+            0.026,
+            0.143,
+            0.207
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_double_turn_long",
+          "tris": 1256,
+          "size_m": [
+            0.026,
+            0.212,
+            0.218
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_double_turn_short",
+          "tris": 892,
+          "size_m": [
+            0.026,
+            0.112,
+            0.118
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_double_uturn",
+          "tris": 264,
+          "size_m": [
+            0.011,
+            0.035,
+            0.046
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_to_double_1",
+          "tris": 532,
+          "size_m": [
+            0.026,
+            0.083,
+            0.107
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_to_double_2",
+          "tris": 652,
+          "size_m": [
+            0.026,
+            0.063,
+            0.107
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_to_double_3",
+          "tris": 556,
+          "size_m": [
+            0.026,
+            0.133,
+            0.207
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_to_double_4",
+          "tris": 724,
+          "size_m": [
+            0.026,
+            0.118,
+            0.207
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_box_3way",
+          "tris": 1520,
+          "size_m": [
+            0.037,
+            0.132,
+            0.2
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_box_4way",
+          "tris": 1780,
+          "size_m": [
+            0.037,
+            0.2,
+            0.2
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_box_double",
+          "tris": 1780,
+          "size_m": [
+            0.037,
+            0.065,
+            0.2
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_box_double_to_single",
+          "tris": 1520,
+          "size_m": [
+            0.037,
+            0.065,
+            0.2
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_box_double_to_single_2",
+          "tris": 1520,
+          "size_m": [
+            0.037,
+            0.122,
+            0.132
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_box_turn",
+          "tris": 1260,
+          "size_m": [
+            0.037,
+            0.132,
+            0.132
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_lightswitch",
+          "tris": 852,
+          "size_m": [
+            0.055,
+            0.068,
+            0.136
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_lightswitch_2",
+          "tris": 852,
+          "size_m": [
+            0.053,
+            0.057,
+            0.131
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_lightswitch_double",
+          "tris": 1256,
+          "size_m": [
+            0.055,
+            0.095,
+            0.207
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_plug_4x",
+          "tris": 2666,
+          "size_m": [
+            0.042,
+            0.094,
+            0.154
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_plug_covered",
+          "tris": 1312,
+          "size_m": [
+            0.055,
+            0.064,
+            0.142
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_plug_covered_2",
+          "tris": 1566,
+          "size_m": [
+            0.071,
+            0.057,
+            0.183
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_electric_cables/modular_electric_cables_2k/StaticMeshes/cable_switch",
+          "tris": 3330,
+          "size_m": [
+            0.052,
+            0.147,
+            0.379
+          ]
+        }
+      ],
+      "source": "polyhaven/modular_electric_cables/modular_electric_cables_2k.gltf",
+      "lods": false,
+      "measured_by": "tools/scene/check_env_assets.py"
+    },
+    "country_boat_01": {
+      "role": "boat",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/country_boat_01/country_boat_01/StaticMeshes/country_boat_01",
+          "tris": 2340,
+          "size_m": [
+            7.5,
+            1.55,
+            0.995
+          ]
+        }
+      ],
+      "source": "generated/country_boat_01/country_boat_01.gltf",
+      "lods": false,
+      "measured_by": "tools/scene/check_env_assets.py"
+    },
+    "modular_wooden_pier": {
+      "role": "waterfront",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/modular_wooden_pier/modular_wooden_pier_2k/StaticMeshes/modular_wooden_pier_poles",
+          "tris": 2460,
+          "size_m": [
+            2.212,
+            3.081,
+            3.849
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_wooden_pier/modular_wooden_pier_2k/StaticMeshes/modular_wooden_pier_planks",
+          "tris": 5512,
+          "size_m": [
+            2.524,
+            2.203,
+            0.08
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_wooden_pier/modular_wooden_pier_2k/StaticMeshes/modular_wooden_pier_section_01",
+          "tris": 23280,
+          "size_m": [
+            2.49,
+            3.518,
+            4.266
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_wooden_pier/modular_wooden_pier_2k/StaticMeshes/modular_wooden_pier_section_02",
+          "tris": 11758,
+          "size_m": [
+            2.507,
+            3.392,
+            3.838
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_wooden_pier/modular_wooden_pier_2k/StaticMeshes/modular_wooden_pier_section_03",
+          "tris": 14162,
+          "size_m": [
+            2.507,
+            3.392,
+            3.838
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_wooden_pier/modular_wooden_pier_2k/StaticMeshes/modular_wooden_pier_section_05",
+          "tris": 13010,
+          "size_m": [
+            3.102,
+            0.465,
+            7.001
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/modular_wooden_pier/modular_wooden_pier_2k/StaticMeshes/modular_wooden_pier_section_04",
+          "tris": 14598,
+          "size_m": [
+            2.458,
+            3.158,
+            4.158
+          ]
+        }
+      ],
+      "source": "polyhaven/modular_wooden_pier/modular_wooden_pier_2k.gltf",
+      "lods": true,
+      "measured_by": "tools/scene/check_env_assets.py"
+    },
+    "lifebuoy": {
+      "role": "waterfront",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/lifebuoy/lifebuoy_2k/StaticMeshes/lifebuoy_2k",
+          "tris": 10728,
+          "size_m": [
+            0.783,
+            0.155,
+            0.841
+          ]
+        }
+      ],
+      "source": "polyhaven/lifebuoy/lifebuoy_2k.gltf",
+      "lods": false,
+      "measured_by": "tools/scene/check_env_assets.py"
+    },
+    "life_jacket": {
+      "role": "waterfront",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/life_jacket/life_jacket_2k/StaticMeshes/life_jacket_2k",
+          "tris": 8968,
+          "size_m": [
+            0.696,
+            0.184,
+            0.992
+          ]
+        }
+      ],
+      "source": "polyhaven/life_jacket/life_jacket_2k.gltf",
+      "lods": false,
+      "measured_by": "tools/scene/check_env_assets.py"
+    },
+    "bark_debris_01": {
+      "role": "debris_bark",
+      "meshes": [
+        {
+          "asset": "/Game/Sightline/Props/bark_debris_01/bark_debris_01_2k_lite/StaticMeshes/bark_debris_01_a",
+          "tris": 7542,
+          "size_m": [
+            0.185,
+            0.398,
+            0.064
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/bark_debris_01/bark_debris_01_2k_lite/StaticMeshes/bark_debris_01_b",
+          "tris": 9763,
+          "size_m": [
+            0.203,
+            0.463,
+            0.088
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/bark_debris_01/bark_debris_01_2k_lite/StaticMeshes/bark_debris_01_c",
+          "tris": 10144,
+          "size_m": [
+            0.144,
+            0.571,
+            0.095
+          ]
+        },
+        {
+          "asset": "/Game/Sightline/Props/bark_debris_01/bark_debris_01_2k_lite/StaticMeshes/bark_debris_01_d",
+          "tris": 6991,
+          "size_m": [
+            0.135,
+            0.603,
+            0.105
+          ]
+        }
+      ],
+      "source": "polyhaven/bark_debris_01/bark_debris_01_2k_lite.gltf",
+      "lods": true,
+      "measured_by": "tools/scene/check_env_assets.py"
     }
   },
   "humans": {

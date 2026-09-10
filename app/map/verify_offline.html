@@ -91,6 +91,7 @@ map.on("idle", () => {
     `basemap features ${basemapFeats}, markers ${markerFeats}, idle in ${report.ms_to_idle} ms\n` +
     `external requests: ${external.length}, errors: ${errors.length}`;
   document.title = report.ok ? "MAP_OK" : "MAP_FAIL";
+  window.__sightlineReport = report;   // app/map/headless_check.mjs reads this
   fetch("/__report", { method: "POST", body: JSON.stringify(report) }).catch(() => {});
 });
 </script>

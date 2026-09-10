@@ -77,6 +77,8 @@ def main() -> int:
     ap.add_argument("--shutter-m", type=float, default=26.0, help="capture every N metres of track")
     ap.add_argument("--thermal", action="store_true", help="also capture the Infrared pass")
     ap.add_argument("--max-minutes", type=float, default=25.0)
+    ap.add_argument("--alt-tol-m", type=float, default=8.0,
+                    help="do not capture while more than this far off the commanded AGL")
     ap.add_argument("--max-tilt-deg", type=float, default=8.0,
                     help="do not capture while the airframe is banked beyond this")
     a = ap.parse_args()
@@ -127,6 +129,26 @@ def main() -> int:
     with contextlib.redirect_stdout(io.StringIO()):
         grab(c, a.thermal)                                  # warm-up frame, discarded (unconverted buffers)
 
+    # --- PRE-FLIGHT: is the instance segmentation healthy? -------------------------------------------------
+    # A capture is only as good as its instance colours. `tools/capture/thermal_ids.py` assigns a SHARED
+    # segmentation id per temperature (331 objects got one id), which collapses distinct instances onto one
+    # colour: the flood plane then renders in a survivor's colour, and 78 % of the resulting labels are
+    # physically impossible - a "person" spanning 67.8 x 38.1 m of ground. Nothing downstream noticed until a
+    # human looked at a frame. Refuse to fly rather than produce that again.
+    _pal: dict[tuple, list[str]] = {}
+    for _i, _n in enumerate(names):
+        _pal.setdefault(tuple(int(v) for v in cmap[_i]), []).append(_n)
+    _dupes = {c_: ns for c_, ns in _pal.items()
+              if len(ns) > 1 and any(x.startswith(("Human_", "Animal_")) for x in ns)}
+    if _dupes:
+        print("\nFATAL: instance segmentation is degenerate - actors share a colour with other objects:")
+        for c_, ns in list(_dupes.items())[:5]:
+            print(f"   colour {c_} used by {len(ns)} objects: {ns[:4]}")
+        print("\n   Restart PIE to regenerate unique instance ids (InitialInstanceSegmentation in settings),")
+        print("   and never run tools/capture/thermal_ids.py on a PIE session you intend to capture from.")
+        raise SystemExit(2)
+    print(f"pre-flight: {len(names)} instances, every actor colour unique")
+
     c.enableApiControl(True)
     c.armDisarm(True)
     print("\ntaking off...")
@@ -141,6 +163,7 @@ def main() -> int:
 
     k = 0
     total = 0
+    agls: list[float] = []
     seen: set[int] = set()
     t_start = time.time()
     last_shot = None
@@ -175,7 +198,11 @@ def main() -> int:
                                                 1 - 2 * (_o.x_val ** 2 + _o.y_val ** 2)))
                 _pitch = math.degrees(math.asin(max(-1.0, min(1.0, 2 * (_o.w_val * _o.y_val
                                                                        - _o.z_val * _o.x_val)))))
-                level = max(abs(_roll), abs(_pitch)) <= a.max_tilt_deg
+                _agl = (home["ground_asl_m"] - st.position.z_val) - surface_asl(cur_e, cur_n)
+                # and do not shoot when the drone is far off its commanded height: an audit found AGL ranging
+                # 18.7-121.4 m in a run labelled "45 m", which corrupts GSD, scale and geolocation alike.
+                on_alt = abs(_agl - a.alt) <= a.alt_tol_m
+                level = max(abs(_roll), abs(_pitch)) <= a.max_tilt_deg and on_alt
                 if level and (shots == 0 or abs(cur_n - last_n) >= a.shutter_m):
                     g = grab(c, a.thermal)
                     labs = attach_truth(labels_from_mask(g["seg"], names, cmap), truth)
@@ -196,11 +223,17 @@ def main() -> int:
                           "submersion": m.submersion, "occlusion": m.occlusion, "zone": m.zone,
                           "group": m.group, "aerially_detectable": m.aerially_detectable} for m in labs],
                         indent=1), encoding="utf-8")
+                    # GSD must come from the MEASURED height above the surface, not the commanded --alt. The
+                    # drone does not hold the setpoint exactly over rising ground, and writing the constant
+                    # made every GSD and every geolocation number wrong by however much it was off.
+                    agl_now = asl - surface_asl(cur_e, cur_n)
                     tw.writerow([k, time.time(), clip_id, round(cur_e, 2), round(cur_n, 2), round(asl, 2),
-                                 round(asl - surface_asl(cur_e, cur_n), 2), gp.latitude, gp.longitude,
+                                 round(agl_now, 2), gp.latitude, gp.longitude,
                                  round(o.w_val, 6), round(o.x_val, 6), round(o.y_val, 6), round(o.z_val, 6),
                                  -90.0, round(float(cal["hfov_deg"]), 3), g["seg"].shape[1], g["seg"].shape[0],
-                                 round(a.alt / f_px * 100.0, 3), "AUTO", round(water, 3), len(labs), round(spd, 2)])
+                                 round(agl_now / f_px * 100.0, 4), "AUTO", round(water, 3), len(labs),
+                                 round(spd, 2)])
+                    agls.append(agl_now)
                     total += len(labs)
                     seen.update(m.actor_id for m in labs)
                     k += 1
@@ -229,7 +262,11 @@ def main() -> int:
             "speed_ms": a.speed, "shutter_m": a.shutter_m, "frames": k, "total_boxes": total,
             "unique_actors_seen": len(seen), "detectable_in_box": inside,
             "detectable_seen": len(seen & detset), "buried_seen": sorted(seen - detset),
-            "f_px": f_px, "gsd_cm_px": round(a.alt / f_px * 100.0, 3),
+            "f_px": f_px,
+            "gsd_cm_px_nominal": round(a.alt / f_px * 100.0, 4),
+            "agl_m_measured": ({"min": round(min(agls), 1), "median": round(sorted(agls)[len(agls) // 2], 1),
+                                "max": round(max(agls), 1)} if agls else None),
+            "gsd_note": "per-frame gsd_cm_px in telemetry.csv is from MEASURED AGL, not the commanded altitude",
             "capture": "flown coverage pattern (F2), not teleported",
             "domain": "sim", "randomisation": "off (5.5c)", "split_rule": "by scenario seed",
             "minutes": round((time.time() - t_start) / 60.0, 1), "last": last_shot}

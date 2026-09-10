@@ -1,41 +1,61 @@
-"""Synthetic data for the map, the headless check and the demo.
+"""Scenario data for the map, the headless check and the demo.
 
 **Every number here is SIMULATED and labelled as such** (hard rule 5 / §5.12): each record carries
-``source = {"domain": "sim", "synthetic": True, ...}`` and ``notes`` saying so, and the coverage overlay's
-sidecar carries ``"domain": "sim"``. Nothing in this module measures anything — it exists so the UI, the
-WebSocket and the coverage contract can be exercised end to end before the pipeline lanes land.
+``source = {"domain": "sim", "synthetic": True, ...}`` and ``notes`` saying so, and the coverage manifest
+carries ``"domain": "sim"`` on the manifest and again inside every layer's statistics.
 
-Replace it by pointing the API at the real record store the pipeline writes to.
+Two halves, and they are not the same kind of thing:
+
+* **the records are synthetic** — hand-authored cases so the triage UI, the score-component popup and the
+  WebSocket can be exercised before the detection/geolocation lanes land. Nothing here measures anything.
+* **the flight, the coverage raster and the planned pattern are computed by the real lanes**: the pattern
+  comes from ``sightline.plan.boustrophedon_route`` (real spacing from the real camera model), the search
+  quality from ``sightline.coverage.CoverageMap`` fed with the telemetry of the part of that route already
+  flown, and the export from ``sightline.coverage.export_coverage`` — B6's own contract writer. The map is
+  therefore reading the production format, not a mock of it. Its POD numbers are still model-driven: B6's
+  ``k`` is derived, not calibrated, and ``k_is_measured`` is false in the manifest, which the page prints.
+
+Replace the record half by pointing the API at the store the pipeline writes to.
 """
 
 from __future__ import annotations
 
 import io
+import json
 import math
 import random
 import time
 from pathlib import Path
 from typing import Any
 
-import numpy as np
-
-from sightline.api.coverage_feed import grid_to_overlay
 from sightline.api.mission_feed import MissionState
 from sightline.common.geodesy import offset_ne
 from sightline.schemas import (
-    CoverageGrid,
     Evidence,
-    Intrinsics,
     Record,
     ScoreComponents,
     Telemetry,
 )
 from sightline.store import RecordStore
 
-__all__ = ["ORIGIN_LAT", "ORIGIN_LON", "seed_store", "seed_coverage", "seed_mission", "seed_all"]
+__all__ = ["ORIGIN_LAT", "ORIGIN_LON", "SCENE_JSON", "build_route", "route_frames", "seed_store",
+           "seed_coverage", "seed_mission", "seed_all"]
 
 #: docs/CONTEXT.md: OriginGeopoint of the FloodValley scenario (Chooralmala / Mundakkai).
 ORIGIN_LAT, ORIGIN_LON, ORIGIN_ALT = 11.4870, 76.1450, 1046.007
+SCENE_JSON = Path(__file__).resolve().parents[2] / "data" / "scene" / "flood_valley.json"
+
+#: The search box, in scene-NE metres about the map centre, and the survey altitude.
+SEARCH_BOX_N_M, SEARCH_BOX_E_M, SURVEY_AGL_M, SURVEY_SPEED_MS = 900.0, 700.0, 55.0, 8.0
+#: How much of the planned pattern has been flown when the demo opens (§7: the sortie is in progress).
+FLOWN_FRACTION = 0.46
+#: Telemetry sample spacing along the track. 30 m at 55 m AGL is ~3 frames per swath width.
+FRAME_STEP_M = 30.0
+#: "Aerial search cannot clear" areas (§2.7), as closed lat/lon rings: the debris fan and one buried lot.
+BURIAL_RINGS_LATLON: tuple[tuple[tuple[float, float], ...], ...] = (
+    ((11.48430, 76.14180), (11.48430, 76.14420), (11.48620, 76.14420), (11.48620, 76.14180)),
+    ((11.48870, 76.14790), (11.48870, 76.14930), (11.48960, 76.14930), (11.48960, 76.14790)),
+)
 
 _CASES: list[dict[str, Any]] = [
     dict(cls="human", urgency_class="immersed", posture="half_submerged", submersion="head_only",
@@ -185,68 +205,129 @@ def seed_store(store: RecordStore, *, n: int | None = None, t0: float | None = N
     return store.records()
 
 
-def seed_coverage(out_dir: str | Path, *, cell_m: float = 20.0, n: int = 80,
-                  lanes: int = 7, run_id: str = "SIM_FLOODVALLEY_001") -> dict[str, Any]:
-    """A boustrophedon's worth of swept coverage plus one 'aerial search cannot clear' burial polygon."""
-    south, west = offset_ne(ORIGIN_LAT, ORIGIN_LON, -n * cell_m / 2, -n * cell_m / 2)
-    grid = CoverageGrid.empty(south, west, cell_m, n, n, presentation="body", k=1.0)
-    swath_cells = 4.5
-    for li in range(lanes):
-        row = (li + 0.5) * (n / lanes)
-        for i in range(n):
-            d = abs(i - row)
-            if d > swath_cells * 1.6:
-                continue
-            gain = math.exp(-(d / swath_cells) ** 2) * (0.95 if li % 2 == 0 else 0.72)
-            j_hi = n if li < lanes - 2 else int(n * 0.55)  # the last lanes are only half flown
-            grid.coverage[i, :j_hi] += gain
-    # A light second pass over the middle third only, so unswept ground stays visibly unswept.
-    band = slice(int(n * 0.33), int(n * 0.66))
-    grid.coverage[:, band] += 0.35 * np.exp(-((np.linspace(-2, 2, n)[:, None]) ** 2))
-    grid.recompute_pod()
-    cc = np.zeros((n, n), dtype=bool)
-    cc[int(n * 0.55): int(n * 0.72), int(n * 0.18): int(n * 0.40)] = True  # debris fan / burial polygon
-    cc[int(n * 0.24): int(n * 0.32), int(n * 0.62): int(n * 0.78)] = True
-    grid.cannot_clear = cc
-    return grid_to_overlay(grid, out_dir, run_id=run_id, domain="sim")
+# --- the flight: the real plan lane, then the real coverage lane -------------------------------------------
+def _yaw_quat(yaw_deg: float) -> tuple[float, float, float, float]:
+    h = math.radians(yaw_deg) / 2.0
+    return (math.cos(h), 0.0, 0.0, math.sin(h))
 
 
-def seed_mission(mission: MissionState, *, cell_m: float = 20.0, n: int = 80, lanes: int = 7,
-                 progress: float = 0.42) -> MissionState:
-    """Planned boustrophedon + the part of it already flown, ending at the live pose."""
-    mission.intrinsics = Intrinsics.from_hfov(3840, 2160, 84.0, source="sim")
-    half = n * cell_m / 2
-    plan: list[tuple[float, float]] = []
-    for li in range(lanes):
-        north = -half + (li + 0.5) * (2 * half / lanes)
-        ends = [(-half, half), (half, -half)][li % 2]
-        for east in ends:
-            plan.append(offset_ne(ORIGIN_LAT, ORIGIN_LON, north, east))
-    mission.set_plan(plan, name="FloodValley segment 1 — boustrophedon, 52 m AGL, 7 m/s")
+def _nadir_gimbal(heading_deg: float = 0.0) -> tuple[float, float, float, float]:
+    """camera(optical) -> NED at pitch -90 (nadir), wide axis across track.
 
-    flown = max(2, int(len(plan) * progress))
-    t = time.time() - 600
-    for k in range(flown - 1):
-        (la1, lo1), (la2, lo2) = plan[k], plan[k + 1]
-        for s in range(0, 21):
-            f = s / 20.0
-            la, lo = la1 + (la2 - la1) * f, lo1 + (lo2 - lo1) * f
-            mode = "MANUAL" if 2.0 <= k + f <= 2.7 else "AUTO"  # one logged takeover (§7 step 3)
-            yaw = math.degrees(math.atan2(lo2 - lo1, la2 - la1))
-            q = (math.cos(math.radians(yaw) / 2), 0.0, 0.0, math.sin(math.radians(yaw) / 2))
-            t += 1.5
-            mission.update_pose(
-                Telemetry(t_utc=t, lat=la, lon=lo, alt_msl_m=ORIGIN_ALT + 52.0, agl_m=52.0,
-                          q_body=q, vel_ned_ms=(6.0, 1.0, 0.0), mode=mode,
-                          clip_id="SIM_FLOODVALLEY_001", frame_idx=k * 21 + s, h_acc_m=2.5)
-            )
+    Built with the coverage lane's own `gimbal_quat`, which is defined to round-trip through
+    `Telemetry.gimbal_pitch_deg()`. Hand-rolling this quaternion is a trap: the obvious
+    "rotate -90 about Y" reads back as -180 deg and the footprint comes out oblique and huge —
+    which is exactly what the first render of this scenario showed (see docs/lanes/store_api_map.md).
+    """
+    from sightline.coverage.footprint import gimbal_quat
+    from sightline.plan.patterns import gimbal_yaw_for_heading
+
+    return gimbal_quat(-90.0, gimbal_yaw_for_heading(heading_deg))
+
+
+def build_route(*, agl_m: float = SURVEY_AGL_M, speed_ms: float = SURVEY_SPEED_MS,
+                segment_id: str = "S01") -> dict[str, Any]:
+    """The planned pattern, from the PLAN LANE (F2). Returns `Route.to_dict()` — B6's route JSON verbatim.
+
+    The line spacing is derived by `sightline.plan` from the simulator's own camera model and the "body"
+    presentation's sweep width; nothing about the pattern is hand-drawn here.
+    """
+    from sightline.coverage.grid import SceneFrame
+    from sightline.coverage.presentation import SIM_RGB_4K
+    from sightline.plan import boustrophedon_route, rect_polygon
+
+    scene = SceneFrame.from_json(SCENE_JSON)
+    poly = rect_polygon((0.0, 0.0), SEARCH_BOX_N_M, SEARCH_BOX_E_M)
+    route = boustrophedon_route(poly, SIM_RGB_4K, agl_m, scene, presentation="body", side_overlap=0.25,
+                                speed_ms=speed_ms, segment_id=segment_id, pass_id=0)
+    return route.to_dict()
+
+
+def route_frames(route: dict[str, Any], *, flown_fraction: float = FLOWN_FRACTION,
+                 step_m: float = FRAME_STEP_M, t_end: float | None = None) -> list[Telemetry]:
+    """Telemetry for the part of `route` already flown, sampled every `step_m` along track.
+
+    One stretch is logged as a MANUAL takeover so the map's track colouring and §7 step 3 have something
+    real to show. Timestamps end at `t_end` (default: now), so the sortie reads as in-progress.
+    """
+    wps = list(route["waypoints"])
+    n_legs = max(1, int(round((len(wps) - 1) * max(0.02, min(1.0, flown_fraction)))))
+    legs = list(zip(wps, wps[1:]))[:n_legs]
+    speed = float(route["params"].get("speed_ms", SURVEY_SPEED_MS)) or SURVEY_SPEED_MS
+    out: list[Telemetry] = []
+    fi = 0
+    for leg_i, (a, b) in enumerate(legs):
+        dn, de = b["north_m"] - a["north_m"], b["east_m"] - a["east_m"]
+        dist = math.hypot(dn, de)
+        n = max(1, int(dist / step_m))
+        yaw = math.degrees(math.atan2(de, dn))
+        for s in range(n):
+            f = s / n
+            fi += 1
+            manual = leg_i == 2 and 0.15 <= f <= 0.8  # one logged operator takeover
+            out.append(Telemetry(
+                t_utc=0.0, lat=a["lat"] + (b["lat"] - a["lat"]) * f, lon=a["lon"] + (b["lon"] - a["lon"]) * f,
+                alt_msl_m=float(a["alt_asl_m"]), agl_m=float(a["agl_m"]),
+                q_body=_yaw_quat(yaw), q_gimbal=_nadir_gimbal(yaw), gimbal_is_earth_referenced=True,
+                vel_ned_ms=(speed * math.cos(math.radians(yaw)), speed * math.sin(math.radians(yaw)), 0.0),
+                h_acc_m=2.5, mode="MANUAL" if manual else "AUTO",
+                clip_id="SIM_FLOODVALLEY_001", frame_idx=fi,
+                weather={"rain": 0.0, "fog": 0.0, "wind_ms": 3.0, "cloud": 0.35}, time_of_day="day"))
+    dt = step_m / speed
+    t0 = (t_end if t_end is not None else time.time()) - dt * len(out)
+    for i, tel in enumerate(out):
+        tel.t_utc = t0 + dt * i
+    return out
+
+
+def seed_coverage(out_dir: str | Path, frames: list[Telemetry] | None = None, *,
+                  cell_m: float = 20.0, run_id: str = "SIM_FLOODVALLEY_001") -> dict[str, Any]:
+    """Accumulate REAL search quality from `frames` and export it through B6's own `export_coverage`.
+
+    Returns B6's manifest. Every POD number in it is `domain: "sim"` and model-driven: B6 reports
+    `k_is_measured = false` until F19 fits it, and the map prints that.
+    """
+    from sightline.coverage import CoverageMap, export_coverage
+    from sightline.coverage.grid import SceneFrame, polygons_from_latlon
+    from sightline.coverage.presentation import SIM_RGB_4K
+
+    frames = frames if frames is not None else route_frames(build_route())
+    scene = SceneFrame.from_json(SCENE_JSON)
+    cmap = CoverageMap.for_scene(scene, cell_m=cell_m, presentations=("body", "limb_only"))
+    cmap.add_burial_polygons(polygons_from_latlon(cmap.any_grid, [list(r) for r in BURIAL_RINGS_LATLON]))
+    intr = SIM_RGB_4K.intrinsics()
+    auto = [t for t in frames if t.mode == "AUTO"]
+    manual = [t for t in frames if t.mode != "AUTO"]
+    cmap.add_pass(((t, intr) for t in auto), pass_id=0, mode="AUTO")
+    if manual:  # the takeover is its own pass, so the map can attribute coverage to the mode (§5.12)
+        cmap.add_pass(((t, intr) for t in manual), pass_id=1, mode="MANUAL")
+    man = export_coverage(cmap, out_dir, stem="coverage")
+    man["run_id"] = run_id
+    (Path(out_dir) / "coverage.json").write_text(json.dumps(man, indent=2), encoding="utf-8")
+    return man
+
+
+def seed_mission(mission: MissionState, route: dict[str, Any] | None = None,
+                 frames: list[Telemetry] | None = None) -> MissionState:
+    """Adopt the real route as the planned pattern and replay the flown telemetry into the live layers."""
+    from sightline.coverage.presentation import SIM_RGB_4K
+
+    route = route if route is not None else build_route()
+    frames = frames if frames is not None else route_frames(route)
+    mission.intrinsics = SIM_RGB_4K.intrinsics()
+    mission.set_route(route)
+    for tel in frames:
+        mission.update_pose(tel)
     return mission
 
 
 def seed_all(store: RecordStore, coverage_dir: str | Path, mission: MissionState | None = None
              ) -> dict[str, Any]:
+    """One coherent scenario: synthetic records, a real plan, a real flown track and a real POD raster."""
     recs = seed_store(store)
-    side = seed_coverage(coverage_dir)
-    mission = seed_mission(mission or MissionState())
-    return {"records": len(recs), "coverage": side, "mission": mission,
-            "domain": "sim", "synthetic": True}
+    route = build_route()
+    frames = route_frames(route)
+    man = seed_coverage(coverage_dir, frames)
+    mission = seed_mission(mission or MissionState(), route, frames)
+    return {"records": len(recs), "coverage": man, "mission": mission, "route": route,
+            "frames": len(frames), "domain": "sim", "records_are_synthetic": True}

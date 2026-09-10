@@ -1,0 +1,907 @@
+{
+ "generated_by": "tools/scene/gen_utilities.py",
+ "seed": 83,
+ "terrain_seed": 7,
+ "settlement_seed": 11,
+ "water_level_m": 1061.6814259297319,
+ "base_z_m": 1046.0069580078125,
+ "survey": {
+  "gsd_cm_per_px": 1.7656,
+  "wire_px": 2.04,
+  "drop_px": 1.36,
+  "conductor_spacing_px": 17.0
+ },
+ "network": {
+  "obj": "utilities/network.obj",
+  "triangles": 22704,
+  "vertices": 44856,
+  "poles": 60,
+  "chains": 3,
+  "chain_lengths": [
+   28,
+   26,
+   6
+  ],
+  "spans": 57,
+  "conductors_per_span": 4,
+  "service_drops": 40,
+  "pole_triangles_each": 172,
+  "wire_diameter_m": 0.036,
+  "drop_diameter_m": 0.024,
+  "span_m": {
+   "min": 28.0,
+   "ideal": 36.0,
+   "max": 44.0
+  },
+  "poles_in_water": 60,
+  "ue_actor": {
+   "location_cm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "yaw_deg": 90.0,
+   "bounds_cm": {
+    "x_north": [
+     -16758.4,
+     50095.0
+    ],
+    "y_east": [
+     9308.5,
+     44894.4
+    ],
+    "z": [
+     1131.4,
+     2406.4
+    ]
+   }
+  },
+  "materials": [
+   "concrete",
+   "roof_sheet",
+   "wire"
+  ]
+ },
+ "boats": {
+  "variants": {
+   "vallam": {
+    "obj": "utilities/boat_vallam.obj",
+    "triangles": 422,
+    "length_m": 6.2,
+    "beam_m": 1.28,
+    "depth_m": 0.62,
+    "freeboard_m": 0.42,
+    "draught_m": 0.2,
+    "materials": [
+     "wood"
+    ]
+   },
+   "dinghy": {
+    "obj": "utilities/boat_dinghy.obj",
+    "triangles": 430,
+    "length_m": 3.6,
+    "beam_m": 1.46,
+    "depth_m": 0.58,
+    "freeboard_m": 0.41,
+    "draught_m": 0.17,
+    "materials": [
+     "wood"
+    ]
+   },
+   "rescue_punt": {
+    "obj": "utilities/boat_rescue_punt.obj",
+    "triangles": 438,
+    "length_m": 4.8,
+    "beam_m": 1.6,
+    "depth_m": 0.62,
+    "freeboard_m": 0.46,
+    "draught_m": 0.16,
+    "materials": [
+     "roof_sheet",
+     "wood"
+    ]
+   }
+  },
+  "items": [
+   {
+    "id": 0,
+    "name": "Boat_000",
+    "variant": "rescue_punt",
+    "east_m": 16.02,
+    "north_m": -239.07,
+    "base_asl_m": 1061.708,
+    "yaw_deg": 88.0,
+    "pitch_deg": 0.35,
+    "roll_deg": -0.16,
+    "flood_depth_m": 3.34,
+    "note": "moored against house 4"
+   },
+   {
+    "id": 1,
+    "name": "Boat_001",
+    "variant": "vallam",
+    "east_m": 416.18,
+    "north_m": 350.78,
+    "base_asl_m": 1061.704,
+    "yaw_deg": 87.0,
+    "pitch_deg": -4.1,
+    "roll_deg": 4.42,
+    "flood_depth_m": 1.1,
+    "note": "moored against house 30"
+   },
+   {
+    "id": 2,
+    "name": "Boat_002",
+    "variant": "dinghy",
+    "east_m": 53.88,
+    "north_m": -169.56,
+    "base_asl_m": 1061.665,
+    "yaw_deg": 99.3,
+    "pitch_deg": 1.92,
+    "roll_deg": 0.71,
+    "flood_depth_m": 3.08,
+    "note": "moored against house 51"
+   },
+   {
+    "id": 3,
+    "name": "Boat_003",
+    "variant": "rescue_punt",
+    "east_m": 200.15,
+    "north_m": 65.78,
+    "base_asl_m": 1061.653,
+    "yaw_deg": 129.1,
+    "pitch_deg": 1.84,
+    "roll_deg": 1.41,
+    "flood_depth_m": 2.21,
+    "note": "moored against house 42"
+   },
+   {
+    "id": 4,
+    "name": "Boat_004",
+    "variant": "rescue_punt",
+    "east_m": 375.48,
+    "north_m": 74.43,
+    "base_asl_m": 1061.695,
+    "yaw_deg": 66.5,
+    "pitch_deg": 1.41,
+    "roll_deg": 1.56,
+    "flood_depth_m": 2.09,
+    "note": "moored against house 40"
+   },
+   {
+    "id": 5,
+    "name": "Boat_005",
+    "variant": "dinghy",
+    "east_m": 188.0,
+    "north_m": 131.65,
+    "base_asl_m": 1061.672,
+    "yaw_deg": 155.4,
+    "pitch_deg": 2.69,
+    "roll_deg": -2.93,
+    "flood_depth_m": 2.05,
+    "note": "moored against house 48"
+   },
+   {
+    "id": 6,
+    "name": "Boat_006",
+    "variant": "dinghy",
+    "east_m": 9.46,
+    "north_m": -72.92,
+    "base_asl_m": 1061.706,
+    "yaw_deg": 181.3,
+    "pitch_deg": 1.3,
+    "roll_deg": -2.36,
+    "flood_depth_m": 2.67,
+    "note": "moored against house 28"
+   },
+   {
+    "id": 7,
+    "name": "Boat_007",
+    "variant": "vallam",
+    "east_m": 286.52,
+    "north_m": 132.75,
+    "base_asl_m": 1061.66,
+    "yaw_deg": 22.9,
+    "pitch_deg": -1.91,
+    "roll_deg": -2.52,
+    "flood_depth_m": 2.04,
+    "note": "moored against house 50"
+   },
+   {
+    "id": 8,
+    "name": "Boat_008",
+    "variant": "rescue_punt",
+    "east_m": 289.64,
+    "north_m": 63.15,
+    "base_asl_m": 1061.652,
+    "yaw_deg": 47.7,
+    "pitch_deg": 0.11,
+    "roll_deg": -0.38,
+    "flood_depth_m": 2.23,
+    "note": "moored against house 8"
+   },
+   {
+    "id": 9,
+    "name": "Boat_009",
+    "variant": "rescue_punt",
+    "east_m": 428.11,
+    "north_m": 317.78,
+    "base_asl_m": 1061.699,
+    "yaw_deg": 102.7,
+    "pitch_deg": 1.86,
+    "roll_deg": 2.18,
+    "flood_depth_m": 1.14,
+    "note": "moored against house 56"
+   },
+   {
+    "id": 10,
+    "name": "Boat_010",
+    "variant": "dinghy",
+    "east_m": -10.92,
+    "north_m": -134.43,
+    "base_asl_m": 1061.697,
+    "yaw_deg": 42.7,
+    "pitch_deg": -0.28,
+    "roll_deg": -3.35,
+    "flood_depth_m": 3.0,
+    "note": "moored against house 6"
+   },
+   {
+    "id": 11,
+    "name": "Boat_011",
+    "variant": "dinghy",
+    "east_m": 381.22,
+    "north_m": 330.38,
+    "base_asl_m": 1061.656,
+    "yaw_deg": 68.8,
+    "pitch_deg": 1.47,
+    "roll_deg": -1.63,
+    "flood_depth_m": 1.12,
+    "note": "moored against house 37"
+   },
+   {
+    "id": 12,
+    "name": "Boat_012",
+    "variant": "dinghy",
+    "east_m": 133.86,
+    "north_m": -129.01,
+    "base_asl_m": 1061.685,
+    "yaw_deg": 57.4,
+    "pitch_deg": 0.89,
+    "roll_deg": 2.78,
+    "flood_depth_m": 3.01,
+    "note": "moored against house 65"
+   },
+   {
+    "id": 13,
+    "name": "Boat_013",
+    "variant": "vallam",
+    "east_m": 297.78,
+    "north_m": 138.44,
+    "base_asl_m": 1061.666,
+    "yaw_deg": 88.1,
+    "pitch_deg": 1.87,
+    "roll_deg": 7.17,
+    "flood_depth_m": 1.99,
+    "note": "adrift in the wrack"
+   },
+   {
+    "id": 14,
+    "name": "Boat_014",
+    "variant": "vallam",
+    "east_m": 401.33,
+    "north_m": 372.16,
+    "base_asl_m": 1061.654,
+    "yaw_deg": 118.9,
+    "pitch_deg": 1.38,
+    "roll_deg": -3.95,
+    "flood_depth_m": 1.05,
+    "note": "adrift in the wrack"
+   },
+   {
+    "id": 15,
+    "name": "Boat_015",
+    "variant": "rescue_punt",
+    "east_m": 415.16,
+    "north_m": 454.67,
+    "base_asl_m": 1061.682,
+    "yaw_deg": 200.0,
+    "pitch_deg": -0.54,
+    "roll_deg": -2.54,
+    "flood_depth_m": 0.75,
+    "note": "adrift in the wrack"
+   },
+   {
+    "id": 16,
+    "name": "Boat_016",
+    "variant": "rescue_punt",
+    "east_m": 399.78,
+    "north_m": 422.32,
+    "base_asl_m": 1061.686,
+    "yaw_deg": 217.1,
+    "pitch_deg": 0.17,
+    "roll_deg": 11.01,
+    "flood_depth_m": 0.73,
+    "note": "adrift in the wrack"
+   },
+   {
+    "id": 17,
+    "name": "Boat_017",
+    "variant": "dinghy",
+    "east_m": -30.44,
+    "north_m": -240.98,
+    "base_asl_m": 1061.709,
+    "yaw_deg": 150.3,
+    "pitch_deg": 2.28,
+    "roll_deg": -0.23,
+    "flood_depth_m": 3.45,
+    "note": "adrift in the wrack"
+   },
+   {
+    "id": 18,
+    "name": "Boat_018",
+    "variant": "rescue_punt",
+    "east_m": 153.66,
+    "north_m": -181.35,
+    "base_asl_m": 1061.681,
+    "yaw_deg": 243.0,
+    "pitch_deg": 0.11,
+    "roll_deg": 3.07,
+    "flood_depth_m": 3.23,
+    "note": "adrift in the wrack"
+   }
+  ],
+  "triangles": 8202
+ },
+ "counts": {
+  "poles": 60,
+  "spans": 57,
+  "service_drops": 40,
+  "boats": 19,
+  "network_triangles": 22704,
+  "boat_triangles": 8202,
+  "total_triangles": 30906
+ },
+ "pole_list": [
+  {
+   "east_m": 328.0,
+   "north_m": 140.0,
+   "ground_asl_m": 1059.8,
+   "height_m": 8.65,
+   "crossarms": 2,
+   "street_light": false,
+   "flood_depth_m": 1.88
+  },
+  {
+   "east_m": 328.0,
+   "north_m": 176.0,
+   "ground_asl_m": 1059.842,
+   "height_m": 8.65,
+   "crossarms": 2,
+   "street_light": true,
+   "flood_depth_m": 1.84
+  },
+  {
+   "east_m": 328.0,
+   "north_m": 212.0,
+   "ground_asl_m": 1059.967,
+   "height_m": 9.11,
+   "crossarms": 1,
+   "street_light": false,
+   "flood_depth_m": 1.71
+  },
+  {
+   "east_m": 328.0,
+   "north_m": 248.0,
+   "ground_asl_m": 1060.166,
+   "height_m": 8.88,
+   "crossarms": 1,
+   "street_light": false,
+   "flood_depth_m": 1.52
+  },
+  {
+   "east_m": 334.0,
+   "north_m": 284.0,
+   "ground_asl_m": 1060.338,
+   "height_m": 8.96,
+   "crossarms": 1,
+   "street_light": false,
+   "flood_depth_m": 1.34
+  },
+  {
+   "east_m": 334.0,
+   "north_m": 320.0,
+   "ground_asl_m": 1060.405,
+   "height_m": 8.74,
+   "crossarms": 1,
+   "street_light": false,
+   "flood_depth_m": 1.28
+  },
+  {
+   "east_m": 334.0,
+   "north_m": 356.0,
+   "ground_asl_m": 1060.52,
+   "height_m": 8.84,
+   "crossarms": 1,
+   "street_light": false,
+   "flood_depth_m": 1.16
+  },
+  {
+   "east_m": 334.0,
+   "north_m": 386.0,
+   "ground_asl_m": 1060.795,
+   "height_m": 8.53,
+   "crossarms": 1,
+   "street_light": true,
+   "flood_depth_m": 0.89
+  },
+  {
+   "east_m": 334.0,
+   "north_m": 422.0,
+   "ground_asl_m": 1060.765,
+   "height_m": 8.61,
+   "crossarms": 1,
+   "street_light": false,
+   "flood_depth_m": 0.92
+  },
+  {
+   "east_m": 340.0,
+   "north_m": 458.0,
+   "ground_asl_m": 1061.069,
+   "height_m": 8.96,
+   "crossarms": 1,
+   "street_light": true,
+   "flood_depth_m": 0.61
+  },
+  {
+   "east_m": 358.0,
+   "north_m": 482.0,
+   "ground_asl_m": 1061.123,
+   "height_m": 8.82,
+   "crossarms": 1,
+   "street_light": false,
+   "flood_depth_m": 0.56
+  },
+  {
+   "east_m": 394.0,
+   "north_m": 500.0,
+   "ground_asl_m": 1061.56,
+   "height_m": 8.51,
+   "crossarms": 1,
+   "street_light": true,
+   "flood_depth_m": 0.12
+  },
+  {
+   "east_m": 424.0,
+   "north_m": 488.0,
+   "ground_asl_m": 1061.079,
+   "height_m": 8.44,
+   "crossarms": 1,
+   "street_light": true,
+   "flood_depth_m": 0.6
+  },
+  {
+   "east_m": 418.0,
+   "north_m": 446.0,
+   "ground_asl_m": 1060.886,
+   "height_m": 8.55,
+   "crossarms": 1,
+   "street_light": false,
+   "flood_depth_m": 0.8
+  },
+  {
+   "east_m": 412.0,
+   "north_m": 410.0,
+   "ground_asl_m": 1060.823,
+   "height_m": 8.98,
+   "crossarms": 1,
+   "street_light": false,
+   "flood_depth_m": 0.86
+  },
+  {
+   "east_m": 406.0,
+   "north_m": 374.0,
+   "ground_asl_m": 1060.626,
+   "height_m": 8.64,
+   "crossarms": 2,
+   "street_light": true,
+   "flood_depth_m": 1.06
+  },
+  {
+   "east_m": 400.0,
+   "north_m": 338.0,
+   "ground_asl_m": 1060.61,
+   "height_m": 9.1,
+   "crossarms": 2,
+   "street_light": false,
+   "flood_depth_m": 1.07
+  },
+  {
+   "east_m": 388.0,
+   "north_m": 302.0,
+   "ground_asl_m": 1060.36,
+   "height_m": 8.82,
+   "crossarms": 1,
+   "street_light": false,
+   "flood_depth_m": 1.32
+  },
+  {
+   "east_m": 370.0,
+   "north_m": 272.0,
+   "ground_asl_m": 1060.223,
+   "height_m": 8.76,
+   "crossarms": 1,
+   "street_light": false,
+   "flood_depth_m": 1.46
+  },
+  {
+   "east_m": 358.0,
+   "north_m": 236.0,
+   "ground_asl_m": 1060.216,
+   "height_m": 8.69,
+   "crossarms": 1,
+   "street_light": false,
+   "flood_depth_m": 1.47
+  },
+  {
+   "east_m": 352.0,
+   "north_m": 200.0,
+   "ground_asl_m": 1059.888,
+   "height_m": 8.53,
+   "crossarms": 1,
+   "street_light": true,
+   "flood_depth_m": 1.79
+  },
+  {
+   "east_m": 358.0,
+   "north_m": 170.0,
+   "ground_asl_m": 1059.823,
+   "height_m": 8.86,
+   "crossarms": 2,
+   "street_light": false,
+   "flood_depth_m": 1.86
+  },
+  {
+   "east_m": 388.0,
+   "north_m": 188.0,
+   "ground_asl_m": 1059.953,
+   "height_m": 9.15,
+   "crossarms": 1,
+   "street_light": true,
+   "flood_depth_m": 1.73
+  },
+  {
+   "east_m": 418.0,
+   "north_m": 212.0,
+   "ground_asl_m": 1060.496,
+   "height_m": 8.98,
+   "crossarms": 2,
+   "street_light": true,
+   "flood_depth_m": 1.19
+  },
+  {
+   "east_m": 448.0,
+   "north_m": 230.0,
+   "ground_asl_m": 1060.867,
+   "height_m": 8.6,
+   "crossarms": 1,
+   "street_light": true,
+   "flood_depth_m": 0.81
+  },
+  {
+   "east_m": 424.0,
+   "north_m": 248.0,
+   "ground_asl_m": 1060.246,
+   "height_m": 8.61,
+   "crossarms": 2,
+   "street_light": true,
+   "flood_depth_m": 1.44
+  },
+  {
+   "east_m": 394.0,
+   "north_m": 260.0,
+   "ground_asl_m": 1060.19,
+   "height_m": 8.68,
+   "crossarms": 1,
+   "street_light": false,
+   "flood_depth_m": 1.49
+  },
+  {
+   "east_m": 382.0,
+   "north_m": 224.0,
+   "ground_asl_m": 1060.028,
+   "height_m": 8.73,
+   "crossarms": 1,
+   "street_light": false,
+   "flood_depth_m": 1.65
+  },
+  {
+   "east_m": 196.0,
+   "north_m": -166.0,
+   "ground_asl_m": 1058.521,
+   "height_m": 8.82,
+   "crossarms": 2,
+   "street_light": false,
+   "flood_depth_m": 3.16
+  },
+  {
+   "east_m": 196.0,
+   "north_m": -130.0,
+   "ground_asl_m": 1058.739,
+   "height_m": 8.41,
+   "crossarms": 1,
+   "street_light": true,
+   "flood_depth_m": 2.94
+  },
+  {
+   "east_m": 190.0,
+   "north_m": -94.0,
+   "ground_asl_m": 1058.926,
+   "height_m": 8.98,
+   "crossarms": 1,
+   "street_light": false,
+   "flood_depth_m": 2.76
+  },
+  {
+   "east_m": 184.0,
+   "north_m": -64.0,
+   "ground_asl_m": 1058.954,
+   "height_m": 9.16,
+   "crossarms": 1,
+   "street_light": false,
+   "flood_depth_m": 2.73
+  },
+  {
+   "east_m": 172.0,
+   "north_m": -28.0,
+   "ground_asl_m": 1059.024,
+   "height_m": 8.73,
+   "crossarms": 2,
+   "street_light": false,
+   "flood_depth_m": 2.66
+  },
+  {
+   "east_m": 166.0,
+   "north_m": 8.0,
+   "ground_asl_m": 1059.24,
+   "height_m": 8.73,
+   "crossarms": 1,
+   "street_light": true,
+   "flood_depth_m": 2.44
+  },
+  {
+   "east_m": 160.0,
+   "north_m": 44.0,
+   "ground_asl_m": 1059.486,
+   "height_m": 8.78,
+   "crossarms": 2,
+   "street_light": false,
+   "flood_depth_m": 2.2
+  },
+  {
+   "east_m": 154.0,
+   "north_m": 80.0,
+   "ground_asl_m": 1059.667,
+   "height_m": 8.82,
+   "crossarms": 2,
+   "street_light": false,
+   "flood_depth_m": 2.01
+  },
+  {
+   "east_m": 160.0,
+   "north_m": 116.0,
+   "ground_asl_m": 1059.636,
+   "height_m": 8.49,
+   "crossarms": 2,
+   "street_light": false,
+   "flood_depth_m": 2.04
+  },
+  {
+   "east_m": 172.0,
+   "north_m": 146.0,
+   "ground_asl_m": 1059.812,
+   "height_m": 8.55,
+   "crossarms": 1,
+   "street_light": false,
+   "flood_depth_m": 1.87
+  },
+  {
+   "east_m": 202.0,
+   "north_m": 140.0,
+   "ground_asl_m": 1059.838,
+   "height_m": 9.05,
+   "crossarms": 1,
+   "street_light": false,
+   "flood_depth_m": 1.84
+  },
+  {
+   "east_m": 238.0,
+   "north_m": 128.0,
+   "ground_asl_m": 1059.619,
+   "height_m": 8.75,
+   "crossarms": 2,
+   "street_light": false,
+   "flood_depth_m": 2.06
+  },
+  {
+   "east_m": 274.0,
+   "north_m": 122.0,
+   "ground_asl_m": 1059.735,
+   "height_m": 8.71,
+   "crossarms": 2,
+   "street_light": false,
+   "flood_depth_m": 1.95
+  },
+  {
+   "east_m": 310.0,
+   "north_m": 116.0,
+   "ground_asl_m": 1059.519,
+   "height_m": 8.62,
+   "crossarms": 2,
+   "street_light": true,
+   "flood_depth_m": 2.16
+  },
+  {
+   "east_m": 340.0,
+   "north_m": 92.0,
+   "ground_asl_m": 1059.554,
+   "height_m": 9.03,
+   "crossarms": 1,
+   "street_light": true,
+   "flood_depth_m": 2.13
+  },
+  {
+   "east_m": 370.0,
+   "north_m": 68.0,
+   "ground_asl_m": 1059.521,
+   "height_m": 8.66,
+   "crossarms": 1,
+   "street_light": false,
+   "flood_depth_m": 2.16
+  },
+  {
+   "east_m": 370.0,
+   "north_m": 38.0,
+   "ground_asl_m": 1059.401,
+   "height_m": 8.79,
+   "crossarms": 1,
+   "street_light": false,
+   "flood_depth_m": 2.28
+  },
+  {
+   "east_m": 334.0,
+   "north_m": 50.0,
+   "ground_asl_m": 1059.296,
+   "height_m": 8.48,
+   "crossarms": 2,
+   "street_light": false,
+   "flood_depth_m": 2.39
+  },
+  {
+   "east_m": 298.0,
+   "north_m": 56.0,
+   "ground_asl_m": 1059.448,
+   "height_m": 8.67,
+   "crossarms": 1,
+   "street_light": false,
+   "flood_depth_m": 2.23
+  },
+  {
+   "east_m": 262.0,
+   "north_m": 62.0,
+   "ground_asl_m": 1059.458,
+   "height_m": 8.78,
+   "crossarms": 1,
+   "street_light": false,
+   "flood_depth_m": 2.22
+  },
+  {
+   "east_m": 226.0,
+   "north_m": 68.0,
+   "ground_asl_m": 1059.503,
+   "height_m": 8.69,
+   "crossarms": 1,
+   "street_light": false,
+   "flood_depth_m": 2.18
+  },
+  {
+   "east_m": 190.0,
+   "north_m": 74.0,
+   "ground_asl_m": 1059.554,
+   "height_m": 8.66,
+   "crossarms": 2,
+   "street_light": true,
+   "flood_depth_m": 2.13
+  },
+  {
+   "east_m": 184.0,
+   "north_m": 104.0,
+   "ground_asl_m": 1059.654,
+   "height_m": 8.75,
+   "crossarms": 2,
+   "street_light": false,
+   "flood_depth_m": 2.03
+  },
+  {
+   "east_m": 220.0,
+   "north_m": 104.0,
+   "ground_asl_m": 1059.416,
+   "height_m": 8.61,
+   "crossarms": 1,
+   "street_light": false,
+   "flood_depth_m": 2.27
+  },
+  {
+   "east_m": 256.0,
+   "north_m": 98.0,
+   "ground_asl_m": 1059.515,
+   "height_m": 8.69,
+   "crossarms": 1,
+   "street_light": false,
+   "flood_depth_m": 2.17
+  },
+  {
+   "east_m": 292.0,
+   "north_m": 92.0,
+   "ground_asl_m": 1059.569,
+   "height_m": 8.47,
+   "crossarms": 1,
+   "street_light": true,
+   "flood_depth_m": 2.11
+  },
+  {
+   "east_m": 160.0,
+   "north_m": -160.0,
+   "ground_asl_m": 1058.555,
+   "height_m": 9.13,
+   "crossarms": 1,
+   "street_light": false,
+   "flood_depth_m": 3.13
+  },
+  {
+   "east_m": 160.0,
+   "north_m": -124.0,
+   "ground_asl_m": 1058.74,
+   "height_m": 9.0,
+   "crossarms": 1,
+   "street_light": true,
+   "flood_depth_m": 2.94
+  },
+  {
+   "east_m": 160.0,
+   "north_m": -88.0,
+   "ground_asl_m": 1058.892,
+   "height_m": 8.83,
+   "crossarms": 1,
+   "street_light": false,
+   "flood_depth_m": 2.79
+  },
+  {
+   "east_m": 130.0,
+   "north_m": -112.0,
+   "ground_asl_m": 1058.737,
+   "height_m": 8.99,
+   "crossarms": 2,
+   "street_light": false,
+   "flood_depth_m": 2.94
+  },
+  {
+   "east_m": 94.0,
+   "north_m": -124.0,
+   "ground_asl_m": 1058.718,
+   "height_m": 9.02,
+   "crossarms": 2,
+   "street_light": false,
+   "flood_depth_m": 2.96
+  },
+  {
+   "east_m": 118.0,
+   "north_m": -148.0,
+   "ground_asl_m": 1058.667,
+   "height_m": 8.91,
+   "crossarms": 2,
+   "street_light": false,
+   "flood_depth_m": 3.01
+  }
+ ]
+}

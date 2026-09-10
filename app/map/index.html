@@ -86,8 +86,11 @@
       border-radius:8px;padding:0;box-shadow:0 10px 30px #0009;max-width:360px}
   .maplibregl-popup-tip{border-top-color:var(--panel)!important;border-bottom-color:var(--panel)!important}
   .maplibregl-popup-close-button{color:var(--dim);font-size:18px;padding:2px 7px}
-  .pop{width:340px}
-  .pop img{width:100%;display:block;border-radius:7px 7px 0 0;background:#000}
+  /* The popup must never run off the bottom of the screen: the score total, the R10 reason box and the
+     dismiss button live at its foot, and an operator has to be able to see and reach them. */
+  .maplibregl-popup-content{max-height:calc(100vh - 90px);overflow:hidden}
+  .pop{width:340px;max-height:calc(100vh - 92px);overflow-y:auto}
+  .pop img{width:100%;height:132px;object-fit:cover;display:block;border-radius:7px 7px 0 0;background:#000}
   .pop-body{padding:9px 11px 11px}
   .pop h2{margin:0 0 2px;font-size:14px;display:flex;align-items:center;gap:7px}
   .kv{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:12px;margin:7px 0}
@@ -147,8 +150,11 @@ const CLASS_COLOR = { human: "#e63946", animal: "#3d87c9" };
 const DISMISSED = "#7b8794";
 const state = {
   records: new Map(), selected: null, ws: null, wsState: "connecting", outbox: null,
-  coverage: null, coverageLoaded: false, mission: null, domain: null, errors: [], lastSeq: 0,
+  coverage: null, coverageLoaded: false, covLayer: QS.get("layer") || "", cannotClear: 0,
+  mission: null, domain: null, errors: [], lastSeq: 0,
 };
+// Exposed for app/map/headless_check.mjs (and for a console poke); nothing in the page reads it back.
+window.__sightlineState = state;
 
 // --- WGS-84 metres-per-degree (matches sightline/common/geodesy.py; the h_acc ring must be metre-true) ---
 const A = 6378137.0, E2 = (1 / 298.257223563) * (2 - 1 / 298.257223563);
@@ -246,9 +252,9 @@ function addLayers() {
 
   map.addSource("footprint", { type: "geojson", data: EMPTY });
   map.addLayer({ id: "footprint-fill", type: "fill", source: "footprint",
-    paint: { "fill-color": "#ffd479", "fill-opacity": 0.13 } });
+    paint: { "fill-color": "#ffd479", "fill-opacity": 0.16 } });
   map.addLayer({ id: "footprint-line", type: "line", source: "footprint",
-    paint: { "line-color": "#ffd479", "line-width": 1.2, "line-opacity": 0.8 } });
+    paint: { "line-color": "#ffd479", "line-width": 1.8, "line-opacity": 0.95 } });
 
   map.addSource("rings", { type: "geojson", data: EMPTY });
   map.addLayer({ id: "acc-ring-fill", type: "fill", source: "rings", filter: NOT_DISMISSED,
@@ -273,11 +279,13 @@ function addLayers() {
     paint: { "text-color": "#ffffff", "text-halo-color": "#000", "text-halo-width": 1 } });
 
   map.addSource("drone", { type: "geojson", data: EMPTY });
+  // The halo is deliberately smaller than the camera footprint: at survey altitude the footprint is only
+  // ~85 x 48 m, and a fat halo swallows it (it did, in the first render of this page).
   map.addLayer({ id: "drone-halo", type: "circle", source: "drone",
-    paint: { "circle-radius": 13, "circle-color": "#ffd479", "circle-opacity": 0.18,
+    paint: { "circle-radius": 8, "circle-color": "#ffd479", "circle-opacity": 0.16,
              "circle-stroke-color": "#ffd479", "circle-stroke-width": 1 } });
   map.addLayer({ id: "drone-dot", type: "circle", source: "drone",
-    paint: { "circle-radius": 5, "circle-color": "#ffd479", "circle-stroke-color": "#241c05",
+    paint: { "circle-radius": 4.2, "circle-color": "#ffd479", "circle-stroke-color": "#241c05",
              "circle-stroke-width": 1.6 } });
 
   for (const id of ["markers", "markers-dismissed"]) {
@@ -285,6 +293,32 @@ function addLayers() {
     map.on("mouseenter", id, () => (map.getCanvas().style.cursor = "pointer"));
     map.on("mouseleave", id, () => (map.getCanvas().style.cursor = ""));
   }
+
+  // The plan lane states WHY each leg exists in the waypoint's `reason`; show it rather than hide it.
+  map.on("click", "plan-wp", (e) => {
+    const p = e.features[0].properties;
+    new maplibregl.Popup({ closeButton: true, offset: 10 })
+      .setLngLat(e.lngLat)
+      .setHTML(`<div class="pop-body" style="width:280px"><h2>waypoint ${p.seq ?? "?"} · ${p.action || "goto"}</h2>
+        <div class="rec-sub">${fmt(p.agl_m, 0)} m AGL · ${fmt(p.speed_ms, 1)} m/s · gimbal ${fmt(p.gimbal_pitch_deg, 0)}°
+        · segment ${p.segment_id || "—"} · pass ${p.pass_id ?? "—"}</div>
+        <p class="formula">${p.reason || ""}</p></div>`)
+      .addTo(map);
+  });
+  map.on("mouseenter", "plan-wp", () => (map.getCanvas().style.cursor = "pointer"));
+  map.on("mouseleave", "plan-wp", () => (map.getCanvas().style.cursor = ""));
+
+  // The "aerial search cannot clear" polygons must say so when clicked (R10, §2.7).
+  map.on("click", "cannot-clear-fill", (e) => {
+    const p = e.features[0].properties;
+    new maplibregl.Popup({ closeButton: true, offset: 6 })
+      .setLngLat(e.lngLat)
+      .setHTML(`<div class="pop-body" style="width:270px"><h2 style="color:#ff9b9b">${p.label || "aerial search cannot clear"}</h2>
+        <p class="formula">POD is held at 0 inside this polygon no matter how much it is overflown.
+        It is never "cleared"; clearing it needs ground search, canine or radar (§2.7, R10).</p>
+        <div class="rec-sub">domain ${p.domain || "?"}${p.reason ? " · " + p.reason : ""}</div></div>`)
+      .addTo(map);
+  });
 }
 
 // --- data plumbing -------------------------------------------------------------------------------------
@@ -317,36 +351,57 @@ async function loadRecords() {
   return fc.features.length;
 }
 
+// The sidecar is sightline/api/coverage_feed.py's normalisation of the coverage lane's own coverage.json
+// (product "sightline.coverage"): one entry per presentation layer, each with an API image/geojson URL,
+// its k and — crucially — whether that k was MEASURED. Today it never is, and the page says so.
+function covLayerEntry() {
+  const side = state.coverage;
+  if (!side?.layers?.length) return null;
+  return side.layers.find((l) => l.layer === state.covLayer) || side.layers[0];
+}
+
 async function loadCoverage() {
   const r = await fetch("/api/coverage/overlay.json");
   if (!r.ok) { setStatus(); return false; }
   const side = await r.json();
   state.coverage = side;
+  if (!side.layers?.length) { state.errors.push("coverage sidecar has no layers"); return false; }
+  if (!side.layers.some((l) => l.layer === state.covLayer)) state.covLayer = side.default_layer || side.layers[0].layer;
+  const entry = covLayerEntry();
   await new Promise((res) => {
     const img = new Image();
     img.onload = () => { state.coverageLoaded = true; res(); };
-    img.onerror = () => res();
-    img.src = "/api/coverage/pod.png?t=" + Math.floor(side.generated_utc);
+    img.onerror = () => { state.errors.push("coverage raster failed to load: " + entry.image_url); res(); };
+    img.src = entry.image_url;
   });
   if (state.coverageLoaded) {
     // The image source is created only once a real raster exists: MapLibre rejects a degenerate placeholder.
-    const url = "/api/coverage/pod.png?t=" + Math.floor(side.generated_utc);
     if (map.getSource("coverage")) {
-      map.getSource("coverage").updateImage({ url, coordinates: side.coordinates });
+      map.getSource("coverage").updateImage({ url: entry.image_url, coordinates: side.coordinates });
     } else {
-      map.addSource("coverage", { type: "image", url, coordinates: side.coordinates });
+      map.addSource("coverage", { type: "image", url: entry.image_url, coordinates: side.coordinates });
       const under = map.getLayer("cannot-clear-base") ? "cannot-clear-base" : state.firstSymbol;
       map.addLayer({ id: "coverage-pod", type: "raster", source: "coverage",
-        paint: { "raster-opacity": 0.62, "raster-resampling": "nearest" } }, under);
+        paint: { "raster-opacity": 0.72, "raster-resampling": "nearest" } }, under);
     }
   }
-  const cc = await fetch("/api/coverage/cannot_clear.geojson");
+  // The burial polygons: the coverage PNG is transparent over them, so this hatch is what fills the hole.
+  const cc = await fetch("/api/coverage/cannot_clear.geojson?layer=" + encodeURIComponent(state.covLayer));
   if (cc.ok) {
     const fc = await cc.json();
     state.cannotClear = fc.features.length;
     map.getSource("cannot-clear").setData(fc);
   }
+  renderLayerPane();
+  renderChips();
   return state.coverageLoaded;
+}
+
+async function setCoverageLayer(name) {
+  state.covLayer = name;
+  state.coverageLoaded = false;
+  await loadCoverage();
+  setStatus();
 }
 
 async function loadMission() {
@@ -408,7 +463,13 @@ function renderChips() {
     `<span class="chip"><b>${by("dismissed")}</b> dismissed</span>`,
   ];
   if (ob) parts.push(`<span class="chip ${ob.online === false ? "down" : ""}">outbox <b>${ob.depth ?? 0}</b>${ob.online === false ? " · link down" : ""}</span>`);
-  if (state.coverage) parts.push(`<span class="chip">POD mean <b>${fmt(state.coverage.pod_mean)}</b> · swept <b>${state.coverage.cells_swept}/${state.coverage.cells_total}</b></span>`);
+  const cl = covLayerEntry();
+  if (cl) {
+    const s = cl.stats || {};
+    parts.push(`<span class="chip">POD <b>${cl.layer}</b> mean <b>${fmt(s.mean_pod)}</b> · ≥0.5 in <b>${s["cells_pod_ge_0.5"] ?? "—"}</b> cells</span>`);
+    parts.push(`<span class="chip ${cl.k_is_measured ? "" : "sim"}">k ${cl.k === null ? "n/a" : fmt(cl.k, 2)} · <b>${cl.k_is_measured ? "measured" : "MODELLED"}</b></span>`);
+    if (state.cannotClear) parts.push(`<span class="chip down"><b>${state.cannotClear}</b> cannot-clear areas</span>`);
+  }
   if (state.mission?.drone) parts.push(`<span class="chip">mode <b>${state.mission.drone.properties.mode}</b> · ${fmt(state.mission.drone.properties.agl_m, 0)} m AGL</span>`);
   if (state.domain === "sim") parts.push(`<span class="chip sim"><b>SIM</b> simulated data</span>`);
   chipsEl.innerHTML = parts.join("");
@@ -473,18 +534,8 @@ function openRecord(id, keepView = false, fly = false) {
       </table>
       <p class="formula">score = P(living) × w_class(t) × urgency × (1 + 0.1·count)<br>
          thermal boost ${fmt(c.thermal_boost, 2)} · motion boost ${fmt(c.motion_boost, 2)}</p>
-      <dl class="kv">
-        <dt>position</dt><dd>${f.geometry.coordinates[1].toFixed(6)}, ${f.geometry.coordinates[0].toFixed(6)}</dd>
-        <dt>accuracy</dt><dd>±${fmt(p.h_acc_m, 1)} m (1σ) · CE90 ${fmt(p.ce90_m, 1)} m · ${p.method}</dd>
-        <dt>confidence</dt><dd>${fmt(p.confidence, 3)} fused · ${fmt(p.confidence_max_det, 3)} best det</dd>
-        <dt>observations</dt><dd>${p.n_observations} in ${p.n_tracks_merged} track(s), passes [${(p.seen_in_passes || []).join(", ")}]</dd>
-        <dt>motion</dt><dd>${p.motion_state} · ${fmt(p.motion_displacement_m, 1)} m / ${fmt(p.motion_window_s, 0)} s</dd>
-        <dt>thermal</dt><dd>${p.thermal_hot ? `hot ${fmt(p.thermal_c, 1)} °C` : "no thermal agreement"} · ${p.modality}</dd>
-        <dt>size</dt><dd>${fmt(p.pixel_size_px, 0)} px · GSD ${fmt(p.gsd_cm_px, 1)} cm/px · occl ${p.occlusion ?? "—"}</dd>
-        ${ev ? `<dt>evidence</dt><dd>${ev.clip_id} frame ${ev.frame_idx} · conf ${fmt(ev.det_conf, 2)} · ${ev.camera}</dd>` : ""}
-        ${p.dismissed_reason ? `<dt>dismissed</dt><dd>${p.dismissed_reason} — ${p.dismissed_by}</dd>` : ""}
-        ${p.notes ? `<dt>notes</dt><dd>${p.notes}</dd>` : ""}
-      </dl>
+      <div class="rec-sub" style="margin:6px 0">±${fmt(p.h_acc_m, 1)} m (1σ) · CE90 ${fmt(p.ce90_m, 1)} m ·
+        ${p.n_observations} obs · ${p.thermal_hot ? `thermal ${fmt(p.thermal_c, 1)} °C` : "no thermal"}</div>
       <div class="act">
         <button data-act="confirmed">Confirm</button>
         <button data-act="stale">Mark stale</button>
@@ -495,6 +546,20 @@ function openRecord(id, keepView = false, fly = false) {
       </div>
       <div class="err" id="act-err"></div>
       <p class="formula">R10: dismissing keeps the record and its history; nothing is ever deleted.</p>
+      <details ${p.dismissed_reason ? "open" : ""}><summary class="rec-sub">all fields</summary>
+      <dl class="kv">
+        <dt>position</dt><dd>${f.geometry.coordinates[1].toFixed(6)}, ${f.geometry.coordinates[0].toFixed(6)}</dd>
+        <dt>accuracy</dt><dd>±${fmt(p.h_acc_m, 1)} m (1σ) · CE90 ${fmt(p.ce90_m, 1)} m · ${p.method}</dd>
+        <dt>confidence</dt><dd>${fmt(p.confidence, 3)} fused · ${fmt(p.confidence_max_det, 3)} best det</dd>
+        <dt>observations</dt><dd>${p.n_observations} in ${p.n_tracks_merged} track(s), passes [${(p.seen_in_passes || []).join(", ")}]</dd>
+        <dt>motion</dt><dd>${p.motion_state} · ${fmt(p.motion_displacement_m, 1)} m / ${fmt(p.motion_window_s, 0)} s</dd>
+        <dt>thermal</dt><dd>${p.thermal_hot ? `hot ${fmt(p.thermal_c, 1)} °C` : "no thermal agreement"} · ${p.modality}</dd>
+        <dt>size</dt><dd>${fmt(p.pixel_size_px, 0)} px · GSD ${fmt(p.gsd_cm_px, 1)} cm/px · occl ${p.occlusion ?? "—"}</dd>
+        <dt>version</dt><dd>v${p.version} · ${p.schema_version} · <a href="/api/records/${encodeURIComponent(f.id)}/history" target="_blank">history</a></dd>
+        ${ev ? `<dt>evidence</dt><dd>${ev.clip_id} frame ${ev.frame_idx} · conf ${fmt(ev.det_conf, 2)} · ${ev.camera}</dd>` : ""}
+        ${p.dismissed_reason ? `<dt>dismissed</dt><dd>${p.dismissed_reason} — ${p.dismissed_by}</dd>` : ""}
+        ${p.notes ? `<dt>notes</dt><dd>${p.notes}</dd>` : ""}
+      </dl></details>
     </div>`;
   el.querySelectorAll("button[data-act]").forEach((b) =>
     b.addEventListener("click", () => act(id, b.dataset.act, el)));
@@ -502,7 +567,9 @@ function openRecord(id, keepView = false, fly = false) {
   popup?.remove();
   popup = new maplibregl.Popup({ closeButton: true, maxWidth: "360px", offset: 14 })
     .setLngLat(f.geometry.coordinates.slice(0, 2)).setDOMContent(el).addTo(map);
-  if (fly && !keepView) map.flyTo({ center: f.geometry.coordinates.slice(0, 2), zoom: Math.max(map.getZoom(), 15), speed: 1.4 });
+  // offset lifts the marker above centre so the popup (score table + R10 controls) has room below it
+  if (fly && !keepView) map.flyTo({ center: f.geometry.coordinates.slice(0, 2), zoom: Math.max(map.getZoom(), 15),
+                                    offset: [0, -140], speed: 1.4 });
   renderList([...state.records.values()]);
 }
 
@@ -539,9 +606,23 @@ const TOGGLES = [
   ["Camera footprint", ["footprint-fill", "footprint-line"], true],
   ["Drone", ["drone-halo", "drone-dot"], true],
 ];
+function rampCss() {
+  const stops = state.coverage?.ramp;
+  if (!stops?.length) return "linear-gradient(90deg,#440154,#3b528b,#21918c,#5ec962,#fde725)";
+  const parts = stops.map((s) => `rgb(${s.rgb.join(",")}) ${(s.pod * 100).toFixed(0)}%`);
+  return `linear-gradient(90deg,${parts.join(",")})`;
+}
+
 function renderLayerPane() {
+  const side = state.coverage, cl = covLayerEntry();
+  const presPicker = side?.layers?.length
+    ? `<h3>Presentation layer (§5.3b)</h3>` + side.layers.map((l) =>
+        `<label class="toggle"><input type="radio" name="covlayer" value="${l.layer}" ${l.layer === state.covLayer ? "checked" : ""}>
+           ${l.layer} <span class="rec-sub">mean POD ${fmt(l.stats?.mean_pod)}</span></label>`).join("")
+    : "";
   paneLayers.innerHTML = `<h3>Layers</h3>` + TOGGLES.map(([label, ids, on], i) =>
     `<label class="toggle"><input type="checkbox" data-i="${i}" ${on ? "checked" : ""}> ${label}</label>`).join("") +
+    presPicker +
     `<div class="legend">
       <h3>Triage markers</h3>
       <div class="lg"><span class="sw" style="background:${CLASS_COLOR.human}"></span> human — size is priority rank</div>
@@ -549,19 +630,27 @@ function renderLayerPane() {
       <div class="lg"><span class="sw" style="background:transparent;border:1.5px solid ${DISMISSED}"></span> dismissed (kept, R10)</div>
       <div class="lg"><span class="sw" style="background:${CLASS_COLOR.human}22;border-color:${CLASS_COLOR.human}"></span> ring = h_acc_m (1σ)</div>
       <h3>Search quality</h3>
-      <div class="lg"><span class="ramp"></span></div>
-      <div class="lg" style="justify-content:space-between"><span>POD 0</span><span>POD 1</span></div>
-      <div class="lg">unshaded = never swept · hatched = aerial search cannot clear</div>
+      <div class="lg"><span class="ramp" style="background:${rampCss()}"></span></div>
+      <div class="lg" style="justify-content:space-between"><span>POD 0</span><span>POD ${side?.bands ? fmt(side.bands[side.bands.length - 2], 2) : "1"}+</span></div>
+      <div class="lg">unshaded = never swept · hatched = ${side?.cannot_clear_label || "aerial search cannot clear"}</div>
+      ${cl ? `<div class="lg" style="display:block">k = ${cl.k === null ? "n/a (mixture)" : fmt(cl.k, 3)},
+        <b style="color:${cl.k_is_measured ? "var(--ok)" : "var(--warn)"}">${cl.k_is_measured ? "measured" : "modelled, NOT measured"}</b><br>
+        <span class="rec-sub">${cl.k_basis || ""}</span></div>` : ""}
+      ${side?.legend_note ? `<div class="lg" style="display:block"><span class="rec-sub">${side.legend_note}</span></div>` : ""}
+      ${side ? `<div class="lg"><span class="rec-sub">domain <b>${side.domain}</b> · ${side.passes?.length || 0} pass(es) · source ${side.source}</span></div>` : ""}
       <h3>Flight</h3>
       <div class="lg"><span class="sw" style="background:#57e08a"></span> AUTO</div>
       <div class="lg"><span class="sw" style="background:#ffb545"></span> MANUAL takeover</div>
       <div class="lg"><span class="sw" style="background:#7fd1ff"></span> planned pattern</div>
       <div class="lg"><span class="sw" style="background:#ffd479"></span> drone + camera footprint</div>
+      ${state.mission?.plan ? `<div class="lg"><span class="rec-sub">${state.mission.plan.features?.[0]?.properties?.name || ""}</span></div>` : ""}
     </div>`;
   paneLayers.querySelectorAll("input[data-i]").forEach((cb) => cb.addEventListener("change", () => {
     const ids = TOGGLES[Number(cb.dataset.i)][1];
     ids.forEach((id) => map.getLayer(id) && map.setLayoutProperty(id, "visibility", cb.checked ? "visible" : "none"));
   }));
+  paneLayers.querySelectorAll("input[name=covlayer]").forEach((rb) =>
+    rb.addEventListener("change", () => setCoverageLayer(rb.value)));
 }
 $("tab-recs").onclick = () => { paneRecs.hidden = false; paneLayers.hidden = true;
   $("tab-recs").setAttribute("aria-selected", "true"); $("tab-layers").setAttribute("aria-selected", "false"); };
@@ -597,7 +686,14 @@ async function selfCheck() {
     drone_features: bySource("drone"),
     footprint_features: bySource("footprint"),
     coverage_raster_loaded: state.coverageLoaded,
-    coverage_pod_mean: state.coverage?.pod_mean ?? null,
+    coverage_source: state.coverage?.source ?? null,
+    coverage_layer: state.covLayer,
+    coverage_layers: (state.coverage?.layers || []).map((l) => l.layer),
+    coverage_pod_mean: covLayerEntry()?.stats?.mean_pod ?? null,
+    coverage_k_is_measured: covLayerEntry()?.k_is_measured ?? null,
+    cannot_clear_polygons: state.cannotClear,
+    plan_waypoints: (state.mission?.plan?.features || []).filter((f) => f.properties.kind === "waypoint").length,
+    track_modes: [...new Set((state.mission?.track?.features || []).map((f) => f.properties.mode))].sort(),
     records_loaded: state.records.size,
     ranked_top: [...state.records.values()].filter((f) => f.properties.priority_rank === 1)
       .map((f) => f.id),
@@ -610,7 +706,9 @@ async function selfCheck() {
     errors: state.errors,
   };
   report.ok = report.basemap_features > 0 && report.marker_features > 0 && report.ring_features > 0 &&
-              report.track_features > 0 && report.cannot_clear_features > 0 && report.coverage_raster_loaded &&
+              report.track_features > 0 && report.plan_features > 0 && report.drone_features > 0 &&
+              report.footprint_features > 0 && report.cannot_clear_features > 0 &&
+              report.coverage_raster_loaded && report.cannot_clear_polygons > 0 &&
               report.score_components_present && report.thumbnails_present > 0 &&
               external.length === 0 && state.errors.length === 0;
   setStatus(JSON.stringify({ basemap: report.basemap_features, markers: report.marker_features,
@@ -629,6 +727,7 @@ map.on("load", async () => {
   try { await loadMission(); } catch (e) { state.errors.push("mission: " + e); }
   try { await loadRecords(); } catch (e) { state.errors.push("records: " + e); }
   await pollOutbox();
+  renderLayerPane();
   connectWS();
   setInterval(pollOutbox, 5000);
   setStatus();
