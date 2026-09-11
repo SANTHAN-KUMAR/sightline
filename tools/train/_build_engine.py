@@ -72,13 +72,17 @@ if __name__ == "__main__":
 
     print(f"\n--- building TensorRT engine (batch={tiles}) ---")
     t0 = time.time()
+    # Batch 6, not the full 15-tile grid. The FP16 AutoCast step runs a CPU reference pass to validate
+    # numerics, and at batch 15 x 3 x 1024 x 1024 the attention intermediates exhausted host RAM
+    # ("bad allocation" in onnxruntime's MatMul). Six is also what SOLUTION_DOC 5.11 actually specifies,
+    # and `dynamic` lets the 15-tile grid still be sent as chunks rather than requiring an exact batch.
     man = export_engine(ExportConfig(weights=str(WEIGHTS), format="engine", imgsz=1024,
-                                     half=True, batch=tiles, device=0))
+                                     half=True, batch=6, dynamic=True, device=0))
     eng = man["exported"]
     print(f"  built in {time.time() - t0:.0f}s -> {eng}")
 
     print("\n--- tensorrt fp16 ---")
-    trt = bench(eng, "tensorrt fp16", 0)
+    trt = bench(eng, "tensorrt fp16", 6)
 
     speedup = base / trt if trt else 0.0
     fps = 1000.0 / trt if trt else 0.0

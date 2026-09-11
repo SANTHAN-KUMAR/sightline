@@ -611,3 +611,34 @@ spacing assumes.
   hypothesis is 11x worse, so there is no ambiguity to argue about.
   **Actions:** fix `coverage.footprint.ground_footprint` to match, and add a `gimbal_yaw_deg` column to
   `telemetry.csv` so no future reader has to re-derive this.
+
+### GPU contention, not inference cost — the live-loop latency finding (2026-09-11 06:30)
+
+**A diagnosis recorded earlier in this session was wrong, and the correction matters more than the original
+claim.** The live loop measured 1165-3205 ms per frame of detection and I attributed it to inference being
+"10-25x over the section 5.11 budget". Measured again with the Unreal editor CLOSED, the identical model on
+the identical 15-tile 1024 px grid runs at:
+
+    pytorch fp16   median 166.9 ms   min 153.7   max 170.2      (6 real 4K frames, RTX 4060 Laptop)
+
+against section 5.11's ~113 ms budget. So uncontended inference is within a factor of 1.5 of budget, not 10x
+over it. The 1.2-3.2 s figure was the Unreal editor rendering a 4K scene and the detector competing for the
+same 8 GB card.
+
+**Why this changes the conclusion.** The bottleneck is deployment topology, not model cost or code:
+
+* on this laptop one GPU does two jobs, and that is the constraint;
+* in the architecture section 5.11 actually describes, the detector runs on a Jetson Orin with no renderer
+  on the same device, so the contention does not exist;
+* it also explains the tracking failure. At 167 ms the loop runs near 1.2 FPS rather than 0.6, which halves
+  the inter-frame camera translation (~450 px at 0.6 FPS) and makes frame-to-frame association far more
+  tractable. The tracker was being starved, not malfunctioning.
+
+**Consequence for any future measurement:** never benchmark the detector while the editor is up, and never
+quote a live-loop latency without saying whether the renderer was running. Both numbers are true; they
+measure different things.
+
+**TensorRT export, same session.** Building at the full 15-tile batch fails in the FP16 AutoCast step, which
+runs a CPU reference pass to validate numerics: at 15 x 3 x 1024 x 1024 the attention intermediates exhaust
+host RAM and onnxruntime raises `bad allocation` on a MatMul node. Build at batch 6 (which is what section
+5.11 specifies anyway) with `dynamic=True` so the 15-tile grid can still be sent as chunks.

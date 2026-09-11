@@ -534,7 +534,23 @@ def test_ultralytics_backend_is_reachable_but_not_exercised_here():
     with pytest.raises(NotImplementedError, match="torch"):
         stub.update(np.zeros((0, 4), np.float32), np.zeros(0, np.float32), None, None)
 
-    assert "torch" not in __import__("sys").modules, "this lane must never pull torch in"
+    # CONTRACTS.md section 3 rule 2 is about what THIS LANE imports, so ask that question in a clean
+    # interpreter. Asserting on the running session's `sys.modules` instead made the check order-dependent:
+    # `conftest.py`'s CUDA fixture imports torch, so any GPU test scheduled earlier in the same session made
+    # this fail while the lane itself was innocent. A subprocess tests the actual property and cannot be
+    # polluted by a neighbour.
+    import subprocess
+    import sys as _sys
+    from pathlib import Path as _Path
+
+    probe = subprocess.run(
+        [_sys.executable, "-c",
+         "import sightline.track, sightline.track.backends, sys; "
+         "print('torch' in sys.modules)"],
+        capture_output=True, text=True, timeout=120,
+        cwd=str(_Path(__file__).resolve().parents[1]))
+    assert probe.returncode == 0, f"probe failed: {probe.stderr[-400:]}"
+    assert probe.stdout.strip() == "False", "importing this lane pulled torch in"
 
 
 def test_unknown_backend_is_rejected_by_name():
