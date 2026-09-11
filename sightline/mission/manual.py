@@ -153,11 +153,26 @@ class ManualPilot:
             return 0.0
         # Inside the envelope but close to it: bleed the command off over the last 5 m instead of hitting a
         # wall, so the aircraft settles rather than stopping dead and the judge feels the edge coming.
+        #
+        # **The bleed-off is reported, not silent.** Measured against the live simulator 2026-09-11: with the
+        # floor 1 m below the aircraft, a full-down stick was correctly reduced to a 0.3 m/s descent - and
+        # `clamp.reasons` came back EMPTY, because only the hard stop below `min_agl_m` set a flag. So the
+        # envelope was overriding the pilot while the HUD said nothing, which is precisely the "input
+        # silently ignored, therefore the controller is broken" failure this dataclass exists to prevent.
+        # A pilot must be told they are being held BEFORE they hit the wall, not at it.
         margin = 5.0
         if vz > 0.0 and agl < lim.min_agl_m + margin:
-            vz *= max(0.0, (agl - lim.min_agl_m) / margin)
+            scale = max(0.0, (agl - lim.min_agl_m) / margin)
+            if scale < 0.95:
+                clamp.floor = True
+                clamp.reasons.append(f"easing off the floor: {agl:.0f} m AGL, {lim.min_agl_m:.0f} m minimum")
+            vz *= scale
         elif vz < 0.0 and agl > lim.max_agl_m - margin:
-            vz *= max(0.0, (lim.max_agl_m - agl) / margin)
+            scale = max(0.0, (lim.max_agl_m - agl) / margin)
+            if scale < 0.95:
+                clamp.ceiling = True
+                clamp.reasons.append(f"easing off the ceiling: {agl:.0f} m AGL, {lim.max_agl_m:.0f} m limit")
+            vz *= scale
         return vz
 
     def _clamp_horizontal(self, vn: float, ve: float, east_m: float, north_m: float,

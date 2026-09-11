@@ -42,13 +42,19 @@ const BROWSERS = [
 const exe = opt("--browser", BROWSERS.find((p) => existsSync(p)));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// --size WxH lets the RESPONSIVE breakpoints be verified rather than asserted in a stylesheet.
+// A layout that only ever renders at 1600x1000 has not been checked at the widths people use.
+const _sz = /^(\d+)x(\d+)$/.exec(opt("--size", "1600x1000")) || [null, "1600", "1000"];
+const VW = Number(_sz[1]) || 1600;
+const VH = Number(_sz[2]) || 1000;
+
 mkdirSync(PROFILE, { recursive: true });
 mkdirSync(SHOTS, { recursive: true });
 const browser = spawn(exe, [
   "--headless=new", `--remote-debugging-port=${PORT}`, `--user-data-dir=${PROFILE}`,
   "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--no-first-run", "--no-default-browser-check",
   "--disable-extensions", "--disable-background-networking", "--disable-component-update", "--disable-sync",
-  "--host-resolver-rules=MAP * ~NOTFOUND , EXCLUDE 127.0.0.1", "--window-size=1600,1000", "about:blank",
+  "--host-resolver-rules=MAP * ~NOTFOUND , EXCLUDE 127.0.0.1", `--window-size=${VW},${VH}`, "about:blank",
 ], { stdio: "ignore" });
 
 let ws;
@@ -122,7 +128,7 @@ try {
   await send("Runtime.enable");
   await send("Page.enable");
   await send("Target.setAutoAttach", { autoAttach: true, waitForDebuggerOnStart: true, flatten: true });
-  await send("Emulation.setDeviceMetricsOverride", { width: 1600, height: 1000, deviceScaleFactor: 1, mobile: false });
+  await send("Emulation.setDeviceMetricsOverride", { width: VW, height: VH, deviceScaleFactor: 1, mobile: VW < 700 });
   await send("Page.navigate", { url: URL_ });
 
   const deadline = Date.now() + TIMEOUT_MS;

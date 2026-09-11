@@ -519,6 +519,17 @@ ALLOWANCES: tuple[Allowance, ...] = (
         "line 307",
     ),
     Allowance(
+        "sightline/api/demo_control.py", "container reset", "self._log.clear()", 1,
+        "`self._log` is a bounded deque of STDOUT LINES from a demo subprocess, shown on the demo console "
+        "so a judge can watch a run without a terminal. It is reset when a NEW demo starts so the console "
+        "does not show the previous run's output as if it were this one's. No Record, no segment and no "
+        "evidence is in scope in this module: it starts and stops processes, and the record log lives in "
+        "`sightline/store` and is never opened here. The guard is right to flag the shape - a bare "
+        "container reset is indistinguishable from a record purge without reading it - which is why this "
+        "entry exists rather than the call being rewritten to dodge the pattern.",
+        "line 115, Runner.start",
+    ),
+    Allowance(
         "sightline/api/live.py", "set discard", "self._clients.discard(ws)", 1,
         "`unregister` drops a disconnected websocket from the subscriber set. It removes a *listener*, not "
         "data; the record log is `sightline/store` and is untouched by a client going away.",

@@ -150,6 +150,10 @@ def create_app(
             "t_utc": time.time(),
             "schema_version": SCHEMA_VERSION,
             "store": store.stats(),
+            # Seeded fixtures and live detections look identical on a map, which is how a demo ends up
+            # presenting eight canned records as if the aircraft had just found them. The server is the
+            # only thing that knows which it is, so it has to say.
+            "seeded": bool(getattr(app.state, "seeded", False)),
             "outbox": (uploader.stats() if uploader is not None else (outbox.stats() if outbox else None)),
             "live_clients": hub.clients,
             "live_seq": hub.seq,
@@ -248,6 +252,80 @@ def create_app(
         if p is None:
             raise HTTPException(404, f"no thumbnail {name}")
         return FileResponse(p, headers={"Cache-Control": "public, max-age=86400"})
+
+    # ---- demo control ---------------------------------------------------------------------------------
+    # So a judge never needs a terminal. Only ids in demo_control.CATALOG can be launched - the request
+    # names a catalog entry, never a command - because a dashboard that ran an arbitrary string would be a
+    # remote shell on whatever laptop is showing the demo.
+    from sightline.api.demo_control import (CATALOG as DEMO_CATALOG, RUNNER as DEMO_RUNNER,
+                                            preflight as demo_preflight)
+
+    @app.get("/api/demo/preflight")
+    def demo_preflight_route(id: str = "nominal") -> dict[str, Any]:
+        """What is and is not ready, in words, BEFORE anybody presses a button.
+
+        A judge should learn the editor is not in Play mode by reading it on the page, not by watching a
+        flight fail in a log pane.
+        """
+        ok, checks = demo_preflight(id)
+        return {"ok": ok, "checks": checks}
+
+    @app.get("/api/demo/chain")
+    def demo_chain() -> dict[str, Any]:
+        """Unreal -> flight -> backend -> camera, link by link, so a break can be located not just noticed."""
+        from sightline.api.demo_control import SERVE_PORT, chain
+
+        return chain(SERVE_PORT, records=store.stats()["records"], ws_clients=hub.clients)
+
+    @app.get("/api/demo/catalog")
+    def demo_catalog() -> dict[str, Any]:
+        return {"demos": [{k: v for k, v in d.items() if k != "cmd"} for d in DEMO_CATALOG]}
+
+    @app.get("/api/demo/status")
+    def demo_status() -> dict[str, Any]:
+        return DEMO_RUNNER.status()
+
+    @app.post("/api/demo/start")
+    def demo_start(body: dict[str, Any]) -> dict[str, Any]:
+        code, payload = DEMO_RUNNER.start(str(body.get("id", "")))
+        if code != 200:
+            raise HTTPException(code, payload.get("error", "could not start"))
+        return payload
+
+    @app.post("/api/demo/stop")
+    def demo_stop() -> dict[str, Any]:
+        return DEMO_RUNNER.stop()
+
+    # ---- the operator's camera view ------------------------------------------------------------------
+    # The map says WHERE a survivor is; this says what the drone is looking at and what the model found in
+    # it. `sightline.mission.liveview` writes both files atomically per frame, so a poll can never catch a
+    # half-written JPEG. Served no-cache because the whole point is that it is the LATEST frame.
+    def _live_view(suffix: str) -> Path | None:
+        root = Path(__file__).resolve().parents[2] / "_artifacts" / "dataset"
+        if not root.exists():
+            return None
+        cands = [d / f"live_view{suffix}" for d in root.iterdir() if d.is_dir()]
+        live = [c for c in cands if c.exists()]
+        return max(live, key=lambda c: c.stat().st_mtime) if live else None
+
+    @app.get("/api/live/view.jpg")
+    def live_view_jpg() -> FileResponse:
+        p = _live_view(".jpg")
+        if p is None:
+            raise HTTPException(404, "no live view: nothing is flying, or the run wrote no frames yet")
+        return FileResponse(p, media_type="image/jpeg",
+                            headers={"Cache-Control": "no-store, max-age=0"})
+
+    @app.get("/api/live/view.json")
+    def live_view_json() -> dict[str, Any]:
+        p = _live_view(".json")
+        if p is None:
+            raise HTTPException(404, "no live view yet")
+        import json as _json
+
+        d = _json.loads(p.read_text(encoding="utf-8"))
+        d["age_s"] = round(time.time() - p.stat().st_mtime, 1)
+        return d
 
     # ---- coverage (B6's contract, read through coverage_feed.py) --------------------------------------
     def _sidecar() -> dict[str, Any] | None:
@@ -501,8 +579,8 @@ def create_app(
         `events` is a LIST the caller appends to, not a field it overwrites: the flight loop batches the
         lines it produced since its last push, and the feed keeps every one of them.
         """
-        events = body.pop("events", None) or []
-        control.update(**body)
+        events = body.get("events") or []
+        control.update(**{k: v for k, v in body.items() if k != "events"})
         for ev in events:
             if isinstance(ev, dict):
                 control.event(str(ev.get("kind", "note")), str(ev.get("text", "")),

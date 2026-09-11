@@ -39,6 +39,8 @@ and an honest map of where nobody has looked well enough yet.
 
 [**Fine-tuning**](#fine-tuning-the-detector) · [**The verifier**](#the-verifier-precision-you-can-buy-back) · [**Improvements**](#the-improvements-two-defects-that-were-holding-recall-at-zero) · [**Results**](#measured-results) · [**Guardrails**](#guardrails-enforced-in-code-not-policy)
 
+**14 independent lane packages** under `sightline/`, ~56k lines of Python, **998 tests**.
+
 **[docs/SYSTEM-INDEX.md](docs/SYSTEM-INDEX.md)** — the full depth: every module, contract, artefact and number
 
 </div>
@@ -737,10 +739,14 @@ number, with where each one is verified.
 
 ### Run it
 
+**→ [QUICKSTART.md](QUICKSTART.md) is the runbook**: how to start the dashboard, bring up the simulator, fly
+the live demo, and what each command should print.
+
+
 ```bash
 uv sync                                    # restore the pinned environment (Python 3.11)
 uv run python tools/doctor.py              # verify the toolchain
-uv run pytest tests/ -q                    # the gates
+uv run pytest tests/ -q                    # 998 tests, the gates
 ```
 
 The command map against a demo scenario, **no simulator required**:

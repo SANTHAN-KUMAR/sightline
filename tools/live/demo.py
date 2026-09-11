@@ -40,6 +40,57 @@ REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 
 UV = r"D:\Tools\uv\uv.exe"
+#: Scenario variations - each one a DIFFERENT DETECTION PROBLEM, not a different label.
+#:
+#: MEASURED 2026-09-11 by tools/live/_check_scenarios.py: `simSetTimeOfDay` and `simSetWeatherParameter`
+#: DO NOTHING in this level. Five presets spanning 06:40 to 18:15 with rain up to 0.6 rendered frames that
+#: are pixel-for-pixel the same lighting: luma spread 4.7 %, R/B spread 1.0 %, and the contact strip shows
+#: five identical images. The level's sun is not the actor AirSim's time-of-day drives, and the weather FX
+#: are not enabled in this world. Shipping those as "five slices" would have been five labels on one slice.
+#:
+#: The same measurement casts doubt on the CAPTURED DATASET: its passes are labelled `clear_morning` and
+#: `clear_midday`, and dataset_gate.py measured luma 0.640 vs 0.649 for them - the same signature. Treat
+#: that dataset as ONE lighting condition until the sun is wired.
+#:
+#: So these vary what this project demonstrably controls. Altitude is the single largest lever on recall
+#: (SOLUTION_DOC 5.5: pixels-on-target), and speed sets how many shutter releases a survivor gets, which is
+#: what the section 5.6 confirmation gate consumes. Both are real, measurable and under our control.
+SCENARIOS: dict[str, dict] = {
+    "nominal": {"alt": 45.0, "speed": 7.0, "shutter": 4.0,
+                "why": "the ACCEPTANCE slice: 45 m, inside the 40-60 m nominal band (5.5c step 5). "
+                       "Every headline number comes from here."},
+    "low":     {"alt": 30.0, "speed": 6.0, "shutter": 3.0,
+                "why": "30 m: BELOW the nominal band. Roughly 1.5x the pixels on target and a narrower "
+                       "swath - the easiest detection and the slowest coverage. A named slice, not the "
+                       "headline."},
+    "high":    {"alt": 80.0, "speed": 9.0, "shutter": 6.0,
+                "why": "80 m: ABOVE the band. Pixels-on-target roughly halve, so small and prone targets "
+                       "fall toward the 20 px floor. A named HARD slice; never averaged with acceptance."},
+    "slow":    {"alt": 45.0, "speed": 4.0, "shutter": 3.0,
+                "why": "45 m at 4 m/s: the tracker's best case. A survivor gets ~7 shutter releases "
+                       "instead of ~4, so the 3-hits-in-window gate closes far more often. Shows what "
+                       "recall looks like when the loop is not starved."},
+    "fast":    {"alt": 45.0, "speed": 12.0, "shutter": 8.0,
+                "why": "45 m at 12 m/s: the survey speed the dataset was flown at. A target is in frame "
+                       "for ~2 shutter releases, BELOW the 3 the gate needs - this is the configuration "
+                       "that produced detections but no confirmed tracks."},
+}
+
+
+#: The acceptance slice. Derived from the table so it cannot drift out of `choices` again.
+DEFAULT_SCENARIO = "nominal"
+
+
+def apply_scenario(name: str) -> str:
+    """Scenario state that the SIMULATOR must be told about. Currently none - see the note above.
+
+    Kept as the seam: when the level's sun is wired to AirSim's time-of-day, the weather and lighting go
+    here and `_check_scenarios.py` becomes the test that they actually took effect.
+    """
+    sc = SCENARIOS[name]
+    return f"{name}: {sc['alt']:.0f} m AGL, {sc['speed']:.0f} m/s, shutter {sc['shutter']:.0f} m"
+
+
 ENGINE = REPO / "models/detect/f8b_sim/weights/best.engine"
 WEIGHTS = REPO / "models/detect/f8b_sim/weights/best.pt"
 
@@ -107,25 +158,41 @@ def sim_has_vehicle() -> tuple[bool, str]:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--port", type=int, default=8781)
-    ap.add_argument("--alt", type=float, default=45.0)
-    ap.add_argument("--speed", type=float, default=7.0,
+    ap.add_argument("--scenario", choices=sorted(SCENARIOS), default=DEFAULT_SCENARIO,
+                    help="which world to fly: " + "; ".join(f"{k} = {v['why'].split(chr(46))[0]}"
+                                                            for k, v in SCENARIOS.items()))
+    ap.add_argument("--alt", type=float, default=0.0,
+                    help="metres AGL; 0 = take the scenario's own altitude")
+    ap.add_argument("--speed", type=float, default=0.0,
                     help="7 m/s keeps a survivor in frame for ~4 shutter releases at the measured loop rate, "
                          "which is what the section 5.6 confirmation gate needs")
     ap.add_argument("--conf", type=float, default=0.25)
-    ap.add_argument("--shutter-m", type=float, default=4.0)
+    ap.add_argument("--shutter-m", type=float, default=0.0,
+                    help="metres between shutter releases; 0 = the scenario's own value")
     ap.add_argument("--minutes", type=float, default=12.0)
     ap.add_argument("--pytorch", action="store_true", help="use best.pt instead of the TensorRT engine")
     ap.add_argument("--engine", action="store_true",
                     help="force the TensorRT engine even with the editor running (it will likely die with "
                          "CUDA_ERROR_ILLEGAL_ADDRESS: 2.6 GB of context plus a 4K renderer exceeds 8 GB)")
     ap.add_argument("--check", action="store_true", help="verify everything and exit, starting nothing")
+    ap.add_argument("--no-reset", action="store_true",
+                    help="take off from wherever the aircraft is, instead of resetting it to the pad first. "
+                         "The reset is what makes two runs of one scenario fly the same ground track.")
     ap.add_argument("--ignore-safety", action="store_true",
                     help="fly a plan the battery model rejects (the violation is stamped in the data card)")
     a = ap.parse_args()
 
+    sc = SCENARIOS[a.scenario]
+    if a.alt <= 0:
+        a.alt = float(sc["alt"])
+    if a.speed <= 0:
+        a.speed = float(sc["speed"])
+    if a.shutter_m <= 0:
+        a.shutter_m = float(sc["shutter"])
     print("=" * 78)
     print("SIGHTLINE — LIVE DEMO")
     print("=" * 78)
+    print(f"  scenario    {a.scenario}  -  {sc['why']}")
 
     # --- 1. detector --------------------------------------------------------------------------------
     # MEASURED 2026-09-11: the TensorRT engine is faster (125 ms vs 159 ms) but its execution context alone
@@ -179,6 +246,11 @@ def main() -> int:
         if not a.check:
             return 2
 
+    if ok and not a.check:
+        applied = apply_scenario(a.scenario)
+        if applied:
+            print(f"  world set   {applied}")
+
     url = f"http://127.0.0.1:{a.port}/app/map/index.html"
     print(f"\n  DASHBOARD   {url}")
     if a.check:
@@ -198,6 +270,9 @@ def main() -> int:
            # member_descriptor reaching json.dumps) while the gamepad work is in flight in another session.
            # `--control none` keeps the two demos independent rather than coupling this one to that fix.
            "--control", "none"]
+    if not a.no_reset:
+        # Same button, same flight. See live.py's fly() for why this is not a cosmetic nicety.
+        cmd.append("--reset-world")
     if a.ignore_safety:
         cmd.append("--ignore-safety")
 

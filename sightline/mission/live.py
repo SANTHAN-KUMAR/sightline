@@ -328,6 +328,9 @@ class LiveMission:
                                            shutter_m=self.shutter_m, plan=args.plan,
                                            overlap=args.overlap, patch_link_m=args.patch_link_m)
         self.cadence = cadence_verdict(args.alt, args.speed, self.shutter_m, self.scn.hfov_deg)
+        #: The F2 constraint set, set by `check_safety` and handed to `ManualPilot` so a human pilot flies
+        #: inside the same envelope the plan was checked against.
+        self.constraints: Any = None
         self.safety = self.check_safety()
 
         self.clip_id = args.clip_id or f"live_seed{self.scn.seed}_alt{int(args.alt)}_{self.detector}"
@@ -363,6 +366,10 @@ class LiveMission:
         self._control_events: list[dict[str, Any]] = []
         self._last_kin: Any = None
         self._last_tel: Telemetry | None = None
+        #: Pilot-side faults the flight survived. Counted and stamped into the data card, because a demo
+        #: that quietly degraded to "no manual control" must not read afterwards as a clean flight.
+        self._pilot_faults = 0
+        self._pilot_fault_seen: set[str] = set()
 
         self.client = None
         self.names: list[str] = []
@@ -401,6 +408,9 @@ class LiveMission:
             return None
         home = self.scn.home
         c = Constraints(home_ne=(float(home["north_m"]), float(home["east_m"])))
+        # Keep them: `ManualPilot` enforces the SAME object on a human pilot, so the constraints the plan
+        # was checked against and the ones the judge flies inside cannot drift apart.
+        self.constraints = c
         try:
             return check_plan(self.plan, c, transit_speed_ms=self.a.speed)
         except Exception as e:
@@ -558,6 +568,17 @@ class LiveMission:
         self._pending_latency = still
 
     def write_frame(self, fr: LiveFrame, res: Any) -> None:
+        # The OPERATOR view: the frame just taken with what the model found drawn on it. The map answers
+        # "where are the survivors"; this answers "what is the drone looking at now, and is the model seeing
+        # what I am seeing?" - which is the question asked first. It never raises into the flight loop.
+        from sightline.mission.liveview import write_live_view      # noqa: PLC0415
+
+        write_live_view(self.out, fr.rgb, getattr(res, "detections", ()) or (),
+                        frame_idx=fr.frame_idx, agl_m=float(fr.telemetry.agl_m),
+                        mode=str(fr.telemetry.mode), n_records=len(getattr(res, "records", ()) or ()),
+                        detect_ms=float(getattr(getattr(res, "latency", None), "detect_ms", 0.0) or 0.0),
+                        detector=self.detector)
+
         stem = f"{self.clip_id}_{fr.frame_idx:05d}"
         if fr.rgb is not None and not self.a.no_images:
             import cv2                                      # noqa: PLC0415
@@ -608,9 +629,32 @@ class LiveMission:
             print(f"\n  >>> MODE {tr}  [{', '.join(applied.get('did', [])) or 'no vehicle action'}] "
                   f"in {applied.get('ms', 0.0):.1f} ms\n", flush=True)
 
-        self.handle_demo_buttons(ctl)
-        self.fly_manual(ctl)
-        self.publish_control(ctl)
+        # A fault on the PILOT side must never take the aircraft down with it. Learned the hard way on the
+        # first live run: `--manual-speed`'s argparse default was a slots descriptor rather than a number,
+        # so the first stick movement raised `float * member_descriptor` inside `fly_manual`, the exception
+        # escaped the flight loop, the loop died, and Cosys-AirSim printed "API call was not received,
+        # entering hover mode for safety" while the aircraft drifted into a wall - 1212 collisions. The
+        # aircraft was fine; the software that was flying it had stopped existing.
+        #
+        # The mission is the thing that must survive. Each of these three is optional to the flight: a
+        # broken controller costs manual control, a broken HUD costs a dashboard. Neither costs the survey.
+        for what, fn in (("demo buttons", self.handle_demo_buttons), ("manual flight", self.fly_manual),
+                         ("hud", self.publish_control)):
+            try:
+                fn(ctl)
+            except Exception as e:
+                self._pilot_faults += 1
+                msg = f"{type(e).__name__}: {e}"
+                if msg not in self._pilot_fault_seen:
+                    self._pilot_fault_seen.add(msg)
+                    print(f"\n  !! {what} FAULT (the flight continues): {msg}\n", flush=True)
+                    self._control_events.append({"kind": "note", "text": f"{what} fault",
+                                                 "detail": msg[:160]})
+                if what == "manual flight" and self.takeover.manual:
+                    # Manual flight is the one that leaves the aircraft unattended: nothing is commanding
+                    # it while the machine says a human is. Put it back on the mission rather than let it
+                    # coast, and say so.
+                    self.takeover.force("AUTO", "manual flight fault", detail=msg[:120])
         return tr
 
     def _edge_press(self, name: str, down: bool) -> bool:
@@ -907,6 +951,21 @@ class LiveMission:
 
         a, home = self.a, self.scn.home
         c = self.client
+        # REPRODUCIBILITY. Without this, flight N+1 takes off from wherever flight N abandoned the
+        # aircraft - a different start pose gives a different ground track, a different set of frames and a
+        # different set of records, from the same button. `reset()` puts the vehicle back on its PlayerStart
+        # and disarms it; it does NOT touch the level, so the survivors stay exactly where the scene authored
+        # them. Opt-in, because a pilot-in-command demo may deliberately resume from where the aircraft is.
+        if getattr(a, "reset_world", False):
+            print("resetting the vehicle to its start pose (--reset-world)...")
+            try:
+                c.reset()
+                time.sleep(2.0)                   # the pawn respawns asynchronously; arming too early fails
+                c.confirmConnection()
+            except Exception as exc:              # noqa: BLE001
+                # A failed reset is worth saying out loud but is not worth losing the flight over: the
+                # aircraft is still on the pad in the common case.
+                print(f"  reset failed ({type(exc).__name__}: {exc}) - flying from the current pose")
         c.enableApiControl(True)
         c.armDisarm(True)
         print("\ntaking off...")
@@ -1153,6 +1212,18 @@ class LiveMission:
                         break
             else:
                 self.client = connect()
+                if a.quiet_sim:
+                    # The simulator window is the demo's other screen. By default Cosys-AirSim paints
+                    # "API call was not received", "Vehicle is already armed", the raw joystick axes, a
+                    # running collision count and the level's Lumen warning over the top of it - useful
+                    # while building, noise in front of an audience, and actively misleading when a stale
+                    # warning is the most legible thing on screen. The engine's own suppression is what the
+                    # message itself recommends ("'DisableAllScreenMessages' to suppress").
+                    try:
+                        self.client.simRunConsoleCommand("DisableAllScreenMessages")
+                        print("sim window: on-screen debug text suppressed (--no-quiet-sim keeps it)")
+                    except Exception as e:
+                        print(f"sim window: could not suppress screen messages ({type(e).__name__})")
                 self.names = self.client.simListInstanceSegmentationObjects()
                 self.cmap = self.client.simGetSegmentationColorMap()
                 grab(self.client)          # warm-up frame, discarded (first buffers are unconverted)
@@ -1168,7 +1239,7 @@ class LiveMission:
                         limits=ManualLimits(max_speed_ms=a.manual_speed, boost_speed_ms=a.boost_speed,
                                             min_agl_m=a.manual_min_agl, max_agl_m=a.manual_max_agl),
                         terrain=self.scn.terrain, home=self.scn.home,
-                        constraints=getattr(self, "constraints", None))
+                        constraints=self.constraints)
                 self.authority = VehicleAuthority(
                     self.client,
                     manual_mode=a.manual_mode,
@@ -1281,6 +1352,8 @@ class LiveMission:
                          "idle_handbacks": self.takeover.idle_handbacks,
                          "tilt_gate_deg": {"auto": self.a.max_tilt_deg, "manual": self.a.manual_tilt_deg},
                          "free_flight_ended_in": self.free_flight,
+                         "pilot_faults": self._pilot_faults,
+                         "pilot_fault_kinds": sorted(self._pilot_fault_seen),
                          "pilot_marks": list(self.marks)},
             "c2": self.c2.stats() if self.c2 is not None else None,
             "map_probe": ({"messages": self.probe.messages, "record_frames": self.probe.records_seen}
@@ -1461,6 +1534,9 @@ def build_parser() -> argparse.ArgumentParser:
                    help="how long before the flight the incident began. The survival curves of SS2.5 run on "
                         "time since the INCIDENT, so 0 means every survivor is scored as freshly stranded.")
     p.add_argument("--water-temp-c", type=float, default=None)
+    p.add_argument("--reset-world", action="store_true",
+                   help="reset the vehicle to its start pose before taking off, so repeated runs of the "
+                        "same scenario fly the same ground track. Does not touch the level's actors.")
     p.add_argument("--noise-seed", type=int, default=None,
                    help="inject the §5.7 telemetry noise model with this seed (default: none, and every "
                         "output says so)")
@@ -1498,11 +1574,12 @@ def build_parser() -> argparse.ArgumentParser:
                    help="velocity: the pad flies the aircraft through the API, so centred sticks hold "
                         "station and simple_flight's disarm gesture is unreachable (safe to hand a judge). "
                         "rc: the literal §5.2 handover - enableApiControl(False) and raw RC channels.")
-    g.add_argument("--manual-speed", type=float, default=ManualLimits.max_speed_ms)
-    g.add_argument("--boost-speed", type=float, default=ManualLimits.boost_speed_ms)
-    g.add_argument("--manual-min-agl", type=float, default=ManualLimits.min_agl_m,
+    _lim = ManualLimits()      # an INSTANCE: on a slots dataclass the class attribute is the descriptor
+    g.add_argument("--manual-speed", type=float, default=_lim.max_speed_ms)
+    g.add_argument("--boost-speed", type=float, default=_lim.boost_speed_ms)
+    g.add_argument("--manual-min-agl", type=float, default=_lim.min_agl_m,
                    help="the floor a pilot cannot fly below, measured against the terrain beneath them")
-    g.add_argument("--manual-max-agl", type=float, default=ManualLimits.max_agl_m)
+    g.add_argument("--manual-max-agl", type=float, default=_lim.max_agl_m)
     g.add_argument("--manual-tilt-deg", type=float, default=35.0,
                    help="shutter tilt gate while a HUMAN is flying. Much looser than --max-tilt-deg "
                         "because the camera is gimbal-stabilised and a person banks past 8 deg constantly; "
@@ -1516,6 +1593,11 @@ def build_parser() -> argparse.ArgumentParser:
     g.add_argument("--require-verified-pad", action="store_true",
                    help="refuse to fly a controller whose buttons nobody has ever pressed. The demo "
                         "runner sets this; see tools/live/pad_calibrate.py")
+    g.add_argument("--quiet-sim", action="store_true", default=True,
+                   help="suppress the simulator window's on-screen debug text (AirSim's status lines, the "
+                        "joystick axes, the collision counter and the engine's own warnings). On by "
+                        "default: the sim window is the demo's other screen.")
+    g.add_argument("--no-quiet-sim", dest="quiet_sim", action="store_false")
     g.add_argument("--pose-hz-s", type=float, default=0.10,
                    help="minimum seconds between drone-position pushes to the map. Decoupled from the "
                         "shutter, so the aircraft keeps moving on screen even when no frame is captured.")

@@ -1,0 +1,221 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>SightLine — Demo control</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<!--
+  The demo console. A judge starts a run, watches it, and stops it - without a terminal.
+
+  It is a SEPARATE PAGE from the map on purpose. The map is an operator's instrument and should show the
+  mission, not the machinery that launched it; mixing "start a process" controls into it would put a
+  destructive button next to a live reading. This page is the machinery, the map is the mission, and the
+  only thing they share is the backend.
+
+  Nothing here is styled differently from the map: same tokens, same type, same spacing scale.
+-->
+<style>
+  @import url("vendor/fonts.css");
+  :root{
+    --bg:#ffffff; --surface:#fafafa; --surface-2:#f4f4f5; --line:#e4e4e7; --line-strong:#d4d4d8;
+    --ink:#09090b; --ink-2:#3f3f46; --dim:#71717a; --dim-2:#a1a1aa;
+    --human:#dc2626; --ok:#15803d; --warn:#b45309;
+    --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px;
+    --r:6px; --r-sm:4px;
+    --font:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+    --font-2:'Poppins',system-ui,sans-serif;
+    --mono:ui-monospace,'Cascadia Mono',Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font:400 14px/1.5 var(--font);
+            -webkit-font-smoothing:antialiased}
+  a{color:inherit}
+
+  .wrap{max-width:980px;margin:0 auto;padding:var(--s7) var(--s5) var(--s7)}
+
+  /* ---- masthead ------------------------------------------------------------------------------- */
+  .top{display:flex;align-items:flex-start;gap:var(--s5);margin-bottom:var(--s7)}
+  h1{margin:0;font:700 30px/1.15 var(--font);letter-spacing:-.025em}
+  h1 .mark{color:var(--human)}
+  .lede{margin:var(--s2) 0 0;font:400 14px/1.6 var(--font-2);color:var(--dim);max-width:52ch}
+  .top nav{margin-left:auto;display:flex;gap:var(--s2);flex:none}
+  .lnk{font:500 13px/1 var(--font);color:var(--ink-2);text-decoration:none;padding:var(--s2) var(--s3);
+       border:1px solid var(--line-strong);border-radius:var(--r-sm)}
+  .lnk:hover{background:var(--surface-2)}
+
+  /* ---- running banner ------------------------------------------------------------------------- */
+  .bar{border:1px solid var(--line-strong);border-radius:var(--r);padding:var(--s4) var(--s5);
+       display:flex;align-items:center;gap:var(--s4);margin-bottom:var(--s6);background:var(--surface)}
+  .bar.live{border-color:#bbf7d0;background:#f0fdf4}
+  .bar .dot{width:8px;height:8px;border-radius:50%;background:var(--dim-2);flex:none}
+  .bar.live .dot{background:var(--ok);animation:pulse 1.6s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .bar .what{font:600 14px/1.4 var(--font)}
+  .bar .meta{font:400 12.5px/1.4 var(--font-2);color:var(--dim)}
+  .bar .grow{flex:1}
+
+  button{font:600 13px/1 var(--font);border-radius:var(--r-sm);cursor:pointer;padding:var(--s3) var(--s4);
+         border:1px solid var(--line-strong);background:var(--bg);color:var(--ink);min-height:38px;
+         transition:background .12s ease,border-color .12s ease}
+  button:hover:not(:disabled){background:var(--surface-2);border-color:var(--dim-2)}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+  button.stop{border-color:#fecaca;background:#fef2f2;color:var(--human)}
+  button.stop:hover:not(:disabled){background:#fee2e2;border-color:#fca5a5}
+  button.go{background:var(--ink);border-color:var(--ink);color:#fff}
+  button.go:hover:not(:disabled){background:#27272a;border-color:#27272a}
+
+  /* ---- demo groups ---------------------------------------------------------------------------- */
+  h2{margin:var(--s7) 0 var(--s4);font:600 12px/1.4 var(--font);text-transform:uppercase;
+     letter-spacing:.09em;color:var(--dim)}
+  h2:first-of-type{margin-top:0}
+  .row{display:flex;align-items:flex-start;gap:var(--s5);padding:var(--s5) 0;
+       border-bottom:1px solid var(--line)}
+  .row:first-of-type{border-top:1px solid var(--line)}
+  .row h3{margin:0 0 var(--s1);font:600 16px/1.35 var(--font);letter-spacing:-.01em}
+  .row p{margin:0;font:400 13px/1.65 var(--font-2);color:var(--dim);max-width:62ch}
+  .row .act{margin-left:auto;flex:none;display:flex;gap:var(--s2);align-items:center}
+  .need{font:500 11px/1.6 var(--font);color:var(--warn);background:#fffbeb;border:1px solid #fde68a;
+        border-radius:999px;padding:1px 9px;white-space:nowrap}
+
+  /* ---- live output ----------------------------------------------------------------------------- */
+  .out{margin-top:var(--s7)}
+  pre{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+      padding:var(--s4);font:11.5px/1.65 var(--mono);color:var(--ink-2);max-height:320px;overflow:auto;
+      white-space:pre-wrap;word-break:break-word}
+  .empty{color:var(--dim-2)}
+  .err{color:var(--human);font:400 12.5px/1.5 var(--font-2);margin-top:var(--s3);min-height:18px}
+
+  @media (max-width:720px){
+    .wrap{padding:var(--s5) var(--s4)}
+    h1{font-size:24px}
+    .top{flex-direction:column;gap:var(--s3)}
+    .top nav{margin-left:0}
+    .row{flex-direction:column;gap:var(--s3)}
+    .row .act{margin-left:0;width:100%}
+    .row .act button{flex:1}
+  }
+  @media (prefers-reduced-motion:reduce){ *{animation:none!important;transition:none!important} }
+</style>
+
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1><span class="mark">Sight</span>Line</h1>
+      <p class="lede">Start a demonstration, watch it run, and stop everything from one place.
+         Each one is a different detection problem, not a different label.</p>
+    </div>
+    <nav>
+      <a class="lnk" href="index.html">Open the map &rarr;</a>
+    </nav>
+  </div>
+
+  <div class="bar" id="bar">
+    <span class="dot"></span>
+    <div class="grow">
+      <div class="what" id="what">Nothing running</div>
+      <div class="meta" id="meta">Pick a demonstration below. One runs at a time.</div>
+    </div>
+    <button class="stop" id="stop" disabled>Stop everything</button>
+  </div>
+
+  <div id="groups"></div>
+  <div class="err" id="err"></div>
+
+  <div class="out">
+    <h2>Output</h2>
+    <pre id="log" class="empty">Nothing has run yet.</pre>
+  </div>
+</div>
+
+<script type="module">
+const $ = (id) => document.getElementById(id);
+let catalog = [];
+let busy = false;
+
+function render() {
+  const byGroup = new Map();
+  for (const d of catalog) {
+    if (!byGroup.has(d.group)) byGroup.set(d.group, []);
+    byGroup.get(d.group).push(d);
+  }
+  $("groups").innerHTML = [...byGroup].map(([group, items]) => `
+    <h2>${group}</h2>
+    ${items.map((d) => `
+      <div class="row">
+        <div>
+          <h3>${d.title}</h3>
+          <p>${d.sub}</p>
+        </div>
+        <div class="act">
+          ${d.needs_pad ? '<span class="need">needs a gamepad</span>' : ""}
+          <button class="go" data-id="${d.id}">Start</button>
+        </div>
+      </div>`).join("")}
+  `).join("");
+  for (const b of document.querySelectorAll("button[data-id]")) {
+    b.addEventListener("click", () => start(b.dataset.id));
+  }
+}
+
+async function start(id) {
+  $("err").textContent = "";
+  try {
+    const r = await fetch("/api/demo/start", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    if (!r.ok) {
+      const j = await r.json().catch(() => ({}));
+      $("err").textContent = j.detail || `could not start ${id}`;
+      return;
+    }
+    poll();
+  } catch (e) { $("err").textContent = String(e); }
+}
+
+async function stop() {
+  $("err").textContent = "";
+  $("stop").disabled = true;
+  $("stop").textContent = "Stopping…";
+  try {
+    const r = await fetch("/api/demo/stop", { method: "POST" });
+    const j = await r.json().catch(() => ({}));
+    if (j.killed !== undefined) $("err").textContent = `Stopped. ${j.killed} process tree(s) terminated.`;
+  } catch (e) { $("err").textContent = String(e); }
+  $("stop").textContent = "Stop everything";
+  poll();
+}
+$("stop").addEventListener("click", stop);
+
+function fmt(s) {
+  const m = Math.floor(s / 60), r = Math.round(s % 60);
+  return m ? `${m}m ${String(r).padStart(2, "0")}s` : `${r}s`;
+}
+
+async function poll() {
+  try {
+    const s = await (await fetch("/api/demo/status", { cache: "no-store" })).json();
+    busy = !!s.running;
+    $("bar").classList.toggle("live", busy);
+    $("what").textContent = busy ? s.title : "Nothing running";
+    $("meta").textContent = busy
+      ? `Running for ${fmt(s.seconds)} · watch it on the map`
+      : (s.last_id ? `Last run: ${s.last_id}${s.exit_code !== null ? ` (exit ${s.exit_code})` : ""}`
+                   : "Pick a demonstration below. One runs at a time.");
+    $("stop").disabled = !busy;
+    for (const b of document.querySelectorAll("button[data-id]")) b.disabled = busy;
+    const log = (s.log || []).join("\n");
+    $("log").textContent = log || "Nothing has run yet.";
+    $("log").classList.toggle("empty", !log);
+    if (log) $("log").scrollTop = $("log").scrollHeight;
+  } catch { /* the server may be restarting; the next tick will pick it up */ }
+}
+
+(async () => {
+  try {
+    catalog = (await (await fetch("/api/demo/catalog")).json()).demos || [];
+  } catch { $("err").textContent = "could not load the demo catalog"; }
+  render();
+  poll();
+  setInterval(poll, 1500);
+})();
+</script>

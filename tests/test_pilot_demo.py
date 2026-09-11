@@ -233,6 +233,32 @@ def test_the_floor_bleeds_off_instead_of_hitting_a_wall():
     assert 0.0 < vz < 4.0, f"expected a reduced descent halfway into the margin, got {vz}"
 
 
+def test_the_bleed_off_is_reported_rather_than_silent():
+    """Found by flying it: the envelope limited a real descent and `reasons` came back empty.
+
+    Measured on the live simulator 2026-09-11 - floor 1 m under the aircraft, full-down stick, descent
+    correctly reduced, HUD told nothing. A pilot who is being overridden without being told concludes the
+    controller is broken, which is the one thing `EnvelopeClamp` is for.
+    """
+    p, _ = _pilot(limits=ManualLimits(min_agl_m=10.0, max_climb_ms=4.0, smooth_tau_s=0.0))
+    out = p.command(ControlInput(t=0.0, valid=True, throttle=0.0),
+                    east_m=0, north_m=0, alt_asl_m=11.0, dt=0.1)      # 1 m above the floor, inside the margin
+    assert out["clamp"]["any"] is True and out["clamp"]["floor"] is True
+    assert any("floor" in r for r in out["clamp"]["reasons"]), out["clamp"]
+
+    # ...and well clear of the limit it must stay quiet, or the warning means nothing.
+    quiet = p.command(ControlInput(t=0.1, valid=True, throttle=0.0),
+                      east_m=0, north_m=0, alt_asl_m=60.0, dt=0.1)
+    assert quiet["clamp"]["any"] is False, quiet["clamp"]
+
+
+def test_the_ceiling_bleed_off_is_reported_too():
+    p, _ = _pilot(limits=ManualLimits(max_agl_m=120.0, max_climb_ms=4.0, smooth_tau_s=0.0))
+    out = p.command(ControlInput(t=0.0, valid=True, throttle=1.0),
+                    east_m=0, north_m=0, alt_asl_m=118.0, dt=0.1)
+    assert out["clamp"]["ceiling"] is True and any("ceiling" in r for r in out["clamp"]["reasons"])
+
+
 def test_the_ceiling_is_enforced_on_a_human_too():
     p, c = _pilot(limits=ManualLimits(max_agl_m=120.0, max_climb_ms=4.0, smooth_tau_s=0.0))
     out = p.command(ControlInput(t=0.0, valid=True, throttle=1.0),

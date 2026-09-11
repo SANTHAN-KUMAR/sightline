@@ -50,6 +50,16 @@ from sightline.mission import live as livemod  # noqa: E402
 from sightline.mission.padmap import load_pad_map  # noqa: E402
 from sightline.mission.takeover import ControlInput, ControlSource  # noqa: E402
 
+# The scenario table belongs to the autonomous runner (`tools/live/demo.py`) and is IMPORTED, never copied.
+# A judge demo that quietly used a different 45 m from the acceptance slice would make the two demos
+# non-comparable while looking identical, and CLAUDE.md is explicit that a second implementation is the
+# thing to avoid. If that module cannot be imported the controller demo still runs on its own defaults and
+# says so, rather than failing because a sibling tool moved.
+try:
+    from tools.live.demo import SCENARIOS                          # noqa: E402
+except Exception:                                                  # pragma: no cover - sibling tool absent
+    SCENARIOS = {}
+
 
 class ScriptedJudge(ControlSource):
     """A judge on a timetable, keyed to the frame index the mission has reached.
@@ -191,8 +201,12 @@ def main(argv: list[str] | None = None) -> int:
                     help="the recorded run --scripted drives the live loop from")
     ap.add_argument("--out", default="")
     ap.add_argument("--c2", default="http://127.0.0.1:8781")
-    ap.add_argument("--alt", type=float, default=45.0)
-    ap.add_argument("--speed", type=float, default=12.0)
+    ap.add_argument("--scenario", choices=sorted(SCENARIOS) or None, default="",
+                    help="fly the judge demo at one of the autonomous runner's scenarios "
+                         "(tools/live/demo.py), so the two demos are describing the same flight. "
+                         "--alt / --speed override whatever it sets.")
+    ap.add_argument("--alt", type=float, default=0.0, help="metres AGL; 0 = the scenario's own altitude")
+    ap.add_argument("--speed", type=float, default=0.0, help="m/s; 0 = the scenario's own speed")
     ap.add_argument("--free", action="store_true", help="start in FREE FLIGHT (demo mode 2)")
     ap.add_argument("--idle-resume-s", type=float, default=12.0)
     ap.add_argument("--manual-mode", choices=("velocity", "rc"), default="velocity")
@@ -207,15 +221,28 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--images", action="store_true", help="write frames to disk (slower)")
     a = ap.parse_args(argv)
 
+    # Resolve the scenario first, so preflight can print the flight the judge is about to be handed.
+    sc = SCENARIOS.get(a.scenario) if a.scenario else None
+    alt = a.alt or (sc["alt"] if sc else 45.0)
+    speed = a.speed or (sc["speed"] if sc else 7.0)
+    shutter = (sc or {}).get("shutter", 0.0)
+
     rc = preflight(a)
     if rc:
         return rc
+    if sc is not None:
+        print(f"  scenario    : {a.scenario} - {alt:.0f} m AGL, {speed:.0f} m/s, shutter {shutter:.0f} m")
+        print(f"                {sc['why']}")
+    else:
+        print(f"  scenario    : none named - {alt:.0f} m AGL, {speed:.0f} m/s")
 
     out = a.out or f"_artifacts/live/demo_{time.strftime('%Y%m%d-%H%M%S')}"
-    argv2 = ["--out", out, "--c2", a.c2, "--alt", str(a.alt), "--speed", str(a.speed),
+    argv2 = ["--out", out, "--c2", a.c2, "--alt", str(alt), "--speed", str(speed),
              "--detector", a.detector, "--idle-resume-s", str(a.idle_resume_s),
              "--manual-mode", a.manual_mode, "--max-minutes", str(a.max_minutes),
              "--shoot-transit", "--log-every", "40"]
+    if shutter:
+        argv2 += ["--shutter-m", str(shutter)]
     if a.weights:
         argv2 += ["--weights", a.weights]
     if a.free:
