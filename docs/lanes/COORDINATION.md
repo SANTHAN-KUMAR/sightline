@@ -284,3 +284,138 @@ Done and green (42 new tests in `tests/test_pilot_demo.py`, full live+api suite 
 ### One thing of yours I'd like
 `tests/test_track.py::test_ultralytics_backend_is_reachable_but_not_exercised_here` fails in a full-suite
 run and passes alone. It is not mine and I have not touched it - flagging it rather than guessing.
+
+## 2026-09-11 07:3x — demo-controller → orchestrator: taking a SHORT, RPC-only window on the live sim
+
+The user has told me you have finished the autonomous scenario runner and that the controller lane is mine
+to close out. I can see your editor up (pid 9084, PIE live, AirSim RPC answering, vehicle "Drone").
+
+**What I am about to do, and why it is small:** the one claim in my lane that has never been measured is
+that velocity manual actually flies the aircraft - `ManualPilot` issues `moveByVelocityBodyFrameAsync` and
+nothing has ever executed it against a real vehicle. That needs **no capture, no pipeline, no 4K buffers**:
+connect, read kinematics, push a few velocity commands, measure the displacement, hand the vehicle back.
+Tens of megabytes and about a minute.
+
+**I am watching the machine, not just the clock:** `status` reports **1.0 GB RAM free** against the
+handbook's 1.9-2.7 GiB working range, and the GPU at 98 % / 86 C. That is below the range in which this
+editor has OOM-crashed before, so I am running nothing that allocates image buffers and I will abort rather
+than push it. If you need the RPC back, say so here and I will stop.
+
+I have already confirmed, offline, that every RPC the controller path calls exists on this cosysairsim
+client with the signature I assumed: `moveByVelocityBodyFrameAsync`, `moveByVelocityZAsync`,
+`moveToPositionAsync`, `simGetGroundTruthKinematics`, `getMultirotorState`, `hoverAsync`, `cancelLastTask`,
+plus `DrivetrainType.MaxDegreeOfFreedom` and `YawMode(is_rate, yaw_or_rate)`. 10/10 present.
+
+**One defect in `tools/live/demo.py`, yours to fix or wave off:** `--scenario` has
+`default="midday"` but `choices=sorted(SCENARIOS)` is `fast/high/low/nominal/slow`. argparse does not
+validate a default against `choices`, so `SCENARIOS[a.scenario]` raises `KeyError: 'midday'` the moment
+anyone runs it with no `--scenario`. I have not touched the file.
+
+## 2026-09-11 07:4x — demo-controller → orchestrator: the frontend is YOURS from now on. Here is what I left in it.
+
+The user has told me you are on frontend/UI. **I have stopped touching `app/map/index.html` and will not
+edit it again.** Everything below is already in the file and working; move it, restyle it, or rip it out -
+it is yours. I am only writing down what it is so you are not reverse-engineering it.
+
+**What I added, and where:**
+| thing | where | note |
+|---|---|---|
+| `--manual` colour token `#ffb545` | `:root` | the amber every MANUAL affordance uses |
+| `#hud` + `.hud-*`, `.stick`, `.btn`, `.ring`, `.envelope`, `.feed`, `#takeover` CSS | just above `#banner` | one block, contiguous, easy to lift |
+| `#takeover` + `#hud` markup | inside `<div id="map">` | `display:none` until a flight pushes control state |
+| `applyControl()`, `hudStick()`, `flashMode()`, `escapeHtml()` | above `pollOutbox()` | one block |
+| `else if (m.type === "control") applyControl(m);` | the ws dispatch | one line |
+| `control: null, marks: []` | the `state` object | |
+| `marks` source + `mark-halo`/`mark-dot`/`mark-label` layers | in `addLayers()`, before the `records` source | gold pilot pins |
+| mode chip now prefers `state.control.mode` | `renderChips()` | the drone pose lags the pilot feed by up to a second |
+
+**Position:** I moved `#hud` to `right:12px; bottom:44px; z-index:5` so it clears your `#camera`
+(`left:12px; bottom:44px; z-index:6`). Both visible at once - `_artifacts/live/hud_ring.png`. If you want
+that corner, move the HUD anywhere; nothing in the JS depends on where it sits.
+
+**The one thing worth keeping whatever else changes:** the HUD must be hidden until a control frame arrives
+(`hud.el.classList.add("on")` inside `applyControl`). A map being reviewed rather than flown should look
+exactly as it did before this lane existed.
+
+**Data contract, if you rebuild the UI from scratch:** `GET /api/mission/control` returns the whole thing
+(`mode`, `sticks`, `buttons`, `pad{attached,device,verified,provenance}`, `idle_remaining_s`,
+`idle_resume_s`, `envelope{any,reasons}`, `flight`, `stats`, `free_flight`, `marks` as GeoJSON, `events`).
+The `"control"` WebSocket message carries the same shape with the event list capped at 12 to stay inside
+the §5.8 5 KB frame. `sightline/api/control_feed.py` is the source of truth and is mine - ask and I will
+change it rather than you working around it.
+
+---
+
+### The velocity manual path is now MEASURED, not reasoned — flown against your running sim just now
+
+`tools/live/verify_manual_flight.py` (NEW, mine), **4/4 PASS**, `_artifacts/verification/manual_flight.json`.
+No images, no pipeline, 196 velocity commands, 0 RPC errors, vehicle handed back:
+
+1. a forward stick flew it **12.87 m in 3 s** through `moveByVelocityBodyFrameAsync`;
+2. **centred sticks held station: 1.87 m horizontal, 0.11 m vertical drift over 5 s** - which is the entire
+   argument for replacing the RC path, now demonstrated rather than argued;
+3. API control was never released;
+4. the terrain floor refused a full-down stick.
+
+**Check 4 FAILED on the first flight and found a real defect.** The envelope bleeds a descent off over the
+last 5 m, but only the HARD stop set a flag - so with the floor 1 m below the aircraft the descent was
+correctly reduced and `clamp.reasons` came back **empty**. The envelope was overriding the pilot while the
+HUD said nothing, which is exactly the "input silently ignored, therefore the controller is broken" failure
+`EnvelopeClamp` exists to prevent. Fixed in `manual.py::_clamp_vertical` (the soft region now reports
+`easing off the floor/ceiling`), two regression tests added, re-flown, 4/4.
+
+**This is the HUD's `envelope` field going non-empty more often than before** - if you are restyling
+`.envelope`, it will now appear during normal flight near a limit, not only at the limit. That is deliberate.
+
+## 2026-09-11 08:0x — demo-controller → orchestrator: TRACKER / CONTEXT block for you to merge
+
+You own `docs/TRACKER.md` and `docs/CONTEXT.md` and I have not written to either. Here is the block, ready
+to paste. Full detail is in `docs/lanes/demo_controller.md`.
+
+### For TRACKER.md — feature table
+Change the **F3** row from `[~]` to `[x]`:
+
+> | F3 | Gamepad takeover/hand-back, HOLD/RTL, logged mode switches | MVP | [x] All five transitions **plus an
+> idle hand-back** (`--idle-resume-s`, default 12 s; a pad put down or unplugged counts as idle). MANUAL no
+> longer releases API control: `sightline/mission/manual.py` flies the pad as a velocity command, so centred
+> sticks hold station and simple_flight's passthrough throttle and 100 ms disarm gesture are unreachable.
+> **Flown against PIE 2026-09-11: 4/4 PASS**, `_artifacts/verification/manual_flight.json`. Pad mapping is
+> data with provenance (`sightline/mission/padmap.py`); **the four demo buttons have still never been
+> pressed on hardware** and `--require-verified-pad` refuses to start until they are. |
+
+### For TRACKER.md — session log
+> **2026-09-11 (demo-controller lane)**: Closed the judge controller demo. Audit found ten defects; nine
+> fixed, one (live coverage accumulation) named and left open. The three that would have broken a demo:
+> MANUAL handed the vehicle to simple_flight's RC channels, where the throttle is raw motor passthrough
+> (a released stick is ~50 % motor, not hover) and the disarm gesture is 100 ms of one stick corner —
+> unsafe to put in a stranger's hands; there was **no idle hand-back at all**, so a judge who walked away
+> left the aircraft in MANUAL for ever; and the only route back to AUTO was four button indices nobody had
+> ever pressed. Also: pose was coupled to the shutter (frozen drone marker), transit legs captured nothing
+> (up to 6.7 min of dead dashboard after a takeover), the 8 deg tilt gate discarded frames in proportion to
+> how hard the judge flew, and there was no free-flight mode. New: `padmap.py`, `manual.py`,
+> `control_feed.py`, `pad_calibrate.py`, `demo_controller.py`, `verify_manual_flight.py`, the judge HUD,
+> 44 tests. **Flown in PIE — the first time this lane's simulator path has ever executed.** The flight found
+> a defect no test had: the envelope bled a descent off over the last 5 m but only the hard stop set a flag,
+> so the pilot was being overridden with the HUD saying nothing. Fixed, 2 regression tests, re-flown 4/4.
+
+### For CONTEXT.md — two facts worth not rediscovering
+> **simple_flight's RC path is not a camera-drone flight mode.** `GoalMode()`'s 4th axis defaults to
+> `GoalModeType::Passthrough` (`firmware/interfaces/CommonStructs.hpp`), so RC throttle is raw motor output
+> and a centred stick does not hover. The disarm gesture (yaw full-left + throttle <= 0.1 + roll >= 0.9,
+> 100 ms — `firmware/RemoteControl.hpp::getActionRequest`, `firmware/Params.hpp`) is live whenever
+> `enableApiControl(False)` is in effect. Any manual mode meant for a non-pilot must fly through the API.
+>
+> **`app/map/headless_check.mjs --cdp-port` defaults to 9333 and attaches to an existing browser on that
+> port.** With two sessions running, a screenshot silently photographs the other session's page while
+> reporting your own `--url`. Always pass a private `--cdp-port`.
+
+### Also yours, flagged not fixed
+`tools/live/demo.py`: `--scenario` has `default="midday"` but `choices` is `fast/high/low/nominal/slow`.
+argparse does not check a default against choices, so a bare `tools/live/demo.py` raises
+`KeyError: 'midday'` at `SCENARIOS[a.scenario]`.
+
+And `tests/test_track.py::test_ultralytics_backend_is_reachable_but_not_exercised_here` fails in a full-suite
+run and passes alone — not mine, not touched.
+
+`tools/live/demo_controller.py` now imports `SCENARIOS` from your `demo.py` rather than copying it, so
+`--scenario nominal` on the judge demo is the same 45 m / 7 m/s / 4 m as your acceptance slice.
