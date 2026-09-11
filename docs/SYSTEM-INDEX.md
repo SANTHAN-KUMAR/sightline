@@ -180,7 +180,7 @@ GeoJSON, which is `[lon, lat, alt]` by RFC 7946.
 | ground truth | survivor positions match the sim to **0.00 m** |
 | flight | SimpleFlight, gamepad takeover with a logged four-mode state machine (AUTO / MANUAL / HOLD / RTL) |
 
-![Scene preview](images/scene-preview.jpg)
+*Scene preview figure intentionally omitted in this PR scope.*
 
 **Memory is the binding constraint, not VRAM.** The editor dies of the Windows commit limit at
 a few thousand actors, so every generator carries a `MAX_ACTORS = 400` tripwire and a memory
@@ -356,7 +356,7 @@ GNSS common-mode — and every one **cancels** when you ask "did this box move?"
 | held-out result | **mAP@0.5 0.807** | **recall 0.821** on people, mAP50 0.783 |
 | domain sentence carried in `provenance.json` | simulated valley | **"maritime rescue exercise — NOT flood/debris"** |
 
-![Fine-tune PR curve](images/finetune-pr.png)
+*Fine-tune PR figure intentionally omitted in this PR scope.*
 
 **The domain gap is measured, not assumed:** the real-footage model scores **0.821 on maritime
 swimmers** and **0.028 on rendered flood debris** — one of thirty-six, with four false

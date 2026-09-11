@@ -49,7 +49,7 @@ and an honest map of where nobody has looked well enough yet.
 
 ## The two products
 
-![The SightLine command map](docs/images/c2-map.png)
+*Figure intentionally omitted in this PR (docs-only scope: README + SYSTEM-INDEX text updates).*
 
 **1 · The triage list.** One record per living being, ranked — with the four terms that made
 the ranking shown *separately and never collapsed into one opaque number*, plus the position
@@ -67,7 +67,7 @@ They only work together. That is the whole argument.
 A person is **not one detection problem.** How they present to a nadir camera changes the
 critical dimension by almost **ten times** — the same camera, the same frame:
 
-![Presentation ladder](docs/images/presentation-ladder.jpg)
+*Presentation ladder figure intentionally omitted in this PR scope.*
 
 *Rows are presentation classes, columns are altitude. The bottom row is `buried` — and it is
 empty at every altitude, because it must be.*
@@ -96,7 +96,7 @@ value and no code path that can raise it.
 The simulation is not a training aid — it is **the test bench**, and the renderer is the
 deployment domain.
 
-![The flood valley in Unreal Engine 5.8](docs/images/sim-unreal.png)
+*Flood-valley simulation figure intentionally omitted in this PR scope.*
 
 *Unreal Engine 5.8, the flood valley under scripted weather. The three insets are the capture
 stack the drone actually writes: RGB, instance segmentation (labels only), and LWIR.*
@@ -212,7 +212,7 @@ Every frame from either source runs through the same object. Nothing bypasses it
 
 ### What "detections → records" means
 
-<img src="docs/images/detection-nadir.png" width="320" align="right" alt="Nadir detection">
+*Nadir detection figure intentionally omitted in this PR scope.*
 
 The suppression funnel is the entire argument for tracking and dedup existing:
 
@@ -269,7 +269,7 @@ which is the failure mode to fear at batch 4.
 
 ### The production run
 
-![Fine-tuning curves](docs/images/finetune-curves.png)
+*Fine-tuning curves figure intentionally omitted in this PR scope.*
 
 *The real trace. The epoch-3 dip is visible in every panel; the peak is epoch 12.*
 
@@ -344,7 +344,7 @@ automatically:
 
 > **Domain: maritime rescue exercise — NOT flood/debris.**
 
-![Real vs procedural](docs/images/real-vs-procedural.jpg)
+*Real-vs-procedural figure intentionally omitted in this PR scope.*
 
 *Left: real photographs. Right: our procedural actors. Every number measured on the right
 carries the label `PROCEDURAL` and the sentence "not photography; do not report detector
@@ -439,7 +439,7 @@ judgement from a 98 px crop of a rendered silhouette is close to guessing, and t
 
 ## The thermal band, and why it is carried this way
 
-![RGB and thermal pair](docs/images/rgb-thermal-pair.jpg)
+*RGB/LWIR pair figure intentionally omitted in this PR scope.*
 
 Fusion is **late and box-level** — Weighted Boxes Fusion with the ProbEn score rule — because
 the property being protected is **the fallback**:
