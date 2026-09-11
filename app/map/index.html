@@ -117,6 +117,54 @@
   .tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
   .tabs button:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:var(--r-sm)}
   .pane{flex:1;overflow:auto;padding:var(--s4) var(--s5) var(--s5)}
+
+  /* ---- the RUN pane: mission control, live metrics, and the demo launcher ----------------------
+     This is the half of the console that was a separate page. It lives here because an operator
+     should not have to change page to answer "is it flying, what is it seeing, and how fast".
+     Metrics first, controls second: the readout is what you watch, the buttons are what you press
+     once. */
+  .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);
+           border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:var(--s5)}
+  .metric{background:var(--bg);padding:var(--s3) var(--s3) calc(var(--s3) - 2px)}
+  .metric .k{display:block;font:500 9.5px/1.5 var(--font);letter-spacing:.07em;text-transform:uppercase;
+             color:var(--dim-2)}
+  .metric .v{display:block;font:600 15px/1.35 var(--mono);color:var(--ink);letter-spacing:-.02em;
+             white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .metric .v.off{color:var(--dim-2);font-weight:400}
+  .metric.wide{grid-column:span 3}
+  .metric.half{grid-column:span 3}
+
+  .sec{font:600 10.5px/1.4 var(--font);text-transform:uppercase;letter-spacing:.09em;color:var(--dim);
+       margin:var(--s5) 0 var(--s3)}
+  .sec:first-child{margin-top:0}
+
+  .pf{list-style:none;margin:0 0 var(--s4);padding:0;font:400 12px/1.6 var(--font-2)}
+  .pf li{display:flex;gap:var(--s2);align-items:flex-start;padding:2px 0;color:var(--dim)}
+  .pf .s{flex:none;width:13px;font:700 12px/1.6 var(--mono)}
+  .pf .ok .s{color:var(--ok)} .pf .no .s{color:var(--human)}
+  .pf .no{color:var(--ink-2)}
+  .pf b{font-weight:600;color:var(--ink-2)}
+
+  .demo{display:flex;gap:var(--s3);align-items:flex-start;padding:var(--s3) 0;
+        border-bottom:1px solid var(--line)}
+  .demo:last-of-type{border-bottom:0}
+  .demo .t{font:600 13px/1.4 var(--font);letter-spacing:-.01em}
+  .demo .d{font:400 11.5px/1.55 var(--font-2);color:var(--dim);margin-top:1px}
+  .demo .go{margin-left:auto;flex:none}
+  .runbtn{font:600 12px/1 var(--font);border:1px solid var(--line-strong);background:var(--bg);
+          color:var(--ink);border-radius:var(--r-sm);padding:7px 12px;cursor:pointer;min-height:32px;
+          transition:background .12s ease,border-color .12s ease}
+  .runbtn:hover:not(:disabled){background:var(--surface-2);border-color:var(--dim-2)}
+  .runbtn:disabled{opacity:.38;cursor:not-allowed}
+  .runbtn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+  .runbtn.stop{border-color:#fecaca;background:#fef2f2;color:var(--human);width:100%}
+  .runbtn.stop:hover:not(:disabled){background:#fee2e2;border-color:#fca5a5}
+  .runmsg{font:400 11.5px/1.55 var(--font-2);color:var(--human);margin-top:var(--s3);
+          white-space:pre-wrap}
+  .runlog{margin:var(--s3) 0 0;background:var(--surface);border:1px solid var(--line);
+          border-radius:var(--r);padding:var(--s3);font:10.5px/1.6 var(--mono);color:var(--ink-2);
+          max-height:190px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+
   .pane[hidden]{display:none}
 
   /* ---- record list ----------------------------------------------------------------------------
@@ -453,9 +501,21 @@
     <div class="tabs" role="tablist">
       <button id="tab-recs" role="tab" aria-selected="true">Records</button>
       <button id="tab-layers" role="tab" aria-selected="false">Layers</button>
+      <button id="tab-run" role="tab" aria-selected="false">Run</button>
     </div>
     <div class="pane" id="pane-recs"></div>
     <div class="pane" id="pane-layers" hidden></div>
+    <div class="pane" id="pane-run" hidden>
+      <div class="sec">Live</div>
+      <div class="metrics" id="metrics"></div>
+      <div class="sec">Readiness</div>
+      <ul class="pf" id="preflight"><li><span class="s">·</span><span>checking…</span></li></ul>
+      <button class="runbtn stop" id="run-stop" disabled>Stop everything</button>
+      <div class="runmsg" id="run-msg"></div>
+      <div id="run-demos"></div>
+      <div class="sec">Output</div>
+      <pre class="runlog" id="run-log">Nothing has run yet.</pre>
+    </div>
   </div>
 </div>
 
@@ -479,6 +539,9 @@ const state = {
   //: The F3 pilot feed. Null until a flight pushes one, which is what keeps the HUD hidden on a map that
   //: is only being reviewed rather than flown.
   control: null, marks: [],
+  //: The operator camera's latest frame, when it arrived, and the loop rate derived from the two. The
+  //: rate is measured rather than declared because every timing claim this project makes depends on it.
+  view: null, viewAt: 0, fps: 0,
 };
 // Exposed for app/map/headless_check.mjs (and for a console poke); nothing in the page reads it back.
 window.__sightlineState = state;
@@ -929,8 +992,18 @@ async function pollCamera() {
   const meta = document.getElementById("camera-meta");
   try {
     const r = await fetch("/api/live/view.json", { cache: "no-store" });
-    if (!r.ok) { box.hidden = true; return; }
+    if (!r.ok) { box.hidden = true; state.view = null; renderMetrics(); return; }
     const v = await r.json();
+    // Frame rate is MEASURED here, not assumed: the loop is latency-bound and its real rate is the
+    // number every timing claim on this page depends on.
+    if (state.view && v.frame_idx > state.view.frame_idx) {
+      const dt = (performance.now() - state.viewAt) / 1000;
+      const df = v.frame_idx - state.view.frame_idx;
+      if (dt > 0.05) state.fps = 0.7 * (state.fps || df / dt) + 0.3 * (df / dt);
+    }
+    if (!state.view || v.frame_idx !== state.view.frame_idx) state.viewAt = performance.now();
+    state.view = v;
+    renderMetrics();
     box.hidden = false;
     if (!cameraHidden) img.src = "/api/live/view.jpg?t=" + Date.now();
     const n = (v.detections || []).length;
@@ -989,6 +1062,7 @@ function renderChips() {
   if (state.mission?.drone) parts.push(`<span class="chip">${fmt(state.mission.drone.properties.agl_m, 0)} m AGL</span>`);
   if (state.domain === "sim") parts.push(`<span class="chip sim"><b>SIM</b> simulated data</span>`);
   chipsEl.innerHTML = parts.join("");
+  renderMetrics();
 }
 
 function renderList(feats) {
@@ -1168,10 +1242,149 @@ function renderLayerPane() {
   paneLayers.querySelectorAll("input[name=covlayer]").forEach((rb) =>
     rb.addEventListener("change", () => setCoverageLayer(rb.value)));
 }
-$("tab-recs").onclick = () => { paneRecs.hidden = false; paneLayers.hidden = true;
-  $("tab-recs").setAttribute("aria-selected", "true"); $("tab-layers").setAttribute("aria-selected", "false"); };
-$("tab-layers").onclick = () => { paneRecs.hidden = true; paneLayers.hidden = false;
-  $("tab-recs").setAttribute("aria-selected", "false"); $("tab-layers").setAttribute("aria-selected", "true"); };
+// --- mission control: the live readout and the demo launcher -------------------------------------------
+// This used to be a separate page. It is here because the question "is it flying, what is it seeing, and
+// how fast" should be answerable without changing page, and because the STOP button has to be reachable
+// from wherever the operator is looking when something goes wrong.
+//
+// Every number below is MEASURED and streamed, never a placeholder: telemetry comes from the flight loop
+// over the same WebSocket the map uses, and inference timing from the frame the detector just finished.
+function m(k, v, off) {
+  return `<div class="metric"><span class="k">${k}</span><span class="v${off ? " off" : ""}">${v}</span></div>`;
+}
+function renderMetrics() {
+  const el = $("metrics");
+  if (!el) return;
+  const d = state.mission?.drone?.properties || null;
+  const v = state.view || null;
+  const dash = "—";
+  const out = [
+    m("Alt AGL", d ? `${Number(d.agl_m).toFixed(0)} m` : dash, !d),
+    m("Ground speed", d ? `${Number(d.speed_ms).toFixed(1)} m/s` : dash, !d),
+    m("Heading", d ? `${((Number(d.yaw_deg) + 360) % 360).toFixed(0)}°` : dash, !d),
+    m("Latitude", d ? Number(d.lat).toFixed(5) : dash, !d),
+    m("Longitude", d ? Number(d.lon).toFixed(5) : dash, !d),
+    m("Fix err", d && d.h_acc_m != null ? `${Number(d.h_acc_m).toFixed(1)} m` : dash, !d),
+    m("Frame", v ? `#${v.frame_idx}` : dash, !v),
+    m("Detections", v ? String((v.detections || []).length) : dash, !v),
+    m("Records", String(state.records.size)),
+    m("Inference", v && v.detect_ms ? `${Math.round(v.detect_ms)} ms` : dash, !(v && v.detect_ms)),
+    m("Loop rate", state.fps ? `${state.fps.toFixed(2)} fps` : dash, !state.fps),
+    m("Mode", (state.control?.mode || d?.mode || dash)),
+  ];
+  // The model in use is the single fact that decides whether the timing above is the engine's or
+  // PyTorch's, so it gets its own full-width row rather than being truncated into a cell.
+  out.push(`<div class="metric wide"><span class="k">Detector</span><span class="v${v && v.detector ? "" : " off"}">${v && v.detector ? v.detector : "not loaded"}</span></div>`);
+  el.innerHTML = out.join("");
+}
+
+let demoCatalog = [];
+function renderDemos(running) {
+  const el = $("run-demos");
+  if (!el || !demoCatalog.length) return;
+  const groups = new Map();
+  for (const d of demoCatalog) {
+    if (!groups.has(d.group)) groups.set(d.group, []);
+    groups.get(d.group).push(d);
+  }
+  el.innerHTML = [...groups].map(([g, items]) => `<div class="sec">${g}</div>` + items.map((d) => `
+    <div class="demo">
+      <div>
+        <div class="t">${d.title}</div>
+        <div class="d">${d.sub}</div>
+      </div>
+      <div class="go"><button class="runbtn" data-demo="${d.id}" ${running ? "disabled" : ""}>Start</button></div>
+    </div>`).join("")).join("");
+  for (const b of el.querySelectorAll("button[data-demo]")) {
+    b.addEventListener("click", () => startDemo(b.dataset.demo));
+  }
+}
+
+async function pollPreflight() {
+  const el = $("preflight");
+  if (!el) return;
+  try {
+    const r = await fetch("/api/demo/preflight?id=nominal", { cache: "no-store" });
+    const j = await r.json();
+    el.innerHTML = (j.checks || []).map((c) => `
+      <li class="${c.ok ? "ok" : "no"}"><span class="s">${c.ok ? "✓" : "×"}</span>
+      <span><b>${c.name}</b> — ${c.detail}</span></li>`).join("");
+  } catch {
+    el.innerHTML = '<li class="no"><span class="s">×</span><span>could not reach the backend</span></li>';
+  }
+}
+
+async function startDemo(id) {
+  $("run-msg").textContent = "";
+  try {
+    const r = await fetch("/api/demo/start", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    if (!r.ok) {
+      const j = await r.json().catch(() => ({}));
+      $("run-msg").textContent = j.detail || `could not start ${id}`;
+      pollPreflight();
+      return;
+    }
+    pollDemo();
+  } catch (e) { $("run-msg").textContent = String(e); }
+}
+
+async function stopDemo() {
+  const b = $("run-stop");
+  $("run-msg").textContent = "";
+  b.disabled = true; b.textContent = "Stopping…";
+  try {
+    const r = await fetch("/api/demo/stop", { method: "POST" });
+    const j = await r.json().catch(() => ({}));
+    if (j.killed !== undefined) $("run-msg").textContent = `Stopped. ${j.killed} process tree(s) terminated.`;
+  } catch (e) { $("run-msg").textContent = String(e); }
+  b.textContent = "Stop everything";
+  pollDemo();
+}
+
+async function pollDemo() {
+  if ($("pane-run").hidden) return;          // do not poll a pane nobody is looking at
+  try {
+    const s2 = await (await fetch("/api/demo/status", { cache: "no-store" })).json();
+    const running = !!s2.running;
+    $("run-stop").disabled = !running;
+    renderDemos(running);
+    const log = (s2.log || []).join("\n");
+    const el = $("run-log");
+    el.textContent = log || "Nothing has run yet.";
+    if (log) el.scrollTop = el.scrollHeight;
+  } catch { /* the server may be restarting; the next tick picks it up */ }
+}
+
+(async () => {
+  try {
+    demoCatalog = (await (await fetch("/api/demo/catalog")).json()).demos || [];
+  } catch { /* the Run tab will simply show no demos */ }
+  renderDemos(false);
+  renderMetrics();
+})();
+$("run-stop").addEventListener("click", stopDemo);
+setInterval(pollDemo, 1500);
+setInterval(() => { if (!$("pane-run").hidden) pollPreflight(); }, 6000);
+
+const TABS = [["tab-recs", "pane-recs"], ["tab-layers", "pane-layers"], ["tab-run", "pane-run"]];
+function selectTab(id) {
+  for (const [t, pane] of TABS) {
+    const on = t === id;
+    $(pane).hidden = !on;
+    $(t).setAttribute("aria-selected", on ? "true" : "false");
+  }
+  if (id === "tab-run") { pollDemo(); pollPreflight(); }
+}
+for (const [t] of TABS) $(t).onclick = () => selectTab(t);
+// Deep-linkable, so "?tab=run" opens the console on mission control - and so a verification run can
+// screenshot the pane it means to check rather than the one that happens to be first.
+{
+  const want = (QS.get("tab") || "").toLowerCase();
+  if (want && TABS.some(([t]) => t === `tab-${want}`)) selectTab(`tab-${want}`);
+}
 
 // --- status line + headless self-check ------------------------------------------------------------------
 function setStatus(extra = "") {

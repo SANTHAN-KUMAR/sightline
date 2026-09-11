@@ -77,6 +77,10 @@ SCENARIOS: dict[str, dict] = {
 }
 
 
+#: The acceptance slice. Derived from the table so it cannot drift out of `choices` again.
+DEFAULT_SCENARIO = "nominal"
+
+
 def apply_scenario(name: str) -> str:
     """Scenario state that the SIMULATOR must be told about. Currently none - see the note above.
 
@@ -154,7 +158,7 @@ def sim_has_vehicle() -> tuple[bool, str]:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--port", type=int, default=8781)
-    ap.add_argument("--scenario", choices=sorted(SCENARIOS), default="midday",
+    ap.add_argument("--scenario", choices=sorted(SCENARIOS), default=DEFAULT_SCENARIO,
                     help="which world to fly: " + "; ".join(f"{k} = {v['why'].split(chr(46))[0]}"
                                                             for k, v in SCENARIOS.items()))
     ap.add_argument("--alt", type=float, default=0.0,
@@ -171,6 +175,9 @@ def main() -> int:
                     help="force the TensorRT engine even with the editor running (it will likely die with "
                          "CUDA_ERROR_ILLEGAL_ADDRESS: 2.6 GB of context plus a 4K renderer exceeds 8 GB)")
     ap.add_argument("--check", action="store_true", help="verify everything and exit, starting nothing")
+    ap.add_argument("--no-reset", action="store_true",
+                    help="take off from wherever the aircraft is, instead of resetting it to the pad first. "
+                         "The reset is what makes two runs of one scenario fly the same ground track.")
     ap.add_argument("--ignore-safety", action="store_true",
                     help="fly a plan the battery model rejects (the violation is stamped in the data card)")
     a = ap.parse_args()
@@ -263,6 +270,9 @@ def main() -> int:
            # member_descriptor reaching json.dumps) while the gamepad work is in flight in another session.
            # `--control none` keeps the two demos independent rather than coupling this one to that fix.
            "--control", "none"]
+    if not a.no_reset:
+        # Same button, same flight. See live.py's fly() for why this is not a cosmetic nicety.
+        cmd.append("--reset-world")
     if a.ignore_safety:
         cmd.append("--ignore-safety")
 

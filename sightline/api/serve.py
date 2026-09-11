@@ -68,6 +68,11 @@ def main() -> None:
     import uvicorn
 
     app, store = build(args)
+    # The demo buttons launch flights; those flights must stream back HERE, not to whatever port the
+    # launcher's own default happened to be. See demo_control.SERVE_PORT.
+    from sightline.api import demo_control
+
+    demo_control.set_serve_port(args.port)
     print(f"Sightline C2  http://{args.host}:{args.port}/app/map/index.html   db={store.path}", flush=True)
     uvicorn.run(app, host=args.host, port=args.port, log_level=args.log_level, ws_ping_interval=20.0)
 
