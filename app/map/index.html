@@ -386,6 +386,13 @@
     border-bottom:1px solid var(--line);font:600 10px/1.6 var(--font);letter-spacing:.1em;color:var(--ink-2);
   }
   #camera-meta{margin-left:auto;font:400 10.5px/1.6 var(--mono);color:var(--dim);letter-spacing:0}
+  /* A STALE FRAME MUST LOOK STALE. The panel showed an hour-old picture with the word "stale" in 10 px
+     of grey, and it read as a live view of an aircraft that was airborne - the single most misleading
+     thing this page could do. Now the image greys out and the header goes amber. */
+  #camera.stale #camera-img{filter:grayscale(1) opacity(.45)}
+  #camera.stale #camera-head{background:#fffbeb;border-bottom-color:#fde68a}
+  #camera.stale #camera-meta{color:var(--warn);font-weight:600}
+  #camera.stale #camera-title::after{content:" — NOT LIVE";color:var(--warn);font-weight:700}
   #camera-toggle{
     background:none;border:0;color:var(--dim);cursor:pointer;font-size:16px;line-height:1;
     padding:0 var(--s1);border-radius:var(--r-sm);
@@ -542,6 +549,9 @@ const state = {
   //: The operator camera's latest frame, when it arrived, and the loop rate derived from the two. The
   //: rate is measured rather than declared because every timing claim this project makes depends on it.
   view: null, viewAt: 0, fps: 0,
+  //: True when the store was pre-loaded with fixtures (`serve --demo`). The map cannot tell a seeded
+  //: record from a live one, so the server is asked and the answer is shown.
+  seeded: false,
 };
 // Exposed for app/map/headless_check.mjs (and for a console poke); nothing in the page reads it back.
 window.__sightlineState = state;
@@ -1007,9 +1017,14 @@ async function pollCamera() {
     box.hidden = false;
     if (!cameraHidden) img.src = "/api/live/view.jpg?t=" + Date.now();
     const n = (v.detections || []).length;
-    meta.textContent = `f${v.frame_idx} · ${n} det · ${Math.round(v.agl_m)} m · ${v.mode || ""}` +
-                       (v.detect_ms ? ` · ${Math.round(v.detect_ms)} ms` : "") +
-                       (v.age_s > 8 ? `  (stale ${Math.round(v.age_s)}s)` : "");
+    // 8 s is roughly four frames at the measured loop rate: beyond that the picture is not what the
+    // aircraft is looking at now, and the panel must stop implying that it is.
+    const stale = v.age_s > 8;
+    box.classList.toggle("stale", stale);
+    meta.textContent = stale
+      ? `frame ${v.frame_idx} · ${Math.round(v.age_s)}s old · nothing is flying`
+      : `f${v.frame_idx} · ${n} det · ${Math.round(v.agl_m)} m · ${v.mode || ""}` +
+        (v.detect_ms ? ` · ${Math.round(v.detect_ms)} ms` : "");
   } catch { box.hidden = true; }
 }
 document.getElementById("camera-toggle").addEventListener("click", () => {
@@ -1020,6 +1035,15 @@ document.getElementById("camera-toggle").addEventListener("click", () => {
 });
 setInterval(pollCamera, 1000);
 pollCamera();
+pollHealth();
+
+async function pollHealth() {
+  try {
+    const h = await (await fetch("/health", { cache: "no-store" })).json();
+    state.seeded = !!h.seeded;
+    renderChips();
+  } catch { /* the badge simply stays off */ }
+}
 
 async function pollOutbox() {
   try {
@@ -1061,6 +1085,9 @@ function renderChips() {
   }
   if (state.mission?.drone) parts.push(`<span class="chip">${fmt(state.mission.drone.properties.agl_m, 0)} m AGL</span>`);
   if (state.domain === "sim") parts.push(`<span class="chip sim"><b>SIM</b> simulated data</span>`);
+  // The honest label. Seeded fixtures and live finds are indistinguishable on a map, so if any of these
+  // records were pre-loaded the page says so rather than letting them pass as the aircraft's work.
+  if (state.seeded) parts.push(`<span class="chip down"><b>SEEDED</b> demo fixtures, not live finds</span>`);
   chipsEl.innerHTML = parts.join("");
   renderMetrics();
 }

@@ -46,6 +46,9 @@ def build(args: argparse.Namespace):
         uploader = Uploader(outbox, HttpTransport(url), base_backoff_s=0.5, max_backoff_s=30.0)
     app = create_app(store, outbox=outbox, uploader=uploader, mission=mission,
                      coverage_dir=cov, repo_root=REPO)
+    #: --demo injects SIM-001..SIM-008 so the map is not blank. They are fixtures, and the dashboard
+    #: labels them as such: nobody should ever mistake a seeded record for something the drone found.
+    app.state.seeded = bool(args.demo)
     return app, store
 
 

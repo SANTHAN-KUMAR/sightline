@@ -150,6 +150,10 @@ def create_app(
             "t_utc": time.time(),
             "schema_version": SCHEMA_VERSION,
             "store": store.stats(),
+            # Seeded fixtures and live detections look identical on a map, which is how a demo ends up
+            # presenting eight canned records as if the aircraft had just found them. The server is the
+            # only thing that knows which it is, so it has to say.
+            "seeded": bool(getattr(app.state, "seeded", False)),
             "outbox": (uploader.stats() if uploader is not None else (outbox.stats() if outbox else None)),
             "live_clients": hub.clients,
             "live_seq": hub.seq,
