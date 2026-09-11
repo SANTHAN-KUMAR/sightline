@@ -115,6 +115,9 @@ def main() -> int:
     ap.add_argument("--shutter-m", type=float, default=4.0)
     ap.add_argument("--minutes", type=float, default=12.0)
     ap.add_argument("--pytorch", action="store_true", help="use best.pt instead of the TensorRT engine")
+    ap.add_argument("--engine", action="store_true",
+                    help="force the TensorRT engine even with the editor running (it will likely die with "
+                         "CUDA_ERROR_ILLEGAL_ADDRESS: 2.6 GB of context plus a 4K renderer exceeds 8 GB)")
     ap.add_argument("--check", action="store_true", help="verify everything and exit, starting nothing")
     ap.add_argument("--ignore-safety", action="store_true",
                     help="fly a plan the battery model rejects (the violation is stamped in the data card)")
@@ -125,6 +128,24 @@ def main() -> int:
     print("=" * 78)
 
     # --- 1. detector --------------------------------------------------------------------------------
+    # MEASURED 2026-09-11: the TensorRT engine is faster (125 ms vs 159 ms) but its execution context alone
+    # allocates 2,642 MiB. With the Unreal editor rendering a 4K scene (~4.3 GB) that does not fit in this
+    # 8 GB card, and TensorRT dies with CUDA_ERROR_ILLEGAL_ADDRESS inside Ultralytics' warmup. So the engine
+    # is for UNCONTENDED inference - offline replay, or the Jetson the architecture actually targets - and a
+    # live flight beside the editor uses PyTorch. Choosing automatically beats crashing mid-demo.
+    editor_up = False
+    try:
+        import psutil                                            # noqa: PLC0415
+
+        editor_up = any("UnrealEditor" in (pr.info.get("name") or "")
+                        for pr in psutil.process_iter(["name"]))
+    except Exception:                                            # noqa: BLE001
+        pass
+    if editor_up and not a.engine and ENGINE.exists():
+        print("  note        editor is running: using PyTorch, not the engine "
+              "(TensorRT's 2.6 GB context + the renderer does not fit in 8 GB)")
+        a.pytorch = True
+
     if a.pytorch or not ENGINE.exists():
         if not WEIGHTS.exists():
             print(f"FATAL: no detector. {WEIGHTS.relative_to(REPO)} is missing - run the fine-tune first.")

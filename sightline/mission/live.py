@@ -362,6 +362,7 @@ class LiveMission:
         self._t_control_push = 0.0
         self._control_events: list[dict[str, Any]] = []
         self._last_kin: Any = None
+        self._last_tel: Telemetry | None = None
 
         self.client = None
         self.names: list[str] = []
@@ -467,6 +468,9 @@ class LiveMission:
     # -- the pipeline, per frame -------------------------------------------------------------------
     def handle_frame(self, fr: LiveFrame) -> None:
         """detect -> geo -> track -> dedup -> triage -> map, for ONE frame, while the drone keeps flying."""
+        # Where the aircraft was when this frame was taken. `place_mark` falls back to it so MARK works in a
+        # replay rehearsal too, where there is no simulator to ask for kinematics.
+        self._last_tel = fr.telemetry
         res = self.pipe.process(frame_idx=fr.frame_idx, telemetry=fr.telemetry, intrinsics=fr.intrinsics,
                                 labels=fr.labels if self.detector == "truth" else None,
                                 rgb=fr.rgb, capture_ms=fr.capture_ms, detect_ms_extra=fr.label_ms)
@@ -660,18 +664,35 @@ class LiveMission:
         here" is evidence, and the system is not allowed to erase evidence. The operator can change a
         record's STATUS through the existing `/api/records/{id}/status` route, which is audited.
         """
-        kin = self._last_kin
-        if kin is None:
+        kin, tel = self._last_kin, self._last_tel
+        if kin is not None:
+            home = self.scn.home
+            north = float(home["north_m"]) + float(kin.position.x_val)
+            east = float(home["east_m"]) + float(kin.position.y_val)
+            alt = float(home["ground_asl_m"]) - float(kin.position.z_val)
+            try:
+                gp = self.client.getMultirotorState().gps_location
+                lat, lon = float(gp.latitude), float(gp.longitude)
+            except Exception:
+                lat = lon = None
+        elif tel is not None:
+            # Replay rehearsal: no simulator to ask, but the frame the pilot is looking at knows exactly
+            # where it was taken from. A mark placed here is as truthful as one placed in flight.
+            # `ned_m` is optional in the frozen schema and a replayed frame need not carry it, so scene
+            # coordinates come from the one field that is always there - the geodetic position - measured
+            # against the scenario's own home point.
+            from sightline.common.geodesy import ne_between      # noqa: PLC0415
+
+            lat, lon, alt = float(tel.lat), float(tel.lon), float(tel.alt_msl_m)
+            home = self.scn.home
+            gp = home["geopoint"]
+            dn, de = ne_between(float(gp["lat"]), float(gp["lon"]), lat, lon)
+            north = float(home["north_m"]) + dn
+            east = float(home["east_m"]) + de
+        else:
+            self._control_events.append({"kind": "mark", "text": "MARK ignored",
+                                         "detail": "no position yet - the aircraft has not reported one"})
             return None
-        home = self.scn.home
-        north = float(home["north_m"]) + float(kin.position.x_val)
-        east = float(home["east_m"]) + float(kin.position.y_val)
-        alt = float(home["ground_asl_m"]) - float(kin.position.z_val)
-        try:
-            gp = self.client.getMultirotorState().gps_location
-            lat, lon = float(gp.latitude), float(gp.longitude)
-        except Exception:
-            lat = lon = None
         mark = {"idx": len(self.marks) + 1, "t_utc": time.time(), "east_m": east, "north_m": north,
                 "alt_asl_m": alt, "lat": lat, "lon": lon,
                 "mode": self.takeover.mode, "frame_idx": self.takeover.frame_idx}

@@ -117,7 +117,7 @@
      that a judge flies the aircraft and sees the consequences on the same picture, and a HUD in the corner
      of the map keeps their eyes in one place. It hides itself entirely until a flight pushes control state,
      so a replay or a static review of the map looks exactly as it did before.                          */
-  #hud{position:absolute;left:10px;bottom:56px;z-index:4;width:310px;display:none;
+  #hud{position:absolute;left:10px;bottom:52px;z-index:4;width:352px;display:none;
        background:#0b0e13e8;border:1px solid var(--line);border-radius:10px;overflow:hidden;
        box-shadow:0 8px 28px #0009;backdrop-filter:blur(3px)}
   #hud.on{display:block}
@@ -136,9 +136,13 @@
   .ring.soon .fg{stroke:var(--warn)}
   .ring span{position:absolute;inset:0;display:grid;place-items:center;font-size:11px;font-weight:700}
 
-  .hud-body{padding:9px 11px;display:flex;flex-direction:column;gap:9px}
-  .sticks{display:flex;gap:10px;align-items:center;justify-content:space-between}
-  .stick{width:62px;height:62px;border:1px solid var(--line);border-radius:8px;position:relative;
+  .hud-body{padding:10px 11px;display:flex;flex-direction:column;gap:9px}
+  /* Sticks left, buttons right. The buttons are a fixed 3-column grid rather than a wrapping flex row:
+     wrapping made the panel change height every time a button appeared or vanished, which reads as the
+     page twitching. A grid keeps every control in the same place for the whole demo.                    */
+  .sticks{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start}
+  .stickpair{display:flex;gap:10px}
+  .stick{width:70px;height:70px;border:1px solid var(--line);border-radius:9px;position:relative;
          background:#0f141b}
   .stick::before,.stick::after{content:"";position:absolute;background:#232c37}
   .stick::before{left:50%;top:4px;bottom:4px;width:1px}
@@ -146,12 +150,14 @@
   .stick i{position:absolute;width:13px;height:13px;border-radius:7px;background:var(--manual);
            margin:-6.5px 0 0 -6.5px;transition:left .06s linear,top .06s linear;box-shadow:0 0 8px #0006}
   .stick.idle i{background:#46525f}
-  .stick label{position:absolute;bottom:-15px;left:0;right:0;text-align:center;font-size:9.5px;color:var(--dim)}
-  .stickwrap{display:flex;flex-direction:column;align-items:center;gap:2px;padding-bottom:14px}
+  .stick label{position:absolute;bottom:-14px;left:-6px;right:-6px;text-align:center;font-size:9px;
+               color:var(--dim);letter-spacing:.02em;white-space:nowrap}
+  .stickwrap{position:relative;padding-bottom:15px}
 
-  .btns{display:flex;flex-wrap:wrap;gap:4px}
-  .btn{font-size:9.5px;letter-spacing:.04em;padding:2px 6px;border-radius:9px;border:1px solid var(--line);
-       color:#6d7b8b;background:#141a22}
+  .btns{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+  .btn{font-size:9px;letter-spacing:.03em;padding:3px 0;border-radius:5px;border:1px solid var(--line);
+       color:#6d7b8b;background:#141a22;text-align:center;text-transform:uppercase;overflow:hidden;
+       text-overflow:ellipsis}
   .btn.on{background:var(--manual);border-color:var(--manual);color:#1a1206;font-weight:700}
   .btn.warn{border-color:var(--warn);color:var(--warn)}
 
@@ -159,7 +165,7 @@
             border-radius:6px;padding:4px 7px;display:none}
   .envelope.on{display:block}
 
-  .feed{max-height:118px;overflow:auto;border-top:1px solid var(--line);padding:6px 11px 8px;
+  .feed{max-height:104px;overflow:auto;border-top:1px solid var(--line);padding:6px 11px 8px;
         font-size:10.5px;line-height:1.5}
   .feed .ev{display:flex;gap:6px;padding:1px 0}
   .feed .t{color:#5f6b7a;flex:none;font-variant-numeric:tabular-nums}
@@ -178,7 +184,7 @@
   .mark-dot{width:15px;height:15px;border-radius:8px;background:#ffd479;border:2px solid #7a5c12;
             box-shadow:0 0 0 3px #ffd47933}
   #banner{position:absolute;left:10px;top:10px;z-index:3;display:flex;gap:6px;align-items:center}
-  #status{position:absolute;left:10px;bottom:26px;z-index:3;background:#0b0e13d9;border:1px solid var(--line);
+  #status{position:absolute;left:10px;bottom:24px;z-index:3;background:#0b0e13d9;border:1px solid var(--line);
           border-radius:5px;padding:5px 9px;font:11px ui-monospace,Consolas,monospace;white-space:pre;color:var(--dim)}
   .maplibregl-ctrl-attrib{font-size:10px}
 </style>
@@ -203,15 +209,17 @@
       </div>
       <div class="hud-body">
         <div class="sticks">
-          <div class="stickwrap">
-            <div class="stick idle" id="stick-l"><i></i><label>throttle / yaw</label></div>
+          <div class="stickpair">
+            <div class="stickwrap">
+              <div class="stick idle" id="stick-l"><i></i><label>throttle&nbsp;/&nbsp;yaw</label></div>
+            </div>
+            <div class="stickwrap">
+              <div class="stick idle" id="stick-r"><i></i><label>pitch&nbsp;/&nbsp;roll</label></div>
+            </div>
           </div>
-          <div class="stickwrap">
-            <div class="stick idle" id="stick-r"><i></i><label>pitch / roll</label></div>
-          </div>
-          <div style="flex:1;display:flex;flex-direction:column;gap:5px;align-self:flex-start">
+          <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
             <div class="btns" id="hud-btns"></div>
-            <div id="hud-flight" style="font-size:10.5px;color:var(--dim)"></div>
+            <div id="hud-flight" style="font-size:10px;color:var(--dim);line-height:1.5"></div>
           </div>
         </div>
         <div class="envelope" id="hud-env"></div>

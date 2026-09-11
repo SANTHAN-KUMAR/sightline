@@ -1090,3 +1090,48 @@ exactly the symptom `Infrared` showed for weeks while returning a perfectly vali
 Remaining: relaunch the editor with `-settings=sim/settings/dataset_thermal.json`, run it, LOOK at the
 frame. That unblocks F9/F9b and demo script step 4 (pre-dawn thermal, RGB-only fallback), which is
 currently the only demo step with no path at all.
+
+---
+
+## Session log — 2026-09-11 07:30 (autonomous-flight / detection lane)
+
+**The live chain works end to end.** A drone flying the autonomous pattern in the simulator, with the
+fine-tuned YOLO26s loaded, produced confirmed records on the C2 dashboard in real time. Verified visually
+mid-flight (`_artifacts/live_dashboard.png`): `mode AUTO · 46 m AGL`, flown coverage in green, and records
+such as `2f0ab997 human · stranded · 3x · +-2.6 m · score 1.24` - the `3x` being the deduplicator collapsing
+three observations of one person into one record. The map's headless verifier passes all six checks against
+the live instance.
+
+**TensorRT (F8).** Engine built and MEASURED, not claimed:
+
+    pytorch fp16    158.9 ms
+    tensorrt fp16   125.3 ms      1.27x, 7.98 FPS detect-only
+
+against section 5.11's ~113 ms budget. Two constraints found by running it:
+
+* building at the full 15-tile batch fails - the FP16 AutoCast step runs a CPU reference pass and exhausts
+  host RAM on an attention MatMul. Build at batch 6 (section 5.11's own number) with `dynamic=True`.
+* **the engine cannot run beside the editor.** Its execution context alone allocates 2,642 MiB; with the
+  renderer's ~4.3 GB that exceeds this 8 GB card and TensorRT dies with `CUDA_ERROR_ILLEGAL_ADDRESS` inside
+  Ultralytics' warmup. `tools/live/demo.py` now detects a running editor and selects PyTorch automatically.
+  The engine's place is UNCONTENDED inference: offline replay, or the Jetson section 5.11 targets.
+
+**A diagnosis recorded earlier was wrong and is corrected in docs/CONTEXT.md.** The live loop's 1165-3205 ms
+detect was attributed to inference being far over budget. Measured with the editor closed, the identical
+model on the identical grid runs at 166.9 ms. The gap was GPU contention, not model cost - which also
+explains the tracking failures, since at 167 ms the loop runs near 1.2 FPS rather than 0.6.
+
+**New:**
+* `tools/live/demo.py` - the whole demo in one command; `--check` verifies and starts nothing.
+* `tools/live/demo_ready.py` - readiness gate; a check that cannot run counts as a failure, never a pass.
+* `tools/train/_build_engine.py` - builds the engine and benchmarks it against PyTorch on real frames.
+
+**Fixed:** the `--detector rgb` seam (`detect_frame` was called with arguments that do not exist - every call
+would have raised TypeError, invisible because everything used `--detector truth`); the track confirmation
+window now sized from the MEASURED loop rate rather than a guessed `--tracker-fps`; `ignore` honoured end to
+end; per-run ground truth; a startup print that could ground a flight.
+
+**Open / handed off:** the controller lane is another session's (`docs/lanes/COORDINATION.md` carries a
+`ManualLimits` class-vs-instance bug found while unblocking a flight). Recall remains low under editor
+contention - a survivor is in view for few shutter releases at ~1.5 s/frame. Thermal (F9b) still has never
+rendered a verified frame.
