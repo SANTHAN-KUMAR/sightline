@@ -1045,6 +1045,11 @@ async function pollCamera() {
     const n = (v.detections || []).length;
     // 8 s is roughly four frames at the measured loop rate: beyond that the picture is not what the
     // aircraft is looking at now, and the panel must stop implying that it is.
+    // Past two minutes this is not a hiccup in a live flight, it is a leftover from a previous one, and
+    // a landing page should not open showing an hour-old picture of a drone that is not flying. Between
+    // 8 s and 2 min the panel stays up but marked NOT LIVE, which is the case that matters during a
+    // sortie: the operator needs to know the feed stalled, not have it silently vanish.
+    if (v.age_s > 120) { box.hidden = true; return; }
     const stale = v.age_s > 8;
     box.classList.toggle("stale", stale);
     meta.textContent = stale
