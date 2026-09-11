@@ -173,6 +173,23 @@ def gimbal_quat_from_frd_quat(q_cam_frd_to_ned: Sequence[float]) -> tuple[float,
     return quat_mul(q_cam_frd_to_ned, Q_FRD_FROM_CAM)
 
 
+def frd_quat_from_gimbal_quat(q_gimbal: Sequence[float]) -> tuple[float, float, float, float]:
+    """The camera-FRD-to-NED quaternion from `q_gimbal` — the exact inverse of `gimbal_quat_from_frd_quat`.
+
+    Anything that projects a PIXEL to the ground needs this, not `q_gimbal` itself. `q_gimbal` is the
+    contractual optical-to-NED rotation; a pixel ray is expressed in the camera's FRD frame, and the two
+    differ by `Q_FRD_FROM_CAM`, a 90 degree rotation.
+
+    Getting this wrong is not subtle but it IS silent. `sightline.coverage.footprint.ground_footprint` used
+    `q_gimbal` directly and produced a footprint 67.8 m north by 38.1 m east for a 3840x2160 frame - the wide
+    axis mapped to NORTH. Measured against 110 boxes whose survivors have known world positions, image-right
+    is due EAST (median residual 1.37 m; the next-best hypothesis is 15.8 m), so the footprint was rotated a
+    quarter turn while every number it produced still looked plausible.
+    """
+    w, x, y, z = Q_FRD_FROM_CAM
+    return quat_mul(q_gimbal, (w, -x, -y, -z))
+
+
 def gimbal_quat_from_euler(roll_deg: float, pitch_deg: float, yaw_deg: float) -> tuple[float, float, float, float]:
     """`q_gimbal` from earth-referenced gimbal angles — **the DJI path** (-90 pitch = nadir, yaw 0 = north)."""
     return gimbal_quat_from_frd_quat(euler_to_quat(roll_deg, pitch_deg, yaw_deg))

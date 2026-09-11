@@ -24,6 +24,7 @@ import numpy as np
 
 from sightline.eval.groundtruth import EvalDataset, GtBox, GtFrame
 from sightline.eval.matching import match_frame
+from sightline.eval.context import CONTEXTS
 from sightline.eval.slicing import (
     AXIS_DEFAULT,
     BOX_AXES,
@@ -403,6 +404,11 @@ def _box_axis_label(box: GtBox, frame: GtFrame, axis: str) -> str:
         return posture_label(str(box.posture))
     if axis == "pixel_size":
         return pixel_size_bin(box.size_px)
+    if axis == "context":
+        # `GtBox.context` defaults to "" for a box nobody measured a terrain type for. "all" is the
+        # unpinned value, so such a box lands in the overall row rather than inventing a class for it —
+        # the same treatment `zone` gets when it is genuinely unknown.
+        return str(box.context) if box.context in CONTEXTS else "all"
     raise ValueError(f"{axis} is not a box axis")
 
 

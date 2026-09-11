@@ -283,16 +283,34 @@ def choose_operating_threshold(
 
 
 def metric_rows(op: OperatingPoint, slice_key: SliceKey) -> list[MetricRow]:
-    """The §5.12 numbers as `MetricRow`s, each carrying its slice. A number without its slice is a bug."""
+    """The §5.12 numbers as `MetricRow`s, each carrying its slice. A number without its slice is a bug.
+
+    Every one of these is a ratio, and `sweep()` hands back 0.0 when the denominator is empty so the curve stays
+    plottable. That convention is right inside the sweep and wrong at the reporting boundary: "recall = 0.0 over
+    0 ground-truth boxes" reads as a total failure when the truth is that the slice had nothing to find. Each row
+    therefore states which sample it was measured over, and reports an explicit undefined row when that sample is
+    empty (AUDIT S8: this function was one of the two that bypassed `eval.slicing.metric_row`'s checks).
+    `MetricRow` now enforces the finiteness half of that itself, so a future non-finite `op` field raises here
+    instead of shipping a bare `NaN` into the metrics JSON.
+    """
+    def row(name: str, value: float, n: int, reason: str, **detail: Any) -> MetricRow:
+        if n <= 0:
+            return MetricRow.undefined(name, slice_key, reason, {"conf": op.conf, **detail})
+        return MetricRow.finite_or_undefined(name, value, slice_key, n, reason=reason,
+                                             detail={"conf": op.conf, **detail})
+
+    no_gt = f"no ground-truth boxes for cls={op.cls!r} in this slice, so recall has nothing to be measured over"
+    no_pred = f"no predictions at conf >= {op.conf:.3g} in this slice, so precision has no sample"
+    no_frames = "no frames were processed in this slice, so a per-frame rate has no denominator"
     rows = [
-        MetricRow("recall@IoU0.5", op.recall, slice_key, op.n_gt, {"conf": op.conf, "model": op.model_version}),
-        MetricRow("recall@IoU0.25", op.recall_secondary_iou, slice_key, op.n_gt, {"conf": op.conf}),
-        MetricRow("precision@IoU0.5", op.precision, slice_key, op.tp + op.fp, {"conf": op.conf}),
-        MetricRow("fp_per_frame", op.fp_per_frame, slice_key, op.n_frames, {"conf": op.conf}),
+        row("recall@IoU0.5", op.recall, op.n_gt, no_gt, model=op.model_version),
+        row("recall@IoU0.25", op.recall_secondary_iou, op.n_gt, no_gt),
+        row("precision@IoU0.5", op.precision, op.tp + op.fp, no_pred),
+        row("fp_per_frame", op.fp_per_frame, op.n_frames, no_frames),
     ]
     if op.fp_per_minute is not None:
-        rows.append(MetricRow("fp_per_minute", op.fp_per_minute, slice_key, op.n_frames,
-                              {"conf": op.conf, "fps_processed": op.fps_processed}))
+        rows.append(row("fp_per_minute", op.fp_per_minute, op.n_frames, no_frames,
+                        fps_processed=op.fps_processed))
     return rows
 
 

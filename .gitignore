@@ -50,3 +50,31 @@ data/scene/damage/*.obj
 data/scene/utilities/*.obj
 data/scene/utilities/*.png
 data/scene/buildings/*.obj
+
+# Secrets. Never commit credentials; _secrets/ holds API keys used by tooling.
+_secrets/
+.env
+*.key
+*_api_key*
+
+# --- imported Poly Haven scans (CC0) --------------------------------------------------------------
+# These are ~2.8 GB of 2k/4k texture sets imported into the UE project by tools/scene/build_*.py from
+# the manifest in data/scene/env_assets.json. They are third-party CC0 downloads, not project source:
+# committing them would quadruple the repository for bytes anyone can re-fetch in minutes. The manifest,
+# the fetch script (tools/setup/fetch_external.ps1) and the builders that place them ARE tracked, so the
+# scene is reproducible from a clean clone.
+sim/SightlineSim/Content/Sightline/Props/jacaranda_tree/
+sim/SightlineSim/Content/Sightline/Props/tree_small_02/
+sim/SightlineSim/Content/Sightline/Props/island_tree_01/
+sim/SightlineSim/Content/Sightline/Props/island_tree_02/
+sim/SightlineSim/Content/Sightline/Props/island_tree_03/
+sim/SightlineSim/Content/Sightline/Water/Foam/
+
+# --- trained/exported model artefacts --------------------------------------------------------------
+# Weights, ONNX graphs and TensorRT engines are BUILD OUTPUT, not source. The engines in particular are
+# tied to one GPU, driver and TensorRT version, so a committed engine is wrong on any other machine -
+# tools/train/_build_engine.py rebuilds one in minutes. Training config and curves live beside the run
+# and ARE small enough to keep, so only the heavy binaries are excluded.
+models/
+!models/detect/*/args.yaml
+!models/detect/*/results.csv

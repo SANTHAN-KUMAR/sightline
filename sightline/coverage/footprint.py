@@ -25,7 +25,12 @@ from dataclasses import dataclass
 import numpy as np
 
 from sightline.common.geodesy import euler_to_quat, quat_to_rot
+from sightline.ingest.spec import quat_mul
 from sightline.schemas import Intrinsics, Telemetry
+
+#: +90 deg about the DOWN axis: optical (x right, y down, z forward) -> north-up, east-right.
+Q_CAM_YAW90: tuple[float, float, float, float] = (0.7071067811865476, 0.0, 0.0,
+                                                  0.7071067811865476)
 
 #: §5.7 step 5 rejects a ray whose downward component is <= 0.1 ("near_horizon"). A footprint corner that grazes
 #: the horizon is clipped to this instead of being dropped, so an oblique frame stays usable and bounded.
@@ -96,7 +101,14 @@ def ground_footprint(tel: Telemetry, intr: Intrinsics, ground_asl_m: float | Non
     A flat local ground plane is the §5.7 `flat_plane` method; a DEM would move the corners but not the machinery.
     """
     agl = tel.agl_m if ground_asl_m is None else (tel.alt_msl_m - ground_asl_m)
-    rot = quat_to_rot(tel.q_gimbal)
+    # `q_gimbal` is IDENTITY for a nadir camera (spec.py: "a nadir camera (-90) gives the identity-pitch
+    # quaternion"), and applying it to an OPTICAL ray therefore maps image-right to NORTH and image-down to
+    # EAST. That is a quarter turn from the truth: measured against 110 boxes whose survivors have known
+    # world positions, image-right is due EAST (median residual 1.37 m; the next-best hypothesis 15.8 m).
+    # Left uncorrected this produced a footprint 67.8 m north by 38.1 m east for a 3840x2160 frame - the WIDE
+    # axis on the SHORT ground axis - while every number it returned still looked plausible.
+    # Q_CAM_YAW90 turns the optical frame onto north-up/east-right before the gimbal rotation is applied.
+    rot = quat_to_rot(quat_mul(tel.q_gimbal, Q_CAM_YAW90))
     if not tel.gimbal_is_earth_referenced:  # camera -> body -> NED
         rot = quat_to_rot(tel.q_body) @ rot
     empty = np.zeros((4, 2))

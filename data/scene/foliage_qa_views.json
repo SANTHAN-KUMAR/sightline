@@ -1,0 +1,27 @@
+{
+ "generated_by": "tools/scene/gen_foliage_qa_views.py",
+ "base_z_m": 1046.0069580078125,
+ "fov_deg": 74.0,
+ "zone": "hillslope",
+ "nadir": {
+  "east_m": 546.01,
+  "north_m": 654.46,
+  "cam_asl_m": 1213.59,
+  "agl_m": 45.0,
+  "ground_asl_m": 1168.59,
+  "footprint_m": 67.8,
+  "expected_closure": 0.6618,
+  "trees_in_view": 30
+ },
+ "crown": {
+  "name": "Tree_2843",
+  "pid": "jacaranda_tree",
+  "east_m": 389.77,
+  "north_m": 580.94,
+  "centre_asl_m": 1145.39,
+  "top_asl_m": 1153.46,
+  "radius_m": 16.0,
+  "height_m": 25.22,
+  "scale": 1.3
+ }
+}

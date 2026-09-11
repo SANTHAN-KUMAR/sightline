@@ -357,6 +357,20 @@ class Obj(metaclass=MockMeta):
         return lambda *a, **kw: Obj(k)
 
 
+class Enum(Obj):
+    """A UE enum. Unknown members raise, because a mis-typed enum name is a silent no-op in the
+    permissive mock and a hard AttributeError in the editor - the checker must fail where UE does."""
+
+    def __init__(self, name, *members):
+        super().__init__(name, **{m: f"{name}.{m}" for m in members})
+
+    def __getattr__(self, k):
+        if k.startswith("_") or k in self._p:
+            return super().__getattr__(k)
+        raise AttributeError(f"unreal.{self._name} has no member {k!r}; UE 5.8 defines "
+                             f"{sorted(self._p)}")
+
+
 def make_unreal(cfg):
     u = types.ModuleType("unreal")
     world = {"actors": []}
@@ -391,8 +405,80 @@ def make_unreal(cfg):
         def __init__(self, x=0.0, y=0.0, z=0.0):
             self.x, self.y, self.z = float(x), float(y), float(z)
 
+    class Quat:
+        """UE's FQuat, with the real Rotator() conversion.
+
+        A stub returning zeros would be a shallow proxy: `build_vegetation.py` builds 5,508 instance
+        transforms through Rotator -> Quat, and a mock that silently returns identity would let a dry run
+        "pass" while every drowned tree stood bolt upright in the level.
+        """
+
+        def __init__(self, x=0.0, y=0.0, z=0.0, w=1.0):
+            self.x, self.y, self.z, self.w = float(x), float(y), float(z), float(w)
+
+        def rotator(self):
+            import math as _m
+            sing = self.z * self.x - self.w * self.y
+            yaw_y = 2.0 * (self.w * self.z + self.x * self.y)
+            yaw_x = 1.0 - 2.0 * (self.y ** 2 + self.z ** 2)
+            yaw = _m.degrees(_m.atan2(yaw_y, yaw_x))
+            if sing < -0.4999995:
+                return Rotator(((-yaw - 2.0 * _m.degrees(_m.atan2(self.x, self.w))) + 180.0) % 360.0 - 180.0,
+                               -90.0, yaw)
+            if sing > 0.4999995:
+                return Rotator(((yaw - 2.0 * _m.degrees(_m.atan2(self.x, self.w))) + 180.0) % 360.0 - 180.0,
+                               90.0, yaw)
+            pitch = _m.degrees(_m.asin(max(-1.0, min(1.0, 2.0 * sing))))
+            roll = _m.degrees(_m.atan2(-2.0 * (self.w * self.x + self.y * self.z),
+                                       1.0 - 2.0 * (self.x ** 2 + self.y ** 2)))
+            return Rotator(roll, pitch, yaw)
+
+    class Transform:
+        """UE's FTransform, storing what it is given and handing it back.
+
+        The permissive Obj returns a fresh Obj for any unknown property, so a Transform modelled that way
+        hands back a stub whose `.x` is a bound method - and `build_vegetation.py`'s transform self-probe
+        then fails on `abs()` for a reason the engine would never produce. Worse, a mock that accepted the
+        writes and returned identity would let a dry run "verify" a transform builder that puts every
+        drowned tree bolt upright.
+        """
+
+        def __init__(self, translation=None, rotation=None, scale3d=None):
+            self._p = {"translation": translation if translation is not None else Vector(),
+                       "rotation": rotation if rotation is not None else Quat(),
+                       "scale3d": scale3d if scale3d is not None else Vector(1.0, 1.0, 1.0)}
+
+        def set_editor_property(self, k, v):
+            self._p[k] = v
+
+        def get_editor_property(self, k):
+            return self._p[k]
+
     class Rotator(Vector):
-        pass
+        """UE's FRotator: x = roll, y = pitch, z = yaw, in degrees."""
+
+        @property
+        def roll(self):
+            return self.x
+
+        @property
+        def pitch(self):
+            return self.y
+
+        @property
+        def yaw(self):
+            return self.z
+
+        def quaternion(self):
+            """FRotator::Quaternion(), verbatim from Engine/Source/Runtime/Core/Public/Math/Rotator.h."""
+            import math as _m
+            sp, cp = _m.sin(_m.radians(self.y) * 0.5), _m.cos(_m.radians(self.y) * 0.5)
+            sy, cy = _m.sin(_m.radians(self.z) * 0.5), _m.cos(_m.radians(self.z) * 0.5)
+            sr, cr = _m.sin(_m.radians(self.x) * 0.5), _m.cos(_m.radians(self.x) * 0.5)
+            return Quat(cr * sp * sy - sr * cp * cy,
+                        -cr * sp * cy - sr * cp * sy,
+                        cr * cp * sy - sr * sp * cy,
+                        cr * cp * cy + sr * sp * sy)
 
     class LinearColor:
         def __init__(self, r=0.0, g=0.0, b=0.0, a=1.0):
@@ -530,6 +616,46 @@ def make_unreal(cfg):
         def get_material_property_input_node(m, p):
             return None if cfg.get("no_input_node") else Obj("Lerp", alpha=Obj("in", expression=Obj("Sat")))
 
+    def hism_component():
+        """An instanced-mesh component that actually COUNTS what it is given.
+
+        `get_instance_count()` returning a stub would let a dry run pass while nothing was placed, which is
+        the exact failure mode the instancing rewrite exists to avoid.
+        """
+        c = Obj("hism", static_mesh=None)
+        c._n = [0]
+        c.set_static_mesh = lambda m: c.set_editor_property("static_mesh", m)
+        c.set_mobility = lambda m: None
+        c.set_collision_profile_name = lambda n: None
+        c.set_collision_enabled = lambda e: None
+        c._xf = []
+        def _add(xf, a=False, b=True):
+            c._xf.extend(xf)
+            c._n[0] = len(c._xf)
+        c.add_instances = _add
+        c.get_instance_count = lambda: c._n[0]
+        # `dump_vegetation.py` reads every transform back OUT of the component and `check_vegetation.py`
+        # re-derives the counts and the survivor clearance from that file. The mock therefore has to hand
+        # back the transforms it was given, not a stub: a stub would let the dry run "verify" a read-back
+        # that never happened.
+        c.get_instance_transform = lambda i, world=True: c._xf[i]
+        c.get_class = lambda: Obj("HierarchicalInstancedStaticMeshComponent",
+                                  _name="HierarchicalInstancedStaticMeshComponent")
+        return c
+
+    class SDS:
+        @staticmethod
+        def k2_gather_subobject_data_for_instance(actor):
+            return [Obj("root_handle")]
+
+        @staticmethod
+        def add_new_subobject(params):
+            return Obj("new_handle"), ""          # empty `why` == accepted, which is what UE returns
+
+        @staticmethod
+        def rename_subobject(handle, name):
+            return None
+
     class EAS:
         @staticmethod
         def get_all_level_actors():
@@ -539,6 +665,37 @@ def make_unreal(cfg):
         def destroy_actor(a):
             if a in world["actors"]:
                 world["actors"].remove(a)
+
+        @staticmethod
+        def spawn_actor_from_class(actor_class, loc, rot, transient=False):
+            """Container actor for an instanced-mesh component.
+
+            `build_vegetation.py` and `build_rubble.py` place bulk scenery as HISM instances rather than one
+            actor per item, because one UObject per item exhausted the Windows commit limit and killed the
+            editor at 5,508 actors. The component is added through SubobjectDataSubsystem, since UE 5.8's
+            Python bindings do NOT expose `Actor.add_component_by_class` - so the mock has to model that
+            path too, below, or the dry run fails for a reason the engine would not.
+            """
+            a = Obj("actor", _folder="", _label="")
+            # STORE the label and hand it back. A `set_actor_label` that swallows its argument leaves
+            # `get_actor_label()` returning a mock object, which lands in dump_vegetation.py's JSON as
+            # "Object of type Obj is not JSON serializable" - a failure the engine would never produce.
+            a.set_actor_label = lambda s: a.set_editor_property('_label', s)
+            a.get_actor_label = lambda: a.get_editor_property('_label')
+            a.set_folder_path = lambda f: a.set_editor_property("_folder", f)
+            a.get_folder_path = lambda: a.get_editor_property("_folder")
+            a.set_actor_scale3d = lambda v: None
+            a.get_actor_location = lambda: Vector(0, 0, 0)
+            # build_vegetation.py asserts the container actor is at the IDENTITY before adding world-space
+            # instances - a stray root transform would offset the entire canopy. The mock has to answer all
+            # three or that assertion cannot run.
+            a.get_actor_rotation = lambda: Rotator(0.0, 0.0, 0.0)
+            a.get_actor_scale3d = lambda: Vector(1.0, 1.0, 1.0)
+            a._hism = hism_component()
+            a.get_component_by_class = lambda cls_: a._hism
+            a.get_components_by_class = lambda cls_: [a._hism]
+            world["actors"].append(a)
+            return a
 
         @staticmethod
         def spawn_actor_from_object(mesh, loc, rot):
@@ -581,14 +738,20 @@ def make_unreal(cfg):
 
     def get_editor_subsystem(cls):
         nm = getattr(cls, "__name__", "")
-        return {"LevelEditorSubsystem": LES, "EditorActorSubsystem": EAS}.get(nm, Obj(nm))
+        return {"LevelEditorSubsystem": LES, "EditorActorSubsystem": EAS,
+                "SubobjectDataSubsystem": SDS}.get(nm, Obj(nm))
 
     u.EditorAssetLibrary = EAL
     u.MaterialEditingLibrary = MEL
     u.AssetToolsHelpers = Obj("ath")
     u.AssetToolsHelpers.get_asset_tools = lambda: Tools
     u.get_editor_subsystem = get_editor_subsystem
-    u.Vector, u.Rotator, u.LinearColor = Vector, Rotator, LinearColor
+    # SubobjectDataSubsystem is an ENGINE subsystem, not an editor one, and the two lookups are
+    # separate functions in UE. Wiring only the editor one made `build_vegetation.py`'s component
+    # creation unreachable in the dry run.
+    u.get_engine_subsystem = get_editor_subsystem
+    u.Vector, u.Rotator, u.LinearColor, u.Quat = Vector, Rotator, LinearColor, Quat
+    u.Transform = Transform
     u.AssetImportTask = lambda: Obj("task", imported_object_paths=["/Game/Mock/mesh_LOD0"])
     u.SystemLibrary = Obj("sys")
     u.SystemLibrary.collect_garbage = lambda: None
@@ -603,9 +766,16 @@ def make_unreal(cfg):
     u.LevelEditorSubsystem = klass("LevelEditorSubsystem")
     u.EditorActorSubsystem = klass("EditorActorSubsystem")
     u.StaticMeshEditorSubsystem = klass("StaticMeshEditorSubsystem")
-    u.ComponentMobility = Obj("mob", STATIC="STATIC", MOVABLE="MOVABLE")
+    u.ComponentMobility = Enum("ComponentMobility", "STATIC", "STATIONARY", "MOVABLE")
+    u.CollisionEnabled = Enum("CollisionEnabled", "NO_COLLISION", "QUERY_ONLY", "PHYSICS_ONLY",
+                              "QUERY_AND_PHYSICS", "PROBE_ONLY", "QUERY_AND_PROBE")
     u.MaterialProperty = Obj("mp")
-    u.BlendMode = Obj("bm", BM_OPAQUE="BM_OPAQUE")
+    # Enums are named EXACTLY as UE 5.8 names them, and an unknown member raises. The permissive Obj
+    # below answers any attribute with a lambda, so `unreal.BlendMode.BM_OPAQUE` - a name that does
+    # not exist in the engine - passed this checker and then failed in the editor on the real call.
+    u.BlendMode = Enum("BlendMode", "BLEND_OPAQUE", "BLEND_MASKED", "BLEND_TRANSLUCENT",
+                       "BLEND_ADDITIVE", "BLEND_MODULATE", "BLEND_ALPHA_COMPOSITE",
+                       "BLEND_ALPHA_HOLDOUT", "BLEND_TRANSLUCENT_COLORED_TRANSMITTANCE")
     u.Material = klass("Material")
     u.MaterialInstanceConstant = klass("MaterialInstanceConstant")
     u.StaticMesh = klass("StaticMesh")
@@ -672,7 +842,20 @@ def check_editor_scripts() -> None:
             exc = dry_run(script, cfg)
         label = f"{script} {cfg or '{}'}"
         if expect is None:
-            check(exc is None, f"dry run {label}: unexpected {type(exc).__name__}: {exc}")
+            # An "unexpected TypeError" with no location is unactionable: it could be the script, or it
+            # could be a gap in this mock. Carry the deepest frame INSIDE the dry-run script so the reader
+            # can tell those two apart without re-deriving it.
+            where = ""
+            if exc is not None:
+                tb = exc.__traceback__
+                frames = []
+                while tb is not None:
+                    frames.append((tb.tb_frame.f_code.co_filename, tb.tb_lineno))
+                    tb = tb.tb_next
+                inside = [f for f in frames if script.split("/")[-1] in f[0].replace("\\", "/")]
+                fn, ln = (inside[-1] if inside else (frames[-1] if frames else ("?", 0)))
+                where = f" at {fn.split(chr(92))[-1]}:{ln}"
+            check(exc is None, f"dry run {label}: unexpected {type(exc).__name__}: {exc}{where}")
         else:
             check(exc is not None and expect in str(exc),
                   f"dry run {label}: expected a failure containing {expect!r}, got {exc!r}")

@@ -22,7 +22,7 @@ from typing import Any, Literal
 
 import numpy as np
 
-SCHEMA_VERSION = "1.1.0"
+SCHEMA_VERSION = "1.3.0"
 
 # --- vocabularies (closed sets; the evaluation harness slices on these) ------------------------------------
 ClassName = Literal["human", "animal"]
@@ -393,7 +393,14 @@ class CoverageGrid:
 
 
 # --- 7. evaluation (§5.12) --------------------------------------------------------------------------------
-@dataclass(slots=True)
+# `frozen=True` is load-bearing, not tidiness. `MetricRow` was frozen to stop `row.slice = SliceKey("real")`
+# relabelling a simulation number as a real-world one in place (hard rule 5, the project's hardest reporting
+# rule). That freeze alone did NOT close the hole: `row.slice.domain = "real"` reached straight through the
+# frozen row into a mutable key and relabelled it anyway, in one character. Measured before this change:
+#     row = metric_row("recall@iou0.5", 0.94, make_slice("sim"), 500)
+#     row.slice.domain = "real"   ->  succeeded, str(row) == 'recall@iou0.5=0.94 [domain=real] n=500'
+# A frozen row wrapping a mutable key is a lock on the door of an open window.
+@dataclass(frozen=True, slots=True)
 class SliceKey:
     """The slice grid every accuracy number must carry (§5.12 + hard rule 5).
 
@@ -408,6 +415,10 @@ class SliceKey:
     posture: str = "all"
     pixel_size: str = "all"  # "<20", "20-40", "40-80", "80+"
     modality: str = "all"
+    #: The terrain the box sits on, MEASURED from the placed scene by `sightline.eval.context` — never the
+    #: survivor's zone label. 5.12 requires FP/min per terrain type, and a false positive has no ground-truth
+    #: box to inherit a context from, so this has to live on the slice rather than on `GtBox`.
+    context: str = "all"  # "open_ground", "water", "debris", "vegetation", "structure", "vehicle"
 
     def label(self) -> str:
         parts = [f"domain={self.domain}"]
@@ -415,15 +426,127 @@ class SliceKey:
         return " ".join(parts)
 
 
-@dataclass(slots=True)
+#: Wording used when a row is an explicit "no sample, no value" report. Kept next to `MetricRow` so producers
+#: in three different lanes phrase the same fact the same way and a reader can grep for it.
+UNDEFINED_KEY = "undefined_reason"
+
+
+@dataclass(frozen=True, slots=True)
 class MetricRow:
-    """One measured number with its slice and sample size. Printing this without `slice.domain` is a bug."""
+    """One measured number with its slice and sample size. Printing this without `slice.domain` is a bug.
+
+    Two invariants are enforced in `__post_init__` — in the TYPE, not in a helper — because the helper was
+    exactly what leaked.
+
+    **1. `value` is finite.** `sightline.eval.slicing.metric_row()` has always refused a NaN, but it is only one
+    of three constructors: `dedup/metrics.py` and `detect/threshold.py` build `MetricRow` straight from this
+    module. AUDIT S8 measured the consequence on the "we found nothing" dedup case — the one you most need to
+    report honestly — and got `dedup.mean_position_error_m = nan` and `dedup.ce90_m = nan` (plus
+    `dedup.duplicate_rate = inf` when records exist but none match). `json.dumps` then wrote a bare `NaN`, which
+    RFC 8259 does not allow, and a strict re-parse of the metrics blob raised. `sightline/export/geojson.py`
+    already refuses non-finite coordinates for that reason; this is the same rule one layer up. Putting the check
+    on the dataclass rather than in each producer is the point: the defect WAS a producer bypassing the shared
+    helper, so a fourth helper would not have caught the fifth producer, and a lane written next month inherits
+    the guard for free.
+
+    **2. An empty result stays reportable.** A statistic with no samples has no value. The fix is neither to
+    invent a number nor to drop the row — dropping it hides precisely the case `docs/QUALITY_GATE.md` most wants
+    on the record. `MetricRow.undefined()` / `MetricRow.finite_or_undefined()` build an `n = 0` row carrying
+    `undefined_reason`: `__str__` prints "undefined (reason)" instead of a number, and `value` is pinned to a
+    neutral `0.0` so the row still survives `json.dumps(..., allow_nan=False)`. `undefined_reason` requires
+    `n == 0`, which keeps that placeholder out of `slicing.combine_rows`' weighted mean (it weights by `n`); an
+    undefined value over a NON-empty sample is a broken computation, and raises instead.
+
+    `frozen=True` closes the other half of S8: a row is a *reported* number, and `row.slice = SliceKey("real")`
+    relabelled a simulation number as a real-world one in place — the one thing hard rule 5 exists to prevent.
+    Nothing in the tree ever mutated a row, so it cost nothing; build a variant with `dataclasses.replace`.
+    `detail` is a dict and therefore still mutable: the freeze is shallow, by design, so the existing
+    `dict(detail)` idiom at every call site keeps working.
+    """
 
     name: str
     value: float
     slice: SliceKey
     n: int = 0
     detail: dict[str, Any] = field(default_factory=dict)
+    #: Non-empty => this row is an explicit "no sample, so no value" report, NOT a measurement that came out 0.
+    undefined_reason: str = ""
+
+    def __post_init__(self) -> None:
+        # frozen dataclass: a validator normalises its own fields through object.__setattr__.
+        set_ = object.__setattr__
+        n = int(self.n)
+        set_(self, "n", n)
+        # Copy, never adopt. `detail.setdefault(UNDEFINED_KEY, reason)` below otherwise writes into the dict
+        # the CALLER still holds: `d = {"k": 1}; MetricRow(..., detail=d, undefined_reason="none")` left
+        # `d == {"k": 1, "undefined_reason": "none"}`. Every in-tree call site happens to pass `dict(detail)`,
+        # so this was latent rather than live — which is exactly the kind of thing that stops being latent.
+        detail = dict(self.detail)
+        reason = str(self.undefined_reason or detail.get(UNDEFINED_KEY) or "")
+        where = f"{self.name!r} [domain={getattr(self.slice, 'domain', '?')}]"
+
+        if reason:
+            # `MetricSet.to_dicts()` (eval lane) carries `detail` but not this field, so mirror the reason both
+            # ways: a row that survives to_dicts -> from_dicts stays flagged instead of coming back as a
+            # measured 0.0. This also matches the eval lane's existing "undefined: ..." note idiom, so
+            # `"undefined" in str(row.detail)` holds for rows from every lane.
+            detail.setdefault(UNDEFINED_KEY, reason)
+            set_(self, "detail", detail)
+            set_(self, "undefined_reason", reason)
+            v = float(self.value)
+            if n != 0:
+                raise ValueError(
+                    f"metric {where} is marked undefined ({reason!r}) but reports n={n} with value={v!r}. A "
+                    "value that is undefined over a NON-EMPTY sample is a broken computation, not an honest "
+                    "empty result: fix the computation, or report the n it was actually measured over."
+                )
+            if math.isfinite(v) and v != 0.0:
+                raise ValueError(
+                    f"metric {where} carries a measured value {v!r} AND undefined_reason {reason!r}. "
+                    "A row is one or the other."
+                )
+            set_(self, "value", 0.0)  # neutral placeholder; __str__ never prints it, JSON stays RFC 8259 valid
+            return
+
+        v = float(self.value)
+        if not math.isfinite(v):
+            raise ValueError(
+                f"metric {where} is {v} (n={n}); report an explicit n=0 row with a note instead of a NaN or an "
+                "infinity — MetricRow.undefined(name, slice, reason) or "
+                "MetricRow.finite_or_undefined(name, value, slice, n, reason=...). RFC 8259 has no NaN, so this "
+                "row would serialise to JSON that no strict parser will read back (AUDIT S8)."
+            )
+        set_(self, "value", v)
+
+    @property
+    def is_defined(self) -> bool:
+        """False when this row is an honest "no sample" report. `value` is a placeholder, not a measurement."""
+        return not self.undefined_reason
+
+    @classmethod
+    def undefined(cls, name: str, slice_key: SliceKey, reason: str,
+                  detail: dict[str, Any] | None = None) -> MetricRow:
+        """The honest n=0 row: this metric has no sample, and `reason` says why. `value` is a 0.0 placeholder."""
+        if not reason:
+            raise ValueError(f"metric {name!r}: an undefined row must say WHY the value does not exist")
+        return cls(name=name, value=0.0, slice=slice_key, n=0, detail=dict(detail or {}), undefined_reason=reason)
+
+    @classmethod
+    def finite_or_undefined(cls, name: str, value: float, slice_key: SliceKey, n: int = 0, *, reason: str,
+                            detail: dict[str, Any] | None = None) -> MetricRow:
+        """Measured when `value` is finite; the honest n=0 row carrying `reason` when it is not.
+
+        For producers whose metric is a ratio or a mean that genuinely has no value on an empty sample. If the
+        value is non-finite while `n > 0` this raises, which is correct: that is arithmetic gone wrong, not an
+        empty result, and it must not be laundered into a tidy "undefined" row.
+        """
+        v = float(value)
+        if math.isfinite(v):
+            return cls(name=name, value=v, slice=slice_key, n=int(n), detail=dict(detail or {}))
+        return cls(name=name, value=0.0, slice=slice_key, n=int(n), detail=dict(detail or {}),
+                   undefined_reason=reason)
 
     def __str__(self) -> str:
+        if self.undefined_reason:
+            return f"{self.name}=undefined ({self.undefined_reason}) [{self.slice.label()}] n={self.n}"
         return f"{self.name}={self.value:.4g} [{self.slice.label()}] n={self.n}"

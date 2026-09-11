@@ -121,8 +121,18 @@ def test_nadir_footprint_is_the_appendix_b_rectangle():
     assert fp.valid and not fp.clipped
     assert fp.off_nadir_deg == pytest.approx(0.0, abs=1e-9)
     # Appendix B: width = 2 h tan(HFOV/2) = agl * W_px / fx, height = agl * H_px / fy
-    across = fp.poly_ne_m[:, 0].max() - fp.poly_ne_m[:, 0].min()
-    along = fp.poly_ne_m[:, 1].max() - fp.poly_ne_m[:, 1].min()
+    #
+    # `poly_ne_m` columns are [north, east]. ACROSS-TRACK is EAST: `survey.py` flies north-south legs and
+    # spaces them in east by `W = 2 * alt * tan(hfov/2)`, the WIDE swath. This test previously read `across`
+    # from column 0 (north) and so asserted the wide axis lay north-south - encoding a quarter-turn bug in
+    # `ground_footprint`, which applied the identity `q_gimbal` of a nadir camera to an OPTICAL ray and
+    # mapped image-right to north.
+    #
+    # Settled by measurement, not argument: across 110 boxes whose survivors have known world positions,
+    # image-right is due EAST (median residual 1.37 m; the next-best hypothesis 15.8 m, an order of
+    # magnitude worse). See docs/CONTEXT.md.
+    across = fp.poly_ne_m[:, 1].max() - fp.poly_ne_m[:, 1].min()   # east
+    along = fp.poly_ne_m[:, 0].max() - fp.poly_ne_m[:, 0].min()    # north
     assert across == pytest.approx(swath_m(intr, PROBE_AGL)) == pytest.approx(60.0)
     assert along == pytest.approx(along_track_m(intr, PROBE_AGL)) == pytest.approx(30.0)
     assert fp.area_m2() == pytest.approx(60.0 * 30.0)
@@ -190,15 +200,17 @@ def test_polygon_rasterisation_is_area_weighted():
 def test_single_nadir_pass_raises_pod_in_exactly_the_covered_cells():
     cmap = _map(n=40)
     intr = PROBE_CAM.intrinsics()
-    # camera over grid-NE (100, 100); the 60 m x 30 m footprint is north [70, 130), east [85, 115),
-    # i.e. rows 14..25 and columns 17..22 of a 5 m grid. Nothing else may move.
+    # Camera over grid-NE (100, 100). ACROSS-TRACK IS EAST (see test_nadir_footprint_is_the_appendix_b_
+    # rectangle), so the 60 m x 30 m footprint is east [70, 130) and north [85, 115) - rows 17..22 and
+    # columns 14..25 of a 5 m grid. Still exactly 72 cells; nothing else may move. This block was
+    # transposed while `ground_footprint` mapped image-right to north.
     fc = cmap.add_frame(_tel_over(cmap, 100.0, 100.0), intr, DAY, pass_id=0)
     assert fc.skipped_reason == ""
     cmap.end_pass()
 
     cov, pod = cmap.coverage("body"), cmap.pod("body")
     expected = np.zeros(cmap.shape, dtype=bool)
-    expected[14:26, 17:23] = True
+    expected[17:23, 14:26] = True      # rows = north (30 m), cols = east (60 m)
     assert expected.sum() == 72
     np.testing.assert_array_equal(cov > 0.0, expected)
     np.testing.assert_array_equal(pod > 0.0, expected)

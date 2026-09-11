@@ -122,6 +122,24 @@ class DedupAccuracy:
         return len(self.unmatched_record_ids) / (self.duration_s / 60.0)
 
     def rows(self, slice_key: SliceKey) -> list[MetricRow]:
+        """The §5.6 numbers as sliced `MetricRow`s.
+
+        **The "we found nothing" case is real and stays reported.** It is also the case this used to get wrong.
+        With no matched pairs `mean_distance_m` and `ce90_of_matches_m` are NaN, and with records but no matches
+        `duplicate_rate` is +inf. Those went into `MetricRow` unchecked and came out as a bare `NaN` / `Infinity`
+        in JSON that no strict parser reads back — AUDIT S8, reproduced exactly:
+
+            dedup.mean_position_error_m value=nan n=0   ->   json.dumps(allow_nan=False) raises
+
+        Five of these numbers are statistics over `self.matches`; when there are none, each is *undefined*, not
+        zero, and `over_matches()` emits the explicit n=0 row that says so. Precision and recall are NOT in that
+        group: with one survivor and no records, recall really is 0.0 over n=1, and calling that "undefined"
+        would flatter the system.
+
+        The PROPERTIES keep returning NaN / inf — `tests/test_dedup.py` pins `math.isinf(duplicate_rate)`, and a
+        caller doing arithmetic wants the honest non-number. The honesty is applied where the number is
+        *reported*, which is here.
+        """
         detail: dict[str, Any] = {
             "match_radius_m": self.match_radius_m,
             "n_records": self.n_records,
@@ -130,14 +148,46 @@ class DedupAccuracy:
             "unmatched_records": list(self.unmatched_record_ids),
             "unmatched_gt": list(self.unmatched_gt_ids),
         }
+        no_match = (f"no record matched a ground-truth survivor within {self.match_radius_m:g} m "
+                    f"(records={self.n_records}, survivors={self.n_gt}), so this statistic has no sample")
+
+        def over_matches(name: str, value: float) -> MetricRow:
+            """A statistic over matched pairs. Undefined — never 0, never NaN — when nothing matched."""
+            if self.n_matched == 0:
+                return MetricRow.undefined(name, slice_key, no_match, dict(detail))
+            return MetricRow(name, float(value), slice_key, self.n_matched, dict(detail))
+
         rows = [
-            MetricRow("dedup.record_precision", self.precision, slice_key, self.n_records, dict(detail)),
+            # Precision is matched/records. With ZERO records that is 0/0 — the system made no claims, so
+            # there is nothing to be precise about — and the property returns a bare 0.0, which reads as
+            # "every record it produced was wrong". This is the fix's own target pattern sitting two lines
+            # above the rows it did fix, and it was walked past because the defence written for RECALL was
+            # silently extended to it. Recall's defence is sound and stays: with one survivor and no records,
+            # recall really is 0 of 1, a real denominator. Precision's denominator is empty. Found by
+            # red-team review.
+            (MetricRow.undefined("dedup.record_precision", slice_key,
+                                 f"no records were produced (survivors={self.n_gt}), so there is nothing "
+                                 f"whose precision could be measured", dict(detail))
+             if self.n_records == 0 else
+             MetricRow("dedup.record_precision", self.precision, slice_key, self.n_records, dict(detail))),
             MetricRow("dedup.record_recall", self.recall, slice_key, self.n_gt, dict(detail)),
-            MetricRow("dedup.duplicate_rate", self.duplicate_rate, slice_key, self.n_matched, dict(detail)),
-            MetricRow("dedup.count_mae", self.count_mae, slice_key, self.n_matched, dict(detail)),
-            MetricRow("dedup.count_bias", self.count_bias, slice_key, self.n_matched, dict(detail)),
-            MetricRow("dedup.mean_position_error_m", self.mean_distance_m, slice_key, self.n_matched, dict(detail)),
-            MetricRow("dedup.ce90_m", self.ce90_of_matches_m, slice_key, self.n_matched, dict(detail)),
+            # NOT `over_matches`. With no records at all, `duplicate_rate` deliberately returns a MEASURED
+            # 0.0 -- "no records is a miss, not an infinity of duplicates" (see the property, pinned by
+            # `tests/test_dedup.py:498`). Routing it through `over_matches` reported that real zero as
+            # undefined with the reason "no record matched a ground-truth survivor", which is false when
+            # there were no records to match, and left the property and the reported row disagreeing.
+            # It is only genuinely undefined in the case the property calls infinite: records exist and none
+            # of them matched anything.
+            (MetricRow.undefined("dedup.duplicate_rate", slice_key,
+                                 f"{self.n_records} record(s) matched no survivor within "
+                                 f"{self.match_radius_m:g} m, so the duplicate rate is unbounded",
+                                 dict(detail))
+             if self.n_records and self.n_matched == 0 else
+             MetricRow("dedup.duplicate_rate", self.duplicate_rate, slice_key, self.n_matched, dict(detail))),
+            over_matches("dedup.count_mae", self.count_mae),
+            over_matches("dedup.count_bias", self.count_bias),
+            over_matches("dedup.mean_position_error_m", self.mean_distance_m),
+            over_matches("dedup.ce90_m", self.ce90_of_matches_m),
         ]
         if self.duration_s > 0:
             rows.append(
@@ -306,10 +356,16 @@ def track_metrics(
         "n_frames": len(frames),
     }
     n = int(summary["num_detections"][name])
+    # py-motmetrics returns NaN for the ratio metrics (motp, idf1, hota_alpha, ...) when nothing matched: they
+    # are 0/0, not 0. Reporting the NaN put a value RFC 8259 cannot encode into the metrics blob (AUDIT S8);
+    # reporting 0.0 would claim perfect localisation error on a run that localised nothing. Say undefined.
+    no_match = (f"py-motmetrics scored no matched pairs over {len(frames)} frames, so this ratio is 0/0; "
+                "the count metrics beside it are still exact")
     rows = []
     for metric in MOT_METRICS:
         value = summary[metric][name]
-        rows.append(MetricRow(f"track.{metric}", float(np.mean(value)), slice_key, n, dict(detail)))
+        rows.append(MetricRow.finite_or_undefined(f"track.{metric}", float(np.mean(value)), slice_key, n,
+                                                  reason=no_match, detail=dict(detail)))
     return rows
 
 

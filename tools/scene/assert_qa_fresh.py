@@ -33,6 +33,13 @@ WATCHED = [
 #: files that do not change the render
 IGNORE = {"qa_shots.py", "assert_qa_fresh.py", "flood_level.py", "poses.json", "camera_survey.json"}
 
+#: A script that only OBSERVES the scene cannot change what a render of it shows, so editing one must not
+#: invalidate the render. Builders (`build_*`, `gen_*`, `tune_*`, `place_*`) and anything that writes scene
+#: data stay watched, because those really can change the pixels. Without this, tightening a checker marks
+#: the whole scene stale and pushes people towards re-rendering to silence the gate rather than because
+#: anything moved - which is how a freshness gate stops meaning anything.
+OBSERVER_PREFIXES = ("check_", "measure_", "verify_", "dump_", "sweep_", "qa_", "gate")
+
 
 def main() -> int:
     if not MANIFEST.exists():
@@ -53,7 +60,7 @@ def main() -> int:
         if not d.is_dir():
             continue
         for f in d.rglob(pat):
-            if f.name in IGNORE:
+            if f.name in IGNORE or f.name.startswith(OBSERVER_PREFIXES):
                 continue
             mt = f.stat().st_mtime
             if mt > t:

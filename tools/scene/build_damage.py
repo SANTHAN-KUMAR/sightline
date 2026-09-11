@@ -12,7 +12,9 @@ Fully idempotent, and safe to run repeatedly:
   2. the damaged variants are then swapped in with `set_static_mesh` - the actor, its label, its object name and
      its transform are untouched. NOTHING is renamed: renaming onto a name a destroyed-but-not-yet-collected
      actor still holds is a FATAL engine error (Obj.cpp:383) and crashed the editor twice on 2026-09-10;
-  3. roof debris is cleared and replaced by outliner folder, the same pattern as build_props.py.
+  3. roof debris is cleared and replaced by outliner folder, the same pattern as build_props.py, but placed as
+     `HierarchicalInstancedStaticMeshComponent` instances - the 67 pieces use 15 distinct meshes, so they cost
+     15 actors instead of 67. See build_rubble.py's docstring for why every actor matters on this machine.
 
 One new material instance is created here, `MI_Rubble` (Poly Haven brown_mud_rocks_01, already imported by
 build_materials.py as T_brown_mud_rocks_01_D/_N/_ARM). It parents to M_PBR_Master, so it inherits the anti-tiling
@@ -29,12 +31,14 @@ REPO = r"D:\Sightline"
 MATDIR = "/Game/Sightline/Buildings/Materials"
 DMG_PKG = "/Game/Sightline/Buildings/Damaged"
 FOLDER = "Damage"
+MAX_ACTORS = 400                # hard tripwire: the roof debris is instanced, never one actor per piece
 
 eal = unreal.EditorAssetLibrary
 mel = unreal.MaterialEditingLibrary
 tools = unreal.AssetToolsHelpers.get_asset_tools()
 les = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
 eas = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
+sds = unreal.get_engine_subsystem(unreal.SubobjectDataSubsystem)
 
 if les.is_in_play_in_editor():
     raise RuntimeError("Stop PIE first: imports, spawns and saves are unreliable while PIE runs")
@@ -221,37 +225,128 @@ for a in list(eas.get_all_level_actors()):
 if removed:
     unreal.SystemLibrary.collect_garbage()
 
-cache, absent, placed = {}, set(), 0
+# INSTANCES, NOT ACTORS. The 67 pieces use only 15 distinct meshes, so they cost 15 HISM actors instead of 67
+# AActors. See build_rubble.py's docstring: the editor died at ~5,500 actors on the Windows COMMIT limit
+# (AvailableVirtual 0.00 GiB, UsedVirtual 27.48 GiB) while 0.46 GiB of physical RAM was still free, and every
+# actor this lane does not create is commit that the vegetation lane's instances can have instead.
+# unreal.Transform's `rotation` field is a QUAT, not a Rotator (UE 5.8). Assign through set_editor_property,
+# convert the rotator explicitly, and prove the builder before trusting it 67 times.
+def _rot_to_quat(rot):
+    try:
+        return rot.quaternion()
+    except Exception:                                               # noqa: BLE001
+        return unreal.MathLibrary.conv_rotator_to_quaternion(rot)
+
+
+def _quat_to_rot(q):
+    try:
+        return q.rotator()
+    except Exception:                                               # noqa: BLE001
+        return unreal.MathLibrary.conv_quaternion_to_rotator(q)
+
+
+def debris_xform(rec):
+    t = unreal.Transform()
+    t.set_editor_property("translation", unreal.Vector(rec["north_m"] * 100.0, rec["east_m"] * 100.0,
+                                                       (rec["base_asl_m"] - BASE_Z) * 100.0))
+    t.set_editor_property("rotation", _rot_to_quat(
+        unreal.Rotator(rec["roll_deg"], rec["pitch_deg"], rec["yaw_deg"])))
+    s = float(rec["scale"])
+    t.set_editor_property("scale3d", unreal.Vector(s, s, s))
+    return t
+
+
+_p = {"north_m": 12.34, "east_m": -56.78, "base_asl_m": BASE_Z + 9.0,
+      "roll_deg": 3.0, "pitch_deg": -11.0, "yaw_deg": 50.0, "scale": 1.25}
+_t = debris_xform(_p)
+_tr = _t.get_editor_property("translation")
+_rr = _quat_to_rot(_t.get_editor_property("rotation"))
+_sc = _t.get_editor_property("scale3d")
+if (abs(_tr.x - 1234.0) > 0.5 or abs(_tr.y + 5678.0) > 0.5 or abs(_tr.z - 900.0) > 0.5
+        or abs(_sc.x - 1.25) > 1e-3 or abs(_rr.roll - 3.0) > 0.05 or abs(_rr.pitch + 11.0) > 0.05
+        or abs(_rr.yaw - 50.0) > 0.05):
+    raise RuntimeError(f"transform builder is wrong: t=({_tr.x:.1f},{_tr.y:.1f},{_tr.z:.1f}) "
+                       f"rot=(roll {_rr.roll:.2f}, pitch {_rr.pitch:.2f}, yaw {_rr.yaw:.2f}) scale {_sc.x:.3f}")
+
+cache, absent, byasset = {}, set(), {}
 for rec in plan["roof_debris"]:
-    mesh = cache.get(rec["asset"])
-    if mesh is None:
-        mesh = unreal.load_asset(rec["asset"])
-        cache[rec["asset"]] = mesh
-    if mesh is None:
+    if rec["asset"] not in cache:
+        cache[rec["asset"]] = unreal.load_asset(rec["asset"])
+    if cache[rec["asset"]] is None:
         absent.add(rec["asset"])
         continue
-    loc = unreal.Vector(rec["north_m"] * 100.0, rec["east_m"] * 100.0, (rec["base_asl_m"] - BASE_Z) * 100.0)
-    act = eas.spawn_actor_from_object(mesh, loc, unreal.Rotator(rec["roll_deg"], rec["pitch_deg"], rec["yaw_deg"]))
-    if act is None:
-        continue
-    act.set_actor_scale3d(unreal.Vector(rec["scale"], rec["scale"], rec["scale"]))
-    act.set_actor_label(rec["name"])
-    act.set_folder_path(FOLDER)
-    act.tags = ["Debris", "roof", f"house:{rec['house_id']}"]
-    act.static_mesh_component.set_mobility(unreal.ComponentMobility.STATIC)
-    placed += 1
+    byasset.setdefault(rec["asset"], []).append(rec)
 if absent:
     raise RuntimeError(f"{len(absent)} roof-debris meshes are not in the project, first: {sorted(absent)[:3]}")
 
+if len(byasset) > MAX_ACTORS:
+    raise RuntimeError(f"{len(byasset)} debris actors is over the {MAX_ACTORS} tripwire. NOTHING WAS PLACED.")
+
+placed, comps = 0, 0
+for asset, recs in sorted(byasset.items()):
+    label = "RoofDebris_" + asset.rsplit("/", 1)[-1]
+    act = eas.spawn_actor_from_class(unreal.Actor, unreal.Vector(0.0, 0.0, 0.0), unreal.Rotator(0.0, 0.0, 0.0))
+    if act is None:
+        raise RuntimeError(f"could not spawn the container actor for {label}")
+    # UE 5.8's Python bindings do NOT expose Actor.add_component_by_class (checked live: it is absent from
+    # dir(unreal.Actor) and the call raises AttributeError). SubobjectDataSubsystem is the path the Details
+    # panel's "+ Add Component" takes and it produces an INSTANCE component that serialises with the actor.
+    # Same route as build_rubble.py and build_vegetation.py.
+    handles = sds.k2_gather_subobject_data_for_instance(act)
+    new_handle, why = sds.add_new_subobject(unreal.AddNewSubobjectParams(
+        parent_handle=handles[0], new_class=unreal.HierarchicalInstancedStaticMeshComponent,
+        blueprint_context=None, conform_transform_to_parent=True))
+    if str(why):
+        raise RuntimeError(f"{label}: add_new_subobject refused: {why}")
+    sds.rename_subobject(new_handle, "Debris")
+    comp = act.get_component_by_class(unreal.HierarchicalInstancedStaticMeshComponent)
+    if comp is None:
+        raise RuntimeError(f"{label}: no HISM on the actor after add_new_subobject - the debris would "
+                           f"silently not exist")
+    try:
+        comp.set_static_mesh(cache[asset])
+    except Exception:                                                   # noqa: BLE001
+        comp.set_editor_property("static_mesh", cache[asset])
+    if comp.get_editor_property("static_mesh") != cache[asset]:
+        raise RuntimeError(f"{label}: the HISM did not take the mesh {cache[asset].get_name()}")
+    comp.set_mobility(unreal.ComponentMobility.STATIC)
+    comp.set_collision_profile_name("NoCollision")
+    comp.set_collision_enabled(unreal.CollisionEnabled.NO_COLLISION)
+    act.set_actor_label(label)                                          # label only - never rename()
+    act.set_folder_path(FOLDER)
+    act.tags = ["Debris", "roof"] + sorted({f"house:{r['house_id']}" for r in recs})
+    al, ar, asx = act.get_actor_location(), act.get_actor_rotation(), act.get_actor_scale3d()
+    if (abs(al.x) + abs(al.y) + abs(al.z) > 1.0 or abs(ar.pitch) + abs(ar.yaw) + abs(ar.roll) > 0.01
+            or abs(asx.x - 1) + abs(asx.y - 1) + abs(asx.z - 1) > 1e-3):
+        raise RuntimeError(f"{label}: container actor is not at the identity")
+
+    xf = [debris_xform(r) for r in recs]
+    comp.add_instances(xf, False, True)         # world_space=True: the transforms are world coordinates
+    if comp.get_instance_count() != len(recs):
+        raise RuntimeError(f"{label}: asked for {len(recs)} instances, component reports "
+                           f"{comp.get_instance_count()}")
+    # prove the instances are where the plan says, in world space - a count alone passes on a pile at (0,0,0)
+    want = xf[0].get_editor_property("translation")
+    got = comp.get_instance_transform(0, True).get_editor_property("translation")
+    if max(abs(got.x - want.x), abs(got.y - want.y), abs(got.z - want.z)) > 1.0:
+        raise RuntimeError(f"{label}: instance 0 reads back at ({got.x:.1f}, {got.y:.1f}, {got.z:.1f}) cm, the "
+                           f"plan says ({want.x:.1f}, {want.y:.1f}, {want.z:.1f}) cm")
+    placed += len(recs)
+    comps += 1
+
 n_now = sum(1 for a in eas.get_all_level_actors() if str(a.get_folder_path()) == FOLDER)
-if n_now != placed:
-    raise RuntimeError(f"placed {placed} roof-debris actors but the {FOLDER} folder holds {n_now}")
+if n_now != comps:
+    raise RuntimeError(f"spawned {comps} debris instancer actors but the {FOLDER} folder holds {n_now}")
+if placed != len(plan["roof_debris"]):
+    raise RuntimeError(f"placed {placed} debris instances, the plan has {len(plan['roof_debris'])}")
 
 c = plan["counts"]
 saved = les.save_current_level()
 print(f"damaged {damaged} / {c['houses_total']} houses ({c['by_archetype']})")
 print(f"  by variant: {c['by_variant']}")
-print(f"roof debris: removed {removed}, placed {placed} (~{c['roof_debris_triangles']:,} tris)")
+print(f"roof debris: removed {removed}, placed {placed} INSTANCES across {comps} HISM actors "
+      f"(~{c['roof_debris_triangles']:,} tris)")
 print(f"net added triangles: {c['net_added_triangles']:,} | level saved {saved}")
+print(f"  total level actors now: {len(eas.get_all_level_actors())}")
 print("NOW LOOK: run tools/scene/qa_shots.py and open the images - the API reports success for a scene that "
       "renders wrong.")

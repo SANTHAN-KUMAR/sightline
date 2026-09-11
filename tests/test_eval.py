@@ -275,9 +275,15 @@ def test_curve_lookup_agrees_with_counting_at_the_same_threshold():
 # 3. slicing: every number carries its slice, and the bins partition (hard rule 5)
 # ---------------------------------------------------------------------------------------------------------
 def test_the_slice_grid_is_the_documented_one():
-    """§5.12: zone x altitude x time of day x occlusion x posture x pixel size x modality."""
+    """§5.12: zone x altitude x time of day x occlusion x posture x pixel size x modality x terrain type.
+
+    `context` is the terrain the box sits on. §5.12 asks for it in the same breath as the rest of the grid --
+    "FP/min per terrain type (water, debris, vegetation, roof)" -- but it was missing from both the table and
+    this assertion until 2026-09-11, so no `MetricRow` could carry one. It is measured by
+    `sightline.eval.context` from the placed scene, not derived from the survivor's zone label.
+    """
     assert set(AXIS_VALUES) == {"zone", "altitude_band", "time_of_day", "occlusion", "posture",
-                               "pixel_size", "modality"}
+                               "pixel_size", "modality", "context"}
     assert set(BOX_AXES) | set(FRAME_AXES) == set(AXIS_VALUES)
     assert not set(BOX_AXES) & set(FRAME_AXES), "an axis is a property of the box or of the frame"
 
@@ -773,3 +779,50 @@ def test_the_synthetic_scenario_is_self_consistent():
     assert make_scenario(seed=7).truth == make_scenario(seed=7).truth, "the fixture is deterministic"
     a, b = make_scenario(seed=7), make_scenario(seed=7)
     assert [d.bbox_px for d in a.detections] == [d.bbox_px for d in b.detections]
+
+
+# ---------------------------------------------------------------------------------------------------------
+# An unmeasurable metric must not be rendered as a measured zero (AUDIT S8, reporting half)
+# ---------------------------------------------------------------------------------------------------------
+def test_an_undefined_metric_never_renders_as_a_measured_zero():
+    """`MetricRow.undefined` pins `value = 0.0` so the row survives `json.dumps(allow_nan=False)`.
+
+    That neutral zero is a serialisation device. If it reaches a reader unguarded, the report says
+    "**0.0 % nominal-slice recall, in simulation**" about a slice in which nothing was measured — which is a
+    statement that the system found nobody, not that it was never asked. That is the more damaging direction
+    to be wrong in, and it is the failure this test exists to prevent.
+    """
+    from sightline.eval.report import _headline, _value_str
+    from sightline.schemas import MetricRow
+
+    key = make_slice("sim")
+    undefined = MetricRow.undefined("recall@nominal", key, "no ground-truth boxes in this slice")
+    ms = MetricSet()
+    ms.add(undefined)
+
+    line = _headline(ms, "sim")[0]
+    assert "0.0 %" not in line, f"an unmeasurable slice was rendered as a measured zero: {line}"
+    assert "undefined" in line
+    assert "no ground-truth boxes in this slice" in line, "the reason must travel with the absence"
+    # 5.5c: every recall figure carries its domain in the same sentence — including a missing one.
+    assert "in simulation" in line
+
+    assert _value_str(undefined).startswith("undefined (")
+    assert _value_str(MetricRow(name="recall@nominal", value=0.94, slice=key, n=200)) == "0.94"
+
+
+def test_a_measured_zero_is_still_reported_as_a_measured_zero():
+    """The guard must not swallow a real 0.0 — a detector that genuinely found nothing has to say so."""
+    from sightline.eval.report import _headline, _value_str
+    from sightline.schemas import MetricRow
+
+    key = make_slice("sim")
+    measured = MetricRow(name="recall@nominal", value=0.0, slice=key, n=57)
+    ms = MetricSet()
+    ms.add(measured)
+
+    line = _headline(ms, "sim")[0]
+    assert "0.0 % nominal-slice recall at IoU 0.5, in simulation" in line
+    assert "undefined" not in line
+    assert "n = 57" in line
+    assert _value_str(measured) == "0"

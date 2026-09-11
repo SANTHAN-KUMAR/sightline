@@ -18,6 +18,10 @@ sections 5.4 and 5.7 assume and what the tracker's camera-motion compensation is
 
 The drone holds constant AGL over the higher of ground or flood surface: the valley walls reach 1169.9 m ASL
 while the flood surface is 1061.7, so a fixed height above the water flies into the hillside.
+
+The plan, the terrain follower, the cadence gate and the AirSim capture helper live in
+`sightline/mission/pattern.py` and are SHARED with `sightline/mission/live.py` (the real-time demo loop).
+They used to be local closures in `main()` below, which meant a second runner had to copy them.
 """
 
 from __future__ import annotations
@@ -33,37 +37,18 @@ import time
 from pathlib import Path
 
 import cv2
-import numpy as np
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 sys.path.insert(0, str(REPO / "tools" / "scene"))
-from tools.capture.labels import attach_truth, labels_from_mask, to_yolo  # noqa: E402
+from sightline.mission.pattern import (MIN_HITS, MIN_HITS_WINDOW_S, Scenario, body_euler_deg,  # noqa: E402
+                                       build_plan, cadence_verdict, connect, grab)
+from tools.capture.labels import apply_depth_visibility, attach_truth, labels_from_mask, to_yolo  # noqa: E402
 
 with contextlib.redirect_stdout(io.StringIO()):
-    import cosysairsim as airsim
+    import cosysairsim as airsim  # noqa: E402  (weather / drivetrain / yaw enums only)
 
-
-def connect():
-    with contextlib.redirect_stdout(io.StringIO()):
-        c = airsim.MultirotorClient()
-        c.confirmConnection()
-    return c
-
-
-def grab(c, want_ir: bool = False) -> dict:
-    """Raw AirSim buffers are RGB (measured); OpenCV is BGR, so the swap happens once, on write."""
-    req = [airsim.ImageRequest("survey", airsim.ImageType.Scene, False, False),
-           airsim.ImageRequest("survey", airsim.ImageType.Segmentation, False, False)]
-    if want_ir:
-        req.append(airsim.ImageRequest("survey", airsim.ImageType.Infrared, False, False))
-    with contextlib.redirect_stdout(io.StringIO()):
-        res = c.simGetImages(req)
-    keys = ("scene", "seg", "ir")
-    out = {}
-    for r, k in zip(res, keys):
-        out[k] = np.frombuffer(r.image_data_uint8, dtype=np.uint8).reshape(r.height, r.width, 3)
-    return out
+__all__ = ["MIN_HITS", "MIN_HITS_WINDOW_S", "main"]
 
 
 def main() -> int:
@@ -72,7 +57,31 @@ def main() -> int:
     ap.add_argument("--speed", type=float, default=10.0, help="m/s ground speed")
     ap.add_argument("--out", default="_artifacts/dataset/flight")
     ap.add_argument("--quantile", type=float, default=0.05,
-                    help="trim the survivor bounding box to keep the flight a sane length")
+                    help="box plan only: trim the survivor bounding box to a sane flight length")
+    ap.add_argument("--plan", choices=("box", "patches"), default="patches",
+                    help="box: one lawnmower over the whole survivor extent. patches: one small "
+                         "lawnmower over each cluster of survivors, skipping the empty valley between "
+                         "them. The box plan spends most of its frames on ground with nobody on it: "
+                         "measured on the 2026-09-11 run, 209 frames returned 42 boxes.")
+    ap.add_argument("--time-of-day", default="",
+                    help="YYYY-MM-DD HH:MM:SS to drive the sun, or empty to leave the level alone. "
+                         "Sun angle changes the image far more than another 300 frames of the same "
+                         "light does, and it costs no extra flying.")
+    ap.add_argument("--rain", type=float, default=None, help="0..1")
+    ap.add_argument("--fog", type=float, default=None, help="0..1")
+    ap.add_argument("--dust", type=float, default=None, help="0..1")
+    ap.add_argument("--condition", default="clear_midday",
+                    help="name for this lighting/weather condition; it is written to the data card "
+                         "and is a slice axis, so every metric can be reported per condition")
+    ap.add_argument("--no-track-check", action="store_true",
+                    help="fly even if the cadence cannot confirm a track (detector-only dataset)")
+    ap.add_argument("--dry-run", action="store_true",
+                    help="print the flight plan and exit without arming or flying")
+    ap.add_argument("--patch-link-m", type=float, default=90.0,
+                    help="patches plan: survivors closer than this are flown as one patch")
+    ap.add_argument("--jpeg", type=int, default=0, metavar="Q",
+                    help="save frames as JPEG at this quality instead of PNG (masks stay lossless "
+                         "PNG - a lossy mask would corrupt every label). 4K PNG is 11.9 MB a frame.")
     ap.add_argument("--overlap", type=float, default=0.2)
     ap.add_argument("--shutter-m", type=float, default=26.0, help="capture every N metres of track")
     ap.add_argument("--thermal", action="store_true", help="also capture the Infrared pass")
@@ -83,51 +92,42 @@ def main() -> int:
                     help="do not capture while the airframe is banked beyond this")
     a = ap.parse_args()
 
-    scene = json.loads((REPO / "data/scene/flood_valley.json").read_text())
-    truth = json.loads((REPO / "data/scene/actors.json").read_text())
-    cal = json.loads((REPO / "data/scene/camera_survey.json").read_text())
-    home, water = scene["launch_site"], truth["water_level_m"]
-    f_px = float(cal["f_px"])
+    # Scenario, terrain follower, plan and cadence gate all come from the SHARED module: `live.py` flies the
+    # identical plan, so tuning either runner tunes both (sightline/mission/pattern.py).
+    scn = Scenario.load()
+    home, water = scn.home, scn.water_level_m
+    truth, cal, f_px = scn.truth, scn.cal, scn.f_px
+    surface_asl = scn.terrain.surface_asl
+    det = scn.detectable_actors()
 
-    import gen_terrain as gt
-    t = gt.build(scene["size_m"], scene["cell_m"], scene["seed"])
-    H, N, CELL, SIZE = t["height"], t["n"], t["cell_m"], t["size_m"]
-    X0 = -SIZE / 2.0
+    sp = build_plan(scn, alt_m=a.alt, speed_ms=a.speed, shutter_m=a.shutter_m, plan=a.plan,
+                    overlap=a.overlap, quantile=a.quantile, patch_link_m=a.patch_link_m)
+    legs, inside, W, Hm = sp.legs, sp.survivors_in_plan, sp.frame_w_m, sp.frame_h_m
+    print(sp.summary())
 
-    def surface_asl(e, n):
-        i = int(round((e - X0) / CELL)); j = int(round((n - X0) / CELL))
-        return max(float(H[min(max(j, 0), N - 1)][min(max(i, 0), N - 1)]), water)
+    # --- will this cadence produce a TRACK? -------------------------------------------------------------
+    # SOLUTION_DOC 5.6 rule 3: a track is emitted only after `min_hits=3` inside `min_hits_window_s=2.0`.
+    # A survey that cannot deliver that yields detections and geolocations and then nothing at all.
+    verdict = cadence_verdict(a.alt, a.speed, a.shutter_m, scn.hfov_deg)
+    if not a.no_track_check and not verdict.ok:
+        print(verdict.message())
+        return 2
 
-    det = [x for x in truth["actors"] if x["aerially_detectable"]]
-    es = np.array([x["east_m"] for x in det]); ns = np.array([x["north_m"] for x in det])
-    q = a.quantile
-    e0, e1 = np.quantile(es, [q, 1 - q]); n0, n1 = np.quantile(ns, [q, 1 - q])
-    e0, e1, n0, n1 = e0 - 35, e1 + 35, n0 - 35, n1 + 35
-
-    W = 2.0 * a.alt * math.tan(math.radians(float(cal["hfov_deg"])) / 2.0)
-    d_line = W * (1.0 - a.overlap)
-    lines = int(math.ceil((e1 - e0) / d_line)) + 1
-    legs = []
-    for i in range(lines):
-        e = e0 + i * d_line
-        if e > e1 + d_line:
-            break
-        legs.append((e, n0, n1) if i % 2 == 0 else (e, n1, n0))
-    track_km = sum(abs(b - c_) for _, b, c_ in legs) / 1000.0
-    inside = int(((es >= e0) & (es <= e1) & (ns >= n0) & (ns <= n1)).sum())
-    print(f"survey box east[{e0:.0f},{e1:.0f}] north[{n0:.0f},{n1:.0f}] holds {inside}/{len(det)} survivors")
-    print(f"{len(legs)} lines, {d_line:.0f} m apart, {track_km:.1f} km of track at {a.speed:.0f} m/s "
-          f"-> ~{track_km * 1000 / a.speed / 60:.1f} min, shutter every {a.shutter_m:.0f} m")
+    if a.dry_run:
+        est = sp.est_minutes + sp.est_frames * 0.6 / 60
+        print(f"dry run: {sp.est_frames} frames, ~{est:.1f} min including "
+              f"capture overhead. Nothing was armed or flown.")
+        return 0
 
     out = REPO / a.out
     for d in ("images", "labels", "masks") + (("ir",) if a.thermal else ()):
         (out / d).mkdir(parents=True, exist_ok=True)
 
+    n_hidden = 0        # survivors present in the mask but fully hidden in RGB by foliage/rubble
     c = connect()
     names = c.simListInstanceSegmentationObjects()
     cmap = c.simGetSegmentationColorMap()
-    with contextlib.redirect_stdout(io.StringIO()):
-        grab(c, a.thermal)                                  # warm-up frame, discarded (unconverted buffers)
+    grab(c, want_ir=a.thermal, want_depth=True)             # warm-up frame, discarded (unconverted buffers)
 
     # --- PRE-FLIGHT: is the instance segmentation healthy? -------------------------------------------------
     # A capture is only as good as its instance colours. `tools/capture/thermal_ids.py` assigns a SHARED
@@ -147,14 +147,62 @@ def main() -> int:
         print("\n   Restart PIE to regenerate unique instance ids (InitialInstanceSegmentation in settings),")
         print("   and never run tools/capture/thermal_ids.py on a PIE session you intend to capture from.")
         raise SystemExit(2)
+
+    # --- record the palette WITH the dataset ---------------------------------------------------------------
+    # `tools/capture/validate.py` check C is the only one that confirms a labelled box actually contains its
+    # actor in the mask, and it needs actor_id -> colour. Reading that from a live simulator meant it was
+    # skipped every time anyone validated a dataset with the editor shut, which is almost always - and on
+    # 2026-09-11 the tool then printed "all checks passed - dataset is clean" and exited 0 anyway. Writing
+    # the palette next to the frames makes the dataset self-describing: the check runs for ever, on any
+    # machine, with nothing running.
+    from tools.capture.labels import actor_index as _actor_index, palette_rgb as _palette_rgb  # noqa: PLC0415
+    _pal_rgb = _palette_rgb(cmap)
+    _idx = _actor_index(names)
+    _pal_out = {str(aid): [int(v) for v in _pal_rgb[i]] for i, (aid, _nm, _cls) in _idx.items()}
+    (out / "segmentation_palette.json").write_text(json.dumps({
+        "by": "sightline/mission/survey.py",
+        "note": "actor_id -> RGB in the instance mask, as written by the capture. RGB, not BGR: the raw "
+                "AirSim buffer is RGB and cv2.imread returns BGR, so a reader must reverse the channels.",
+        "objects_registered": len(names), "actors": len(_pal_out),
+        "actor_rgb": _pal_out,
+        # The full map, not just the survivors. Without it the dataset is self-describing for people and
+        # mute about everything else, so nothing downstream can read a mask for what a pixel IS - terrain,
+        # water, a roof - and has to re-derive it geometrically from the scene JSONs instead. It costs ~40 KB.
+        # data/scene/thermal_table.json is NOT a substitute: it holds 1,162 objects against this capture's
+        # 1,252, so the indices do not line up.
+        # CAVEAT, and it is the whole reason the depth gate exists: this map lists what the annotator
+        # REGISTERED, not what it RENDERS. Cosys-AirSim disables the InstancedFoliage/InstancedGrass show
+        # flags in its annotation pass, so every HISM plant here has an entry below and never appears in a
+        # single mask pixel. A reader must not infer "absent from the mask" means "absent from the scene".
+        "object_rgb": {nm: [int(v) for v in _pal_rgb[i]] for i, nm in enumerate(names)},
+    }, indent=1), encoding="utf-8")
+    print(f"  palette recorded: {len(_pal_out)} actors, {len(names)} objects "
+          f"-> {out / 'segmentation_palette.json'}")
     print(f"pre-flight: {len(names)} instances, every actor colour unique")
 
+    if a.time_of_day or a.rain is not None or a.fog is not None or a.dust is not None:
+        if a.time_of_day:
+            c.simSetTimeOfDay(True, a.time_of_day, False, 1.0, 60.0, True)
+        if a.rain is not None or a.fog is not None or a.dust is not None:
+            c.simEnableWeather(True)
+            for p_, v_ in ((airsim.WeatherParameter.Rain, a.rain),
+                           (airsim.WeatherParameter.Fog, a.fog),
+                           (airsim.WeatherParameter.Dust, a.dust)):
+                if v_ is not None:
+                    c.simSetWeatherParameter(p_, float(v_))
+        # Look at the result rather than trusting the call: a level with no sky sphere accepts
+        # simSetTimeOfDay and changes nothing, and that would silently label every frame with a
+        # condition it does not have.
+        _probe = grab(c)["scene"]
+        _tod = a.time_of_day or "level default"
+        print(f"condition {a.condition!r}: time_of_day={_tod} rain={a.rain} fog={a.fog} "
+              f"dust={a.dust}; frame mean brightness {float(_probe.mean()):.1f}/255")
     c.enableApiControl(True)
     c.armDisarm(True)
     print("\ntaking off...")
     c.takeoffAsync(timeout_sec=20).join()
 
-    clip_id = f"flight_seed{truth['seed']}_alt{int(a.alt)}"
+    clip_id = f"seed{truth['seed']}_alt{int(a.alt)}_{a.condition}"
     tf = (out / "telemetry.csv").open("w", newline="", encoding="utf-8")
     tw = csv.writer(tf)
     tw.writerow(["frame_idx", "t_utc", "clip_id", "east_m", "north_m", "alt_msl_m", "agl_m", "lat", "lon",
@@ -168,13 +216,14 @@ def main() -> int:
     t_start = time.time()
     last_shot = None
     try:
-        for li, (e, na, nb) in enumerate(legs):
+        for li, leg in enumerate(legs):
             if (time.time() - t_start) / 60.0 > a.max_minutes:
                 print(f"  stopping: {a.max_minutes} min budget reached at line {li}/{len(legs)}")
                 break
             # Fly the WHOLE leg in one command and shoot on the move. Stopping at every shutter point made the
             # drone accelerate and brake 22 times per line (5 min for two lines) and removed the very motion the
             # tracker's camera-motion compensation exists to handle. A continuous leg is faster AND a truer pass.
+            e, na, nb = leg.east_m, leg.north_start_m, leg.north_end_m
             asl_a = surface_asl(e, na) + a.alt
             c.moveToPositionAsync(float(na - home["north_m"]), float(e - home["east_m"]),
                                   float(-(asl_a - home["ground_asl_m"])), a.speed, timeout_sec=120).join()
@@ -194,24 +243,32 @@ def main() -> int:
                 # captured beyond +-12 deg. The drone banks on acceleration and at leg ends, so gate on the
                 # body attitude: wait for it to level rather than recording a tilted frame.
                 _o = st.orientation
-                _roll = math.degrees(math.atan2(2 * (_o.w_val * _o.x_val + _o.y_val * _o.z_val),
-                                                1 - 2 * (_o.x_val ** 2 + _o.y_val ** 2)))
-                _pitch = math.degrees(math.asin(max(-1.0, min(1.0, 2 * (_o.w_val * _o.y_val
-                                                                       - _o.z_val * _o.x_val)))))
+                _roll, _pitch, _ = body_euler_deg(_o)
                 _agl = (home["ground_asl_m"] - st.position.z_val) - surface_asl(cur_e, cur_n)
                 # and do not shoot when the drone is far off its commanded height: an audit found AGL ranging
                 # 18.7-121.4 m in a run labelled "45 m", which corrupts GSD, scale and geolocation alike.
                 on_alt = abs(_agl - a.alt) <= a.alt_tol_m
                 level = max(abs(_roll), abs(_pitch)) <= a.max_tilt_deg and on_alt
                 if level and (shots == 0 or abs(cur_n - last_n) >= a.shutter_m):
-                    g = grab(c, a.thermal)
-                    labs = attach_truth(labels_from_mask(g["seg"], names, cmap), truth)
+                    g = grab(c, want_ir=a.thermal, want_depth=True)
                     gp = c.getMultirotorState().gps_location
                     o, v = st.orientation, st.linear_velocity
                     spd = math.sqrt(v.x_val ** 2 + v.y_val ** 2 + v.z_val ** 2)
                     asl = home["ground_asl_m"] - st.position.z_val
+                    # The instance mask is blind to foliage (Cosys-AirSim disables the InstancedFoliage show
+                    # flag in its annotation render), so it reports survivors under a canopy as fully
+                    # visible. The depth buffer is not blind to it. Gate every box on depth before writing.
+                    labs, hidden = apply_depth_visibility(
+                        attach_truth(labels_from_mask(g["seg"], names, cmap), truth),
+                        g["seg"], g["depth"], cam_alt_asl_m=asl, actors_json=truth)
+                    n_hidden += len(hidden)
                     stem = f"{clip_id}_{k:05d}"
-                    cv2.imwrite(str(out / "images" / f"{stem}.png"), g["scene"][:, :, ::-1])
+                    if a.jpeg:
+                        cv2.imwrite(str(out / "images" / f"{stem}.jpg"),
+                                    g["scene"][:, :, ::-1],
+                                    [int(cv2.IMWRITE_JPEG_QUALITY), int(a.jpeg)])
+                    else:
+                        cv2.imwrite(str(out / "images" / f"{stem}.png"), g["scene"][:, :, ::-1])
                     cv2.imwrite(str(out / "masks" / f"{stem}.png"), g["seg"][:, :, ::-1])
                     if a.thermal and "ir" in g:
                         cv2.imwrite(str(out / "ir" / f"{stem}.png"), g["ir"][:, :, ::-1])
@@ -221,7 +278,11 @@ def main() -> int:
                         [{"actor_id": m.actor_id, "name": m.name, "cls": m.cls, "bbox_px": list(m.bbox_px),
                           "visible_px": m.visible_px, "size_px": m.size_px, "pose": m.pose,
                           "submersion": m.submersion, "occlusion": m.occlusion, "zone": m.zone,
-                          "group": m.group, "aerially_detectable": m.aerially_detectable} for m in labs],
+                          "group": m.group, "aerially_detectable": m.aerially_detectable,
+                          "visible_fraction": m.visible_fraction,
+                          "amodal_bbox_px": list(m.amodal_bbox_px) if m.amodal_bbox_px else None,
+                          "occlusion_basis": "measured per observation from the DepthPlanar buffer"}
+                         for m in labs],
                         indent=1), encoding="utf-8")
                     # GSD must come from the MEASURED height above the surface, not the commanded --alt. The
                     # drone does not hold the setpoint exactly over rising ground, and writing the constant
@@ -260,6 +321,10 @@ def main() -> int:
     detset = {x["id"] for x in det}
     card = {"clip_id": clip_id, "scenario_seed": truth["seed"], "altitude_m_agl": a.alt,
             "speed_ms": a.speed, "shutter_m": a.shutter_m, "frames": k, "total_boxes": total,
+            "plan": a.plan, "patch_link_m": a.patch_link_m, "lines": len(legs),
+            "condition": a.condition, "time_of_day": a.time_of_day or None,
+            "weather": {"rain": a.rain, "fog": a.fog, "dust": a.dust},
+            "image_format": ("jpeg", a.jpeg) if a.jpeg else ("png", None),
             "unique_actors_seen": len(seen), "detectable_in_box": inside,
             "detectable_seen": len(seen & detset), "buried_seen": sorted(seen - detset),
             "f_px": f_px,
@@ -268,11 +333,18 @@ def main() -> int:
                                 "max": round(max(agls), 1)} if agls else None),
             "gsd_note": "per-frame gsd_cm_px in telemetry.csv is from MEASURED AGL, not the commanded altitude",
             "capture": "flown coverage pattern (F2), not teleported",
+            # The instance mask cannot see foliage: Cosys-AirSim's annotation renderer disables the
+            # InstancedFoliage/InstancedGrass show flags, and every plant here is a HISM instance. So
+            # boxes are gated on the DepthPlanar buffer, which does render the canopy. This counts the
+            # observations that gate removed: survivors the mask claimed but the camera cannot see.
+            "depth_gated": True,
+            "observations_hidden_by_occluders": n_hidden,
             "domain": "sim", "randomisation": "off (5.5c)", "split_rule": "by scenario seed",
             "minutes": round((time.time() - t_start) / 60.0, 1), "last": last_shot}
     (out / "data_card.json").write_text(json.dumps(card, indent=1), encoding="utf-8")
     print(f"\n{k} frames, {total} boxes, {len(seen & detset)}/{inside} survivors in the box seen, "
           f"{card['minutes']} min")
+    print(f"depth gate: {n_hidden} observation(s) dropped as fully hidden by foliage or rubble")
     print(f"written to {out}")
     print("NOW LOOK: uv run python tools/capture/contact_sheet.py " + str(out))
     return 0

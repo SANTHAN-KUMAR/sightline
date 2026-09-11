@@ -335,8 +335,26 @@ def build(seed: int, max_trees: int, roi_margin_m: float, ground_cover: bool) ->
         v = -de * np.sin(hb[:, 2]) + dn * np.cos(hb[:, 2])
         return not bool(np.any((np.abs(u) < hb[:, 3]) & (np.abs(v) < hb[:, 4])))
 
-    def clear_of_survivors(e: float, nn: float, r: float = CLEAR_SURVIVOR_M) -> bool:
+    # A survivor recorded `occlusion: 0` is one the ground truth PROMISES is in the open. Clearing trees by
+    # TRUNK distance does not keep that promise: a jacaranda trunk 3 m away still throws an 8-15 m crown
+    # straight over the survivor's head, and the label goes on claiming a clear view of someone who is under
+    # a canopy. So the trunk radius stays as the physical test (a trunk cannot grow through a body) and the
+    # CROWN is tested separately, once the species and scale are drawn, against the survivors the ground
+    # truth says are visible from above.
+    sv_open = np.array([[a["east_m"], a["north_m"]] for a in actors
+                        if a.get("occlusion", 0) == 0 and a.get("aerially_detectable", True)]
+                       or [[1e9, 1e9]])
+
+    def trunk_clear(e: float, nn: float, r: float = CLEAR_SURVIVOR_M) -> bool:
         return not bool(np.any(np.hypot(sv[:, 0] - e, sv[:, 1] - nn) < r))
+
+    def crown_clear_of_open(e: float, nn: float, crown_r: float) -> bool:
+        """No crown may fall over a survivor whose ground truth says `occlusion: 0`.
+
+        The major radius is used as a circle rather than the true yawed ellipse: that over-rejects slightly,
+        which is the direction an honesty check should err in.
+        """
+        return not bool(np.any(np.hypot(sv_open[:, 0] - e, sv_open[:, 1] - nn) < crown_r))
 
     def ground_at(e: float, nn: float) -> float:
         i = int(round((e + size / 2) / cell))
@@ -345,7 +363,7 @@ def build(seed: int, max_trees: int, roi_margin_m: float, ground_cover: bool) ->
 
     # --- candidate generation ---------------------------------------------------------------------------
     cand: list[dict] = []
-    rejected = {"house": 0, "survivor": 0, "drowned": 0}
+    rejected = {"house": 0, "survivor": 0, "drowned": 0, "crown_over_open": 0}
     cell_area = cell * cell
     zone_stats = {}
     for zone in ZONE_ORDER:
@@ -373,12 +391,15 @@ def build(seed: int, max_trees: int, roi_margin_m: float, ground_cover: bool) ->
                 if not clear_of_houses(e, nn):
                     rejected["house"] += 1
                     continue
-                if not clear_of_survivors(e, nn):
+                if not trunk_clear(e, nn):
                     rejected["survivor"] += 1
                     continue
                 pid = names[int(rng.choice(len(names), p=probs))]
                 lo, hi = SPECIES[pid]["scale"]
                 sc = float(rng.uniform(lo, hi))
+                if not crown_clear_of_open(e, nn, 0.5 * trees[pid]["crown_major_m"] * sc):
+                    rejected["crown_over_open"] += 1
+                    continue
                 gz = ground_at(e, nn)
                 depth = max(0.0, water - gz)
                 tilt, undercut = 0.0, 0.0
@@ -442,6 +463,7 @@ def build(seed: int, max_trees: int, roi_margin_m: float, ground_cover: bool) ->
         gid = next(g for g in GROUND_SPECIES if g in cat)
         sub = cat[gid].get("sub_meshes") or [cat[gid]["asset_hint"]]
         tris_each = max(1, int(cat[gid]["tris"] / max(1, len(sub))))
+        fern_r = 0.5 * float(cat[gid].get("crown_major_m", 3.0)) * 1.9   # widest scale drawn below
         tree_xy = np.array([[t["east_m"], t["north_m"]] for t in items]) if items else np.zeros((0, 2))
         # riparian scrub in the 0-4 m band above the flood line, plus undergrowth under the canopy
         band = (h > water + 0.1) & (h < water + 4.0) & ok_slope & in_roi & far_pad
@@ -453,7 +475,9 @@ def build(seed: int, max_trees: int, roi_margin_m: float, ground_cover: bool) ->
             for (j, i) in cells[take]:
                 e = float(xs[i]) + float(rng.uniform(-cell / 2, cell / 2))
                 nn = float(xs[j]) + float(rng.uniform(-cell / 2, cell / 2))
-                if not clear_of_houses(e, nn) or not clear_of_survivors(e, nn, 2.0):
+                if not clear_of_houses(e, nn) or not trunk_clear(e, nn, 2.0):
+                    continue
+                if not crown_clear_of_open(e, nn, fern_r):
                     continue
                 if "undergrowth" in note and len(tree_xy):
                     if float(np.min(np.hypot(tree_xy[:, 0] - e, tree_xy[:, 1] - nn))) > 6.0:
@@ -492,6 +516,30 @@ def build(seed: int, max_trees: int, roi_margin_m: float, ground_cover: bool) ->
     sel_n = (gn >= hy.min() - 40) & (gn <= hy.max() + 40)
     closure_town = float(cover[np.ix_(sel_n, sel_e)].mean()) if sel_e.any() and sel_n.any() else 0.0
 
+    # --- ground-truth invariant, measured on the FINAL tree list -----------------------------------------
+    # The clearance test above works per candidate; this proves the property on what actually got written,
+    # after the budget trim and every other filter. It is the check that would have caught the 3 m trunk
+    # radius: it counts crowns over each survivor and refuses to emit a layout that contradicts actors.json.
+    canopy_hits = []
+    for a_ in actors:
+        k = sum(1 for t in items
+                if math.hypot(t["east_m"] - a_["east_m"], t["north_m"] - a_["north_m"]) < t["crown_r_m"])
+        canopy_hits.append((a_, k))
+    violations = [f"{a_['name']} (occlusion 0, {k} crown(s) overhead)"
+                  for a_, k in canopy_hits
+                  if k and a_.get("occlusion", 0) == 0 and a_.get("aerially_detectable", True)]
+    under_canopy = {}
+    for a_, k in canopy_hits:
+        if k:
+            key = f"occlusion_{a_.get('occlusion', 0)}"
+            under_canopy[key] = under_canopy.get(key, 0) + 1
+    if violations:
+        raise SystemExit(
+            f"REFUSING TO WRITE: {len(violations)} survivor(s) marked `occlusion: 0` in "
+            f"data/scene/actors.json would stand under a tree crown, so every label for them "
+            f"would claim a clear aerial view of someone who is hidden:\n  "
+            + "\n  ".join(violations[:12]))
+
     tris_total = sum(t["tris"] for t in items)
     unique_tris = sum(trees[p]["tris"] for p in sorted({t["pid"] for t in items}))
     emerg = [t["emergent_m"] for t in items if t["emergent_m"] is not None]
@@ -517,6 +565,9 @@ def build(seed: int, max_trees: int, roi_margin_m: float, ground_cover: bool) ->
             "rejected_house_clearance": rejected["house"],
             "rejected_survivor_clearance": rejected["survivor"],
             "rejected_crown_below_water": rejected["drowned"],
+            "rejected_crown_over_open_survivor": rejected["crown_over_open"],
+            "survivors_under_canopy": under_canopy,
+            "survivors_under_canopy_total": sum(under_canopy.values()),
             "by_species": by_pid, "by_zone": by_zone,
             "instanced_source_triangles": tris_total,
             "unique_mesh_triangles": unique_tris,
@@ -586,7 +637,10 @@ def main() -> None:
     print(f"  by zone:    {c['by_zone']}")
     print(f"  rejected:   {c['rejected_house_clearance']} house-clearance, "
           f"{c['rejected_survivor_clearance']} survivor-clearance, "
-          f"{c['rejected_crown_below_water']} crown below the water surface")
+          f"{c['rejected_crown_below_water']} crown below the water surface, "
+          f"{c['rejected_crown_over_open_survivor']} crown over an unoccluded survivor")
+    print(f"  survivors under a crown: {c['survivors_under_canopy_total']} of {len(json.loads((OUT / 'actors.json').read_text())['actors'])}"
+          f"  {c['survivors_under_canopy'] or '{}'}  (none may be occlusion 0 - enforced)")
     print(f"canopy closure: {k['closure_roi'] * 100:.1f} % of the {k['roi_area_km2']} km2 ROI, "
           f"{k['closure_settlement'] * 100:.1f} % over the settlement")
     print(f"triangles: {c['instanced_source_triangles']:,} instanced source "

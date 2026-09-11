@@ -33,7 +33,8 @@ def main() -> int:
     a = ap.parse_args()
 
     run = Path(a.run) if os.path.isabs(a.run) else REPO / a.run
-    imgs = sorted(glob.glob(str(run / "images" / "*.png")))
+    imgs = sorted(glob.glob(str(run / "images" / "*.png"))
+                  + glob.glob(str(run / "images" / "*.jpg")))
     if not imgs:
         print(f"no images under {run}")
         return 1

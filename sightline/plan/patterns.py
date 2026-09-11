@@ -80,10 +80,16 @@ def altitude_for_min_px(camera: CameraModel, presentation: str, min_px: float = 
 def gimbal_yaw_for_heading(heading_deg: float) -> float:
     """Point the WIDE axis of the frame across-track.
 
-    With the optical convention in `sightline/coverage/footprint.py`, at nadir the image +u axis lies along the
-    gimbal yaw; the wide axis is therefore across-track when the gimbal yaw is heading + 90.
+    At nadir the image +u axis lies **perpendicular** to the gimbal yaw: at yaw 0 the frame is north-up and
+    +u is due EAST. The wide axis is therefore across-track when the gimbal yaw EQUALS the heading.
+
+    This returned `heading + 90` until 2026-09-11, compensating for a quarter-turn in
+    `coverage/footprint.py`, which applied the identity `q_gimbal` of a nadir camera to an OPTICAL ray and so
+    mapped image-right to north. With that fixed at the root, the +90 became a double rotation. The truth was
+    settled by measurement rather than by argument: across 110 boxes whose survivors have known world
+    positions, image-right is due east (median residual 1.37 m; the next-best hypothesis 15.8 m).
     """
-    return (heading_deg + 90.0) % 360.0
+    return heading_deg % 360.0
 
 
 def bearing_deg(from_ne: Sequence[float], to_ne: Sequence[float]) -> float:

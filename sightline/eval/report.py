@@ -39,6 +39,23 @@ def _fmt(v: float) -> str:
     return f"{v:.4g}"
 
 
+def _value_str(row: MetricRow) -> str:
+    """A number, or the honest absence of one — never a neutral zero dressed as a measurement.
+
+    `MetricRow.undefined` pins `value` to `0.0` so an unmeasurable row still survives
+    `json.dumps(..., allow_nan=False)` (AUDIT S8: a bare NaN made the metric blob RFC-8259 invalid). That
+    neutral zero is a serialisation device, and it must never reach a reader as if it had been measured:
+    "0.0 % recall" and "recall undefined, no ground-truth boxes in this slice" are opposite claims about the
+    system, and the first one is the more damaging direction to be wrong in.
+
+    Expressed once, here, because `report.py` renders values from three places (the slice table, the headline
+    sentence and the pixel-height table) and a rule spelled three times is a rule that will be spelled twice.
+    """
+    if not row.is_defined:
+        return f"undefined ({row.undefined_reason})"
+    return _fmt(row.value)
+
+
 def _cell(text: Any) -> str:
     """A markdown table cell: pipes escaped (several metric bases contain `|x - y|`) and newlines removed."""
     return str(text).replace("|", "\\|").replace("\n", " ")
@@ -73,7 +90,7 @@ def slice_table(rows: Iterable[MetricRow], axes: Sequence[str] = tuple(AXIS_VALU
         head.append("detail")
     lines = ["| " + " | ".join(head) + " |", "|" + "|".join(["---"] * len(head)) + "|"]
     for r in rows:
-        cells = [r.slice.domain, r.name, _fmt(r.value), str(r.n)]
+        cells = [r.slice.domain, r.name, _value_str(r), str(r.n)]
         # `SliceKey.label()` treats "unknown" as "axis not pinned" (it is the Zone default), so the table does
         # the same and shows "all"; a frame whose zone is genuinely unknown is reported through `detail`.
         cells += [("all" if slice_axis_value(r.slice, ax) == "unknown" else slice_axis_value(r.slice, ax))
@@ -98,7 +115,14 @@ def _headline(ms: MetricSet, domain: str) -> list[str]:
         r = hits[0]
         conf = r.detail.get("at_conf")
         at = f" at the frozen operating confidence {_fmt(float(conf))}" if conf is not None else ""
-        out.append(f"- **{r.value * 100:.1f} % {label}, {phrase}**{at} (n = {r.n} ground-truth boxes).")
+        # The domain word stays inside the bold span in BOTH branches: 5.5c requires every recall figure to
+        # carry its domain in the same sentence, and an undefined figure is still a figure being reported.
+        if r.is_defined:
+            out.append(f"- **{r.value * 100:.1f} % {label}, {phrase}**{at} "
+                       f"(n = {r.n} ground-truth boxes).")
+        else:
+            out.append(f"- **{label} is undefined, {phrase}**{at} — {r.undefined_reason} "
+                       f"(n = {r.n} ground-truth boxes).")
     return out
 
 
@@ -251,7 +275,7 @@ def render_markdown(results: Sequence[EvalResult], title: str = "Sightline evalu
             L.append("| domain | pixel-height bin | recall | n |")
             L.append("|---|---|---|---|")
             for r in px:
-                L.append(f"| {r.slice.domain} | {r.detail.get('px_bin')} | {_fmt(r.value)} | {r.n} |")
+                L.append(f"| {r.slice.domain} | {r.detail.get('px_bin')} | {_value_str(r)} | {r.n} |")
             L.append("")
 
     # --- failure clusters ---------------------------------------------------------------------------
@@ -300,7 +324,11 @@ def write_report(results: Sequence[EvalResult], out_dir: Path | str = DEFAULT_RE
                   "failure_clusters": r.failure_clusters} for r in results],
         "rows": [row for r in results for row in r.metrics.to_dicts()],
     }
-    json_path.write_text(json.dumps(payload, indent=1, default=str), encoding="utf-8")
+    json_path.write_text(# `allow_nan=False` for the same reason `export/geojson.py:103` refuses non-finite coordinates: a bare
+        # NaN makes the blob RFC-8259 invalid and a strict parser rejects the whole report. `MetricRow` now
+        # guarantees finite ROW values, but this payload also carries `asdict(r.operating)` and the failure
+        # clusters, which it does not police.
+        json.dumps(payload, indent=1, default=str, allow_nan=False), encoding="utf-8")
     return path
 
 

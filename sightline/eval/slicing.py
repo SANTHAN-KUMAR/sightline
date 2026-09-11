@@ -32,6 +32,10 @@ MODALITIES: tuple[str, ...] = ("rgb", "thermal", "fused")
 ZONES: tuple[str, ...] = ("fan", "settlement", "channel", "hillslope", "unknown")
 
 #: Axis name -> the labels it may take, "all" excluded. Used to validate and to enumerate report tables.
+#: The terrain vocabulary, imported rather than restated so a context measured by `sightline.eval.context`
+#: is assignable to a slice without translation.
+from sightline.eval.context import CONTEXTS  # noqa: E402  (kept next to the table it feeds)
+
 AXIS_VALUES: dict[str, tuple[str, ...]] = {
     "zone": ZONES,
     "altitude_band": ALTITUDE_BANDS,
@@ -40,6 +44,7 @@ AXIS_VALUES: dict[str, tuple[str, ...]] = {
     "posture": POSTURES,
     "pixel_size": PIXEL_SIZE_BINS,
     "modality": MODALITIES,
+    "context": CONTEXTS,
 }
 
 #: The value each axis has when it is NOT pinned. `SliceKey` defaults `zone` to "unknown" and everything else
@@ -52,7 +57,7 @@ AXIS_DEFAULT: dict[str, str] = {ax: ("unknown" if ax == "zone" else "all") for a
 #: positive has no ground-truth box and therefore no occlusion, posture or pixel-size bin (§5.12).
 FRAME_AXES: tuple[str, ...] = ("zone", "altitude_band", "time_of_day", "modality")
 #: Axes that are a property of the ground-truth BOX. Only recall-style metrics are defined on these.
-BOX_AXES: tuple[str, ...] = ("occlusion", "posture", "pixel_size")
+BOX_AXES: tuple[str, ...] = ("occlusion", "posture", "pixel_size", "context")
 
 
 class DomainMixError(ValueError):
@@ -215,6 +220,26 @@ def combine_rows(rows: Sequence[MetricRow], name: str, how: str = "weighted_mean
         values = {slice_axis_value(k, axis) for k in keys}
         shared[axis] = values.pop() if len(values) == 1 else "all"
     key = make_slice(domain, **shared)
+
+    # An UNDEFINED row carries `value = 0.0` only so it survives `json.dumps(allow_nan=False)`; that zero is a
+    # serialisation device and was never measured. `weighted_mean` is safe because such a row has `n == 0` and
+    # therefore contributes nothing to either side of the ratio -- but `mean` divides by the ROW COUNT and
+    # `sum` adds the value outright, so both would fold the placeholder in as though it were a measurement.
+    #
+    # Measured, and this is a REGRESSION that the S8 fix introduced rather than a gap it left open: pooling a
+    # real 4.0 m CE90 with one undefined row under `how="mean"` returned **2.0 m**. Before undefined rows
+    # existed the same input produced a NaN, which `metric_row()` then rejected with a ValueError -- a loud
+    # failure. Turning a loud failure into a quotable wrong number is the exact shape of defect
+    # `docs/QUALITY_GATE.md` exists to prevent, so this raises rather than skipping: dropping the row would
+    # silently change the denominator of a macro average, which is its own quieter lie.
+    if how in ("mean", "sum"):
+        blank = [r for r in rows if not r.is_defined]
+        if blank:
+            raise ValueError(
+                f"cannot {how} {name!r}: {len(blank)} of {len(rows)} rows are undefined "
+                f"({'; '.join(r.undefined_reason for r in blank[:3])}). An undefined row has no value to "
+                f"contribute -- pool only the measured rows, or report the absence.")
+
     n = sum(r.n for r in rows)
     if how == "sum":
         value = sum(r.value for r in rows)
@@ -333,7 +358,13 @@ class MetricSet:
 
     def to_dicts(self) -> list[dict[str, Any]]:
         return [
+            # `undefined_reason` is TOP LEVEL, not only mirrored inside `detail`. Relying on the mirror made
+            # the shallow freeze a laundering channel: `del row.detail["undefined_reason"]` on a frozen
+            # undefined row, then to_dicts -> from_dicts, returned `value=0.0, is_defined=True` — an
+            # unmeasured slice reborn as a measured zero, which the type's own docstring calls worse than the
+            # NaN it replaced. It also gives a machine consumer reading `row["value"]` something to check.
             {"name": r.name, "value": r.value, "n": r.n, "domain": r.slice.domain,
+             "undefined_reason": r.undefined_reason,
              **{ax: slice_axis_value(r.slice, ax) for ax in AXIS_VALUES}, "detail": r.detail}
             for r in self.rows
         ]
@@ -343,7 +374,11 @@ class MetricSet:
         out = cls()
         for d in dicts:
             key = make_slice(d["domain"], **{ax: d.get(ax, "all") for ax in AXIS_VALUES})
-            out.add(metric_row(d["name"], d["value"], key, int(d.get("n", 0)), **dict(d.get("detail") or {})))
+            detail = dict(d.get("detail") or {})
+            reason = str(d.get("undefined_reason") or detail.get("undefined_reason") or "")
+            if reason:
+                detail["undefined_reason"] = reason
+            out.add(metric_row(d["name"], d["value"], key, int(d.get("n", 0)), **detail))
         return out
 
     def __str__(self) -> str:

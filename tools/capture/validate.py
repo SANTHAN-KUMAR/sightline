@@ -42,19 +42,29 @@ def main() -> int:
     ap.add_argument("--uniform-std", type=float, default=3.0, help="below this grey std a frame is degenerate")
     ap.add_argument("--max-tilt-deg", type=float, default=12.0)
     ap.add_argument("--sample-masks", type=int, default=60, help="frames to check for label-image agreement")
+    ap.add_argument("--allow-skipped", action="store_true",
+                    help="exit 0 even when a check could not run (knowingly accepting the gap)")
     a = ap.parse_args()
 
     run = Path(a.run) if Path(a.run).is_absolute() else REPO / a.run
-    imgs = sorted(glob.glob(str(run / "images" / "*.png")))
+    imgs = sorted(glob.glob(str(run / "images" / "*.png"))
+                  + glob.glob(str(run / "images" / "*.jpg")))
     if not imgs:
         print(f"FAIL: no images under {run}")
         return 1
-    truth = json.loads((REPO / "data/scene/actors.json").read_text())
+    from tools.capture.labels import truth_for_run  # noqa: PLC0415
+    truth, _truth_src = truth_for_run(run)
+    print(f"ground truth: {_truth_src}")
     by_id = {x["id"]: x for x in truth["actors"]}
     detset = {x["id"] for x in truth["actors"] if x["aerially_detectable"]}
 
     fails: list[str] = []
     warns: list[str] = []
+    #: A check that did not RUN is not a check that passed. Kept apart from `warns` because this tool's whole
+    #: job is to say "do not train on this", and on 2026-09-11 it printed "all checks passed - dataset is
+    #: clean" and exited 0 while check C had been silently skipped for want of a live simulator. A gate that
+    #: returns green when a check does not run is worse than no gate at all.
+    skipped: list[str] = []
     print(f"validating {len(imgs)} frames in {run.name}\n")
 
     # --- A/B: image-level checks ---------------------------------------------------------------------------
@@ -84,7 +94,19 @@ def main() -> int:
     masks = sorted(glob.glob(str(run / "masks" / "*.png")))
     checked = mismatched = boxes = 0
     if masks:
+        # Prefer the palette the CAPTURE recorded. Reading it from a live simulator meant this check was
+        # skipped every time anyone validated with the editor shut - which is almost always - and the tool
+        # then reported the dataset "clean" anyway. A dataset that carries its own palette can be verified
+        # for ever, on any machine, with nothing running.
+        pal_file = run / "segmentation_palette.json"
+        colour_of = {}
+        if pal_file.exists():
+            _raw = json.loads(pal_file.read_text(encoding="utf-8"))
+            colour_of = {int(k): np.array(v, dtype=np.uint8) for k, v in _raw["actor_rgb"].items()}
+            print(f"C    palette recorded at capture time: {len(colour_of)} actors")
         try:
+            if colour_of:
+                raise StopIteration                      # already have it; skip the live-sim path
             import cosysairsim as airsim
             import contextlib, io
             with contextlib.redirect_stdout(io.StringIO()):
@@ -93,9 +115,14 @@ def main() -> int:
             pal = palette_rgb(c.simGetSegmentationColorMap())
             idx = actor_index(names)
             colour_of = {aid: pal[i] for i, (aid, _n, _c) in idx.items()}
+        except StopIteration:
+            pass
         except Exception as exc:
             colour_of = {}
-            warns.append(f"label-image check skipped (no live sim: {exc})")
+            skipped.append(
+                    f"check C (label-image agreement) did NOT run: no segmentation_palette.json in the "
+                    f"run and no live sim ({type(exc).__name__}). That is the ONLY check confirming a "
+                    f"labelled box contains its actor in the mask, so this dataset is UNVERIFIED.")
         if colour_of:
             step = max(1, len(masks) // a.sample_masks)
             for mp in masks[::step]:
@@ -155,6 +182,13 @@ def main() -> int:
     for lj in glob.glob(str(run / "labels" / "*.json")):
         for L in json.loads(Path(lj).read_text()):
             sizes.append(L.get("size_px", 0))
+            # An `ignore` box is neither a training target nor a recall target (section 6.3), so it cannot
+            # make a buried survivor "found". This matters because the instance mask is blind to the ISM
+            # rubble slab covering actor 55: the burial geometry IS correct - check_occlusion_truth.py
+            # confirms "everybody buried is covered" - the mask simply cannot see the occluder. Counting an
+            # ignored box here would fail a run whose ground truth is right.
+            if L.get("ignore"):
+                continue
             seen[L["actor_id"]] += 1
             per_pose[L.get("pose", "?")][L["actor_id"]] += 1
     if sizes:
@@ -218,12 +252,20 @@ def main() -> int:
     print()
     for w in warns:
         print(f"WARN  {w}")
+    for sk in skipped:
+        print(f"SKIP  {sk}")
     if fails:
         for f in fails:
             print(f"FAIL  {f}")
         print(f"\n{len(fails)} check(s) FAILED - do not train on this dataset")
         return 1
-    print("all checks passed - dataset is clean")
+    if skipped and not a.allow_skipped:
+        print(f"\n{len(skipped)} check(s) did not run, so this dataset is UNVERIFIED - "
+              f"not clean. Re-run with the simulator up, or use a capture that recorded its palette. "
+              f"Pass --allow-skipped only to knowingly accept the gap.")
+        return 2
+    print("all checks ran and passed - dataset is clean"
+          + (f" ({len(skipped)} skipped, knowingly accepted)" if skipped else ""))
     return 0
 
 

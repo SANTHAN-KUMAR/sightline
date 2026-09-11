@@ -93,6 +93,11 @@ class CaptureLabel:
     group: str | None = None
     aerially_detectable: bool = True
     visible_px: int = 0
+    #: Section 6.3 `ignore`: neither a recall target nor a false positive. Set by
+    #: tools/capture/refine_labels_with_depth.py when the depth buffer at the recorded camera pose shows no
+    #: line of sight to the body - the instance mask is blind to instanced foliage and rubble, so a box can
+    #: be written over an occluder with no subject visible in RGB at all.
+    ignore: bool = False
 
     @property
     def width_px(self) -> float:
@@ -202,10 +207,22 @@ def load_run(path: str | Path) -> CaptureRun:
     if tel_p.exists():
         with tel_p.open(newline="", encoding="utf-8") as fh:
             for row in csv.DictReader(fh):
-                tel[int(row["frame_idx"])] = row
+                # A run killed mid-write leaves a NUL-padded tail: the file length is flushed before the
+                # bytes, so the CSV ends in thousands of \x00 and `int()` raises a ValueError quoting them,
+                # which tells a reader nothing. Stop at the first non-row and say how far the file was
+                # usable - the frames before the interruption are still good data.
+                raw = (row.get("frame_idx") or "").strip("\x00 \t\r\n")
+                if not raw.isdigit():
+                    print(f"  {tel_p.name}: truncated after {len(tel)} frames (run interrupted); "
+                          f"the frames before that point are still usable")
+                    break
+                tel[int(raw)] = row
 
     frames: list[CaptureFrame] = []
-    for img in sorted((root / "images").glob("*.png")):
+    # A run captured with `survey.py --jpeg` writes .jpg frames - 4K PNG is 11.9 MB each and a
+    # 1,700-frame campaign is 20 GB of them - while masks stay lossless PNG. Globbing only *.png
+    # found ZERO frames and reported an empty dataset as though that were an answer.
+    for img in sorted([*(root / "images").glob("*.png"), *(root / "images").glob("*.jpg")]):
         stem = img.stem
         idx = int(stem.rsplit("_", 1)[-1]) if stem.rsplit("_", 1)[-1].isdigit() else len(frames)
         lj = root / "labels" / f"{stem}.json"
@@ -224,6 +241,7 @@ def load_run(path: str | Path) -> CaptureRun:
                 group=m.get("group"),
                 aerially_detectable=bool(m.get("aerially_detectable", True)),
                 visible_px=int(m.get("visible_px", 0)),
+                ignore=bool(m.get("ignore", False)),
             )
             for m in raw
         ]
@@ -420,6 +438,14 @@ def tile_boxes(
     dropped: list[CaptureLabel] = []
     for m in labels:
         if m.cls not in cls_id:
+            continue
+        if m.ignore:
+            # Section 6.3 `ignore`. There is no subject visible in RGB here - the mask claimed one because
+            # it cannot see the foliage or rubble covering them. Emitting this box would train the detector
+            # to invent a person from leaf texture, which is the single worst thing this dataset could do.
+            # The tile is still kept as background: "nothing visible" is the correct target for it, and a
+            # hidden survivor is a genuinely useful hard negative.
+            dropped.append(m)
             continue
         if intersection_area(m.bbox_px, tile.rect) <= 0.0:
             continue
@@ -637,6 +663,10 @@ def to_eval_dataset(
                 submersion=m.submersion if m.submersion in _SUBMERSIONS else "unknown",
                 truncated=(x1 <= 0.0 or y1 <= 0.0 or x2 >= fr.width_px or y2 >= fr.height_px),
                 uncertain=not m.aerially_detectable,
+                # section 6.3 `ignore`: no line of sight, so neither a true positive nor a miss.
+                # GtBox.scored already excludes it; kept distinct from `uncertain`, which here means
+                # the section 2.7 buried survivors, so the two reasons stay tellable apart.
+                ignore=m.ignore,
                 is_group=False, group_count=1,
                 context=_context_for(m.zone, m.submersion),
             ))

@@ -158,7 +158,12 @@ class Uploader(threading.Thread):
         self.max_attempts = max_attempts
         self.jitter = jitter
         self.on_change = on_change
-        self._stop = threading.Event()
+        # NOT `_stop`: `threading.Thread._stop` is a bound method CPython calls itself during
+        # thread teardown (`_wait_for_tstate_lock`). Shadowing it with an Event made
+        # `Uploader.stop()` raise `TypeError: 'Event' object is not callable` whenever the
+        # thread had already exited - i.e. on every clean shutdown that joined a finished
+        # uploader. Found by the live lane on 2026-09-11.
+        self._stop_event = threading.Event()
         self._attempts: dict[str, int] = {}
         self._next_try = 0.0
         self.sent = 0
@@ -215,13 +220,13 @@ class Uploader(threading.Thread):
                 pass
 
     def run(self) -> None:
-        while not self._stop.is_set():
+        while not self._stop_event.is_set():
             state = self.step()
             if state in ("idle", "backoff"):
-                self._stop.wait(self.poll_s)
+                self._stop_event.wait(self.poll_s)
 
     def stop(self, timeout: float = 5.0) -> None:
-        self._stop.set()
+        self._stop_event.set()
         if self.is_alive():
             self.join(timeout)
 

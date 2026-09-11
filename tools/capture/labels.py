@@ -54,6 +54,8 @@ class MaskLabel:
     group: str | None = None
     visible_fraction: float | None = None
     amodal_bbox_px: tuple[int, int, int, int] | None = None
+    #: Section 6.3 `ignore`: no line of sight to the body, so neither a recall target nor a false positive.
+    ignore: bool = False
 
     @property
     def width_px(self) -> int:
@@ -147,6 +149,105 @@ def labels_from_mask(mask_rgb: np.ndarray, names: list[str], colour_map, *,
     return out
 
 
+#: Depth-gate slack in metres. ABOVE absorbs the camera's mounting offset below the telemetry reference and
+#: any error in the body height; BELOW absorbs terrain slope under the body and the quantisation of
+#: `base_asl_m`. Both are far smaller than the 3-16 m a crown or a slab stands above a survivor, which is the
+#: separation this gate actually has to resolve.
+DEPTH_SLACK_ABOVE_M = 1.0
+DEPTH_SLACK_BELOW_M = 1.5
+
+#: A box has to clear BOTH floors to be a training target. `MIN_VISIBLE_PX` alone lets specks seen through
+#: gaps in a canopy hold a full-size box open; `MIN_VISIBLE_FRACTION` is what actually catches that case.
+MIN_VISIBLE_PX = 12
+MIN_VISIBLE_FRACTION = 0.04
+
+
+def apply_depth_visibility(
+    labels: list[MaskLabel], mask_rgb: np.ndarray, depth_planar: np.ndarray, *,
+    cam_alt_asl_m: float, actors_json: dict, min_px: int = MIN_VISIBLE_PX,
+    min_visible_fraction: float = MIN_VISIBLE_FRACTION,
+    slack_above_m: float = DEPTH_SLACK_ABOVE_M, slack_below_m: float = DEPTH_SLACK_BELOW_M,
+) -> tuple[list[MaskLabel], list[MaskLabel]]:
+    """Cut each mask instance down to the pixels a camera can really see, using the depth buffer.
+
+    Returns `(visible, fully_occluded)`.
+
+    WHY THIS IS NEEDED. Cosys-AirSim renders its instance mask with two engine show flags switched off
+    (`Source/Annotation/ObjectAnnotator.cpp:SetViewForAnnotationRender`)::
+
+        show_flags.SetInstancedFoliage(false);
+        show_flags.SetInstancedGrass(false);
+
+    Every plant in this scene is an instance on a HierarchicalInstancedStaticMeshComponent, because the
+    Windows commit limit killed the editor at ~5,500 individual actors. So the mask renders the terrain
+    straight through the canopy: a survivor lying under a fern appears in it whole and unoccluded. Measured on
+    seed23_alt35, 7 of 110 boxes sat on pure leaf texture with no subject visible in RGB at all, and every
+    vegetation-occluded survivor carried a full-body box where guideline section 1 requires a visible-extent
+    one.
+
+    DepthPlanar is the ordinary scene depth buffer and both Nanite and instanced meshes write it, which
+    `tools/capture/check_depth_sees_foliage.py` demonstrates on a frame where the mask shows flat terrain and
+    depth shows every crown. Because it is *planar* depth - distance along the optical axis, not radial range
+    - a nadir frame gives `depth = camera_altitude - surface_altitude` at every pixel, with no dependence on
+    where the pixel sits in the image. So the test is simply whether the frontmost surface at that pixel is
+    the survivor's own body or something above it::
+
+        visible(px)  <=>  d_ground - body_height - slack_above  <=  depth(px)  <=  d_ground + slack_below
+
+    THE DIVIDEND. Because foliage is missing from the mask, the mask silhouette is the **amodal** body - what
+    the camera would see with the occluder removed. That makes `visible_px / amodal_px` a *measured*
+    visibility budget rather than the reference-silhouette estimate `measure_occlusion.py` has to fall back
+    on, and it is exact per observation. It is kept in `visible_fraction`, with the pre-gate box preserved in
+    `amodal_bbox_px`.
+    """
+    if depth_planar.shape[:2] != mask_rgb.shape[:2]:
+        raise ValueError(f"depth {depth_planar.shape[:2]} does not match mask {mask_rgb.shape[:2]}")
+    by_id = {a["id"]: a for a in actors_json["actors"]}
+    visible: list[MaskLabel] = []
+    occluded: list[MaskLabel] = []
+
+    for m in labels:
+        a = by_id.get(m.actor_id)
+        if a is None:
+            raise KeyError(f"{m.name} is in the mask but not in actors.json - the palette and the ground "
+                           f"truth disagree, which invalidates every box in this frame")
+        x1, y1, x2, y2 = m.bbox_px
+        sub_m = mask_rgb[y1:y2 + 1, x1:x2 + 1]
+        sub_d = depth_planar[y1:y2 + 1, x1:x2 + 1]
+        amodal = np.all(sub_m == np.array(m.rgb, dtype=mask_rgb.dtype), axis=2)
+
+        d_ground = float(cam_alt_asl_m) - float(a["base_asl_m"])
+        body_m = float(a["height_cm"]) / 100.0
+        lo = d_ground - body_m - slack_above_m
+        hi = d_ground + slack_below_m
+        sel = amodal & np.isfinite(sub_d) & (sub_d >= lo) & (sub_d <= hi)
+
+        n_amodal, n_vis = int(amodal.sum()), int(sel.sum())
+        m.amodal_bbox_px = m.bbox_px
+        m.visible_fraction = float(n_vis) / float(n_amodal) if n_amodal else 0.0
+        # BOTH a pixel floor and a fraction floor. A pixel count alone is not enough: measured on
+        # seed47_alt55, a survivor under a jacaranda leaked a handful of pixels through gaps between fronds
+        # and kept a 22 px box over solid foliage with no subject visible in RGB at all. A body that is
+        # 96 % hidden is not a training target whatever the absolute pixel count happens to be.
+        if n_vis < min_px or m.visible_fraction < min_visible_fraction:
+            # Nothing of this survivor reaches the camera. This is ground truth, not a labelling failure:
+            # section 2.7 already has buried survivors an aerial search cannot find. Dropping the box is the
+            # only honest option - writing one would train the detector to invent a person from foliage.
+            m.visible_px = n_vis
+            occluded.append(m)
+            continue
+        ys, xs = np.where(sel)
+        m.bbox_px = (x1 + int(xs.min()), y1 + int(ys.min()), x1 + int(xs.max()), y1 + int(ys.max()))
+        m.visible_px = n_vis
+        # section 6.3's three-level scale, now measured per observation instead of inherited from the layout
+        # generator, which never knew what the other five generators scattered on top.
+        vf = m.visible_fraction
+        m.occlusion = 0 if vf >= 0.99 else (1 if vf >= 0.5 else 2)
+        visible.append(m)
+
+    return visible, occluded
+
+
 def attach_truth(labels: list[MaskLabel], actors_json: dict) -> list[MaskLabel]:
     """Join the mask labels to the generator's ground truth (pose, submersion, occlusion, zone)."""
     by_id = {a["id"]: a for a in actors_json["actors"]}
@@ -186,10 +287,30 @@ def to_yolo(labels: list[MaskLabel], width: int, height: int, classes=("human", 
     cls_id = {c: i for i, c in enumerate(classes)}
     lines = []
     for m in labels:
-        if m.cls not in cls_id:
+        if m.cls not in cls_id or m.ignore:
             continue
         x1, y1, x2, y2 = m.bbox_px
         cx, cy = (x1 + x2 + 1) / 2.0 / width, (y1 + y2 + 1) / 2.0 / height
         bw, bh = m.width_px / width, m.height_px / height
         lines.append(f"{cls_id[m.cls]} {cx:.6f} {cy:.6f} {bw:.6f} {bh:.6f}")
     return lines
+
+
+def truth_for_run(run_dir):
+    """The ground truth THIS run was captured against, not whatever `data/scene/actors.json` holds now.
+
+    `gen_actors.py --seed N` overwrites the global file, so the moment a second scenario is generated every
+    tool that reads the global path starts checking one seed's labels against another seed's actor
+    placements. Measured on 2026-09-11 that produced "50 labels disagree with actors.json" on a run whose
+    labels were in fact correct. The capture copies its own `actors.json` beside the frames; prefer it, and
+    say out loud which file was used so a mismatch can never be silent again.
+    """
+    import json as _json
+    from pathlib import Path as _Path
+
+    run = _Path(run_dir)
+    own = run / "actors.json"
+    if own.exists():
+        return _json.loads(own.read_text(encoding="utf-8")), own
+    glob = _Path(__file__).resolve().parents[2] / "data/scene/actors.json"
+    return _json.loads(glob.read_text(encoding="utf-8")), glob

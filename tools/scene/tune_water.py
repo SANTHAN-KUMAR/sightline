@@ -122,10 +122,44 @@ if w is None:
 # --------------------------------------------------------------------------------------------------------
 # new values. Vector params are RGB; scalars are floats. Units: Scattering/Absorption are 1/cm (engine header)
 # --------------------------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------
+# TURBIDITY: measured from the render on 2026-09-11 (utilities lane), not from the table above.
+#
+# At the coefficients derived in section 2 the flood renders as a FLAT, FEATURELESS GREEN FIELD from 45 m
+# nadir - _artifacts/editor_shots/util_10_nadir_gsd.png, taken at the real survey GSD, is a uniform green
+# with nothing but sun glint in it. Nothing of the drowned ground is readable at ANY depth, and even the
+# 5-15 cm of water at the very shoreline is fully opaque (util_9_shallow.png: the bank goes brown mud ->
+# teal with no submerged slope visible at all). The hue was right; the depth scale was not.
+#
+# Reference A (docs/SCENE_REFERENCE.md) is explicit that "depth [is] readable through it near edges". Water
+# you can read depth through is water with a Secchi depth near 1 m, not the 0.35 m section 2 assumed:
+#     K_d ~= 1.44 / z_SD    ->    z_SD 0.35 m -> 4.1 /m (green, as derived)
+#                                 z_SD 1.05 m -> 1.37 /m
+# so every extinction coefficient is divided by 3.0. Dividing Scattering AND Absorption by the SAME factor
+# leaves the single-scattering albedo w = S/(S+A) unchanged in every channel, so the hue, the albedo and the
+# clear/plume contrast derived above all survive untouched and only the DEPTH SCALE moves:
+#     green transmittance   0.79 at 0.17 m   0.51 at 0.50 m   0.26 at 1.0 m   0.065 at 2.0 m  0.017 at 3.0 m
+#     new extinction /m     clear R 2.07 G 1.37 B 1.67        plume R 2.50 G 1.67 B 2.10
+# The settlement stands in 0.5-3.7 m (settlement.json), so submerged roads, kerbs, garden walls and the
+# shallow margins now show through while the deep terrace still reads as opaque teal - which is the depth
+# variation the reference photograph has. This is the knob the docstring's own "NOW LOOK" line names for
+# this exact symptom: "if the shallows do not show the ground, lower every extinction value by the same
+# factor".
+# --------------------------------------------------------------------------------------------------------
+TURBIDITY_DIVISOR = 3.0
+
 VEC = {
-    "Scattering": (0.0211, 0.0254, 0.0260),      # extinction /m 6.2 4.1 5.0, albedo 0.34 0.62 0.52
-    "Absorption": (0.0409, 0.0156, 0.0240),
-    "BaseColor": (0.052, 0.070, 0.060),          # surface film only, at 3 % coverage
+    # 2026-09-11: re-derived from the RENDER against the reference photographs, not from a colour theory.
+    # The previous pair gave albedo 0.34 / 0.62 / 0.52 - green-cyan - and once the SkyLight was fixed and
+    # started delivering real ambient, `qa_4_nadir45.png` read as pale milky JADE: a swimming pool, not a
+    # monsoon flood. Both photographs in docs/SCENE_REFERENCE.md show brown-olive silty water.
+    # Silt is a mineral suspension: it scatters long wavelengths and absorbs short ones, so red must SURVIVE
+    # and blue must die. New albedo w = S/(S+A): R 0.56, G 0.44, B 0.17.
+    # Extinction is deliberately left near the old magnitude (1.8 / 1.8 / 2.4 per m after the divisor) so the
+    # depth cue the utilities lane established - submerged walls readable near the margin - is preserved.
+    "Scattering": (0.0300, 0.0240, 0.0120),      # extinction /m 5.4 5.4 7.2, albedo 0.56 0.44 0.17
+    "Absorption": (0.0240, 0.0300, 0.0600),      # (both scaled by TURBIDITY_DIVISOR below)
+    "BaseColor": (0.052, 0.070, 0.060),          # surface film only, at 3 % coverage - NOT scaled
     "BaseColorSilt": (0.165, 0.150, 0.112),
 }
 SCAL = {
@@ -138,11 +172,29 @@ SCAL = {
 }
 # added by this script
 NEW_VEC = {
-    "ScatteringSilt": (0.0293, 0.0300, 0.0246),  # extinction /m 7.5 5.0 6.3, albedo 0.39 0.60 0.39
-    "AbsorptionSilt": (0.0458, 0.0200, 0.0384),
+    # The silt plume is the same physics pushed further: browner still and more opaque than clear water.
+    "ScatteringSilt": (0.0380, 0.0290, 0.0130),  # albedo 0.59 0.45 0.16, and more opaque than clear
+    "AbsorptionSilt": (0.0260, 0.0350, 0.0680),
 }
 NEW_SCAL = {"WaterOpacity": 0.03, "WaterOpacitySilt": 0.22}
 REQUIRED = set(VEC) | set(SCAL)
+
+# Apply the turbidity divisor to the four optical coefficients ONLY. The BaseColor pair is a surface film,
+# not a volume coefficient, and scaling it would darken the scum for no reason.
+_OPTICAL = ("Scattering", "Absorption", "ScatteringSilt", "AbsorptionSilt")
+for _d in (VEC, NEW_VEC):
+    for _k in list(_d):
+        if _k in _OPTICAL:
+            _d[_k] = tuple(round(c / TURBIDITY_DIVISOR, 6) for c in _d[_k])
+_ext = {n: [(VEC if n == "clear" else NEW_VEC)[f"Scattering{s}"][i]
+            + (VEC if n == "clear" else NEW_VEC)[f"Absorption{s}"][i]
+            for i in range(3)] for n, s in (("clear", ""), ("plume", "Silt"))}
+print(f"turbidity /{TURBIDITY_DIVISOR}: extinction /m clear "
+      f"R {_ext['clear'][0] * 100:.2f} G {_ext['clear'][1] * 100:.2f} B {_ext['clear'][2] * 100:.2f}; "
+      f"plume R {_ext['plume'][0] * 100:.2f} G {_ext['plume'][1] * 100:.2f} B {_ext['plume'][2] * 100:.2f}")
+import math as _math
+for _z in (0.17, 0.5, 1.0, 2.0, 3.0):
+    print(f"    green transmittance at {_z:.2f} m: {_math.exp(-_ext['clear'][1] * 100 * _z):.3f}")
 
 # --------------------------------------------------------------------------------------------------------
 # 1. find what build_materials.py left behind, and refuse to guess if it is not what we expect
@@ -270,8 +322,16 @@ print(f"M_FloodWater retuned: {len(created)} nodes added, {len(stale)} from a pr
 print(f"  silt modulation: {how}")
 print(f"  Opacity connected -> WaterVisibility = 1 - Opacity is now {1 - NEW_SCAL['WaterOpacity']:.2f} "
       f"instead of 0.00 (the volume was previously multiplied away entirely)")
-print(f"  extinction /m: clear R 6.2 G 4.1 B 5.0 (albedo 0.34/0.62/0.52), silt R 7.5 G 5.0 B 6.3; "
-      f"green transmittance 0.13 at 0.50 m, 0.017 at 1.0 m")
+# Derived from the values this run actually wrote, NOT hard-coded. The previous version of these two lines
+# printed the pre-TURBIDITY_DIVISOR figures as literals, so after any change to the coefficients the script
+# confidently reported numbers that were no longer true of the material it had just written.
+_alb = [VEC["Scattering"][i] / (VEC["Scattering"][i] + VEC["Absorption"][i]) for i in range(3)]
+print(f"  extinction /m: clear R {_ext['clear'][0] * 100:.2f} G {_ext['clear'][1] * 100:.2f} "
+      f"B {_ext['clear'][2] * 100:.2f} (albedo {_alb[0]:.2f}/{_alb[1]:.2f}/{_alb[2]:.2f}), "
+      f"silt R {_ext['plume'][0] * 100:.2f} G {_ext['plume'][1] * 100:.2f} B {_ext['plume'][2] * 100:.2f}; "
+      f"green transmittance {_math.exp(-_ext['clear'][1] * 100 * 0.5):.3f} at 0.50 m, "
+      f"{_math.exp(-_ext['clear'][1] * 100 * 1.0):.3f} at 1.0 m "
+      f"(turbidity divisor {TURBIDITY_DIVISOR})")
 print(f"  compiles: {s.num_pixel_shader_instructions} instructions, {s.num_pixel_texture_samples} "
       f"texture samples")
 print(f"  flood surface sits at z = {meta['ue_import']['flood_water_z_cm']:.1f} cm")

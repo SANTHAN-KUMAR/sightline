@@ -100,6 +100,18 @@ class GtFrame:
     weather: dict[str, float] = field(default_factory=dict)
     gimbal_pitch_deg: float = -90.0
     gsd_cm_px: float = 0.0
+    #: Where the camera was, so a PREDICTION can be projected to the ground and its terrain type measured.
+    #: A false positive has no `GtBox` and therefore no `context` to inherit, so §5.12's "FP/min per terrain
+    #: type" is unanswerable without the camera pose living on the frame. NaN means "not recorded"; the
+    #: terrain rows are then skipped rather than guessed. `None` rather than NaN: these round-trip through
+    #: `dataset_to_json` / `save_dataset`, and NaN is not valid JSON.
+    camera_east_m: float | None = None
+    camera_north_m: float | None = None
+    camera_asl_m: float | None = None
+
+    @property
+    def has_camera_pose(self) -> bool:
+        return None not in (self.camera_east_m, self.camera_north_m, self.camera_asl_m)
     # for the FiftyOne error browser: where the rendered frame lives and how big it is (4K default, §5.5c)
     image_path: str = ""
     width_px: int = 3840

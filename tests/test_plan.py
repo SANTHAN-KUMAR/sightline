@@ -151,8 +151,12 @@ def test_boustrophedon_route_is_a_serpentine_over_the_polygon_and_states_its_own
     assert all("boustrophedon line" in w.reason and "sweep" in w.reason for w in rt.waypoints)
     assert all(w.speed_ms <= pat.speed_limit_ms(CAM, 60.0) for w in rt.waypoints)
     assert "sweep width" in rt.notes[0] and "overlap" in rt.notes[0]
-    # gimbal yaw puts the WIDE axis across track
-    assert pat.gimbal_yaw_for_heading(0.0) == 90.0 and pat.gimbal_yaw_for_heading(300.0) == 30.0
+    # Gimbal yaw puts the WIDE axis across track, and at nadir the image +u axis is PERPENDICULAR to the
+    # gimbal yaw (at yaw 0 the frame is north-up and +u is due EAST), so the yaw equals the heading. This
+    # asserted `heading + 90` until 2026-09-11, which was the compensator for a quarter-turn in
+    # coverage/footprint.py rather than a property of the camera. Measured across 110 boxes with known
+    # survivor world positions: image-right is due east (residual 1.37 m vs 15.8 m for the next hypothesis).
+    assert pat.gimbal_yaw_for_heading(0.0) == 0.0 and pat.gimbal_yaw_for_heading(300.0) == 300.0
     # the long axis is chosen by default, so the pattern turns as little as possible
     wide_poly = pat.rect_polygon((0.0, 0.0), 100.0, 600.0)
     assert pat.principal_axis_heading(wide_poly) == pytest.approx(90.0)
