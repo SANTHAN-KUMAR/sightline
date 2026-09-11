@@ -4,6 +4,8 @@
 
 **Aerial survivor triage for flood and landslide disasters.**
 
+**Built for MEGATHON'26**
+
 A drone flies itself over a flooded valley, finds every living being from 4K nadir imagery,
 and hands the incident commander two things — a ranked list of who to rescue,
 and an honest map of where nobody has looked well enough yet.
@@ -17,6 +19,56 @@ and an honest map of where nobody has looked well enough yet.
 </p>
 
 </div>
+
+
+---
+
+## MEGATHON'26 · PS 2
+
+### AI for Disaster Response & Public Safety: Real-Time Vision System for Identifying Survivors in Flood, Landslide and Tsunami Zones
+
+#### Problem Description
+
+After a landslide, flash flood or tsunami, survival probability falls steeply with every hour. Manual search is slow and puts rescuers into the same conditions that caused the casualties.
+
+Drones have solved the capture problem: a single team can generate terabytes of aerial footage in hours. The unsolved problem is triage: footage arrives faster than any control room can watch it. A survivor visible in frame 14,000 of an unwatched flight is never found.
+
+Standard person detectors trained on street-level pedestrian imagery fail in this setting. Subjects are heavily occluded by debris, mud, silt and collapsed structures: often only a limb or head is visible. Poses are abnormal: prone, supine, half-submerged or trapped, not upright and walking. Aerial targets are small and change scale with altitude, under low light, dust, rain, motion blur and an unstable platform. Cost is asymmetric: a missed survivor may be fatal, while a flood of false positives makes responders stop trusting the system.
+
+The output of this system is a prioritised, geolocated triage list for an incident commander, not a stream of bounding boxes.
+
+#### Expected Solution
+
+Implement the following pipeline as separate, testable modules:
+
+1. **Ingest module:** read a video stream or recorded flight, plus a telemetry log (CSV or MAVLink), and synchronise them on timestamp.
+2. **Detection and fusion:** detect living beings under occlusion and non-standard pose (classes: human, animal); fuse RGB with thermal where available and fall back cleanly to RGB-only.
+3. **Tracking and deduplication:** assign persistent IDs across frames so that one survivor produces one record, not forty.
+4. **Geolocation module:** project each image coordinate to latitude and longitude using telemetry (altitude, attitude) and camera intrinsics. A detection without a coordinate cannot be actioned.
+5. **Triage output:** a confidence-ranked GeoJSON or KML record set containing location, confidence, movement vs. stillness, estimated count and an evidence thumbnail, rendered on a map.
+6. **Offline queue:** buffer results locally when connectivity is lost and synchronise on reconnect.
+7. **Evaluation script:** report recall at IoU 0.5, false positives per minute and deduplication accuracy on a held-out clip. The system recommends only: it must never close out a search area automatically.
+
+#### Technical Requirements
+
+| Parameter | Specification |
+|---|---|
+| **Camera** | Minimum 4K for aerial capture at >= 30 FPS |
+| **Thermal camera** | Recommended: RGB + thermal fusion, with an RGB-only fallback path |
+| **Model type** | YOLOv8, EfficientDet, RTMDet or equivalent with a fusion head |
+| **Latency and target** | < 300 ms per frame on Jetson Orin onboard, with cloud fallback and offline queueing |
+| **Metrics** | Recall >= 90% at IoU 0.5 on the human class (recall prioritised over precision); false positives per minute reported explicitly |
+| **Geolocation** | Detection projected to lat/long; state the error budget for the assumed altitude |
+| **Output format** | GeoJSON or KML triage list plus map view, with an evidence crop per record |
+
+#### Deliverables
+
+- **Annotated dataset:** aerial or ground imagery with occlusion and pose diversity, plus the annotation guideline used for partially visible subjects.
+- **Source code and model:** training, inference, tracking and geolocation modules, plus trained weights, in a repository with a README.
+- **Integration and triage output:** live camera input or a replay harness over recorded video plus telemetry, producing a deduplicated, geotagged, ranked survivor list on a live map.
+- **Evaluation report:** recall, false positives per minute, deduplication accuracy and analysis of missed detections.
+- **Acceptance thresholds:** recall >= 90%; latency < 300 ms.
+
 
 ---
 
