@@ -120,3 +120,47 @@ def test_pad_check_is_advisory_never_blocking(monkeypatch: pytest.MonkeyPatch) -
     pad = [c for c in checks if c["name"] == "Gamepad"]
     assert pad and pad[0].get("advisory") is True
     assert ok, "a missing pad must not block the demo it is optional for"
+
+
+def test_a_shell_that_grepped_for_a_flight_is_not_a_flight() -> None:
+    """The exclusive-use probe must identify a PROGRAM, not a string.
+
+    "mission.live" appears in the command line of any shell that ever searched for it - including the
+    session that built this - and matching those made `preflight` report "another flight is already
+    running" for a shell, which blocked every demo from starting. This is that regression.
+    """
+    assert dc._is_interpreter("D:/Sightline/.venv/Scripts/python.exe")
+    assert dc._is_interpreter("uv.exe")
+    assert dc._is_interpreter("python")
+    assert not dc._is_interpreter("C:/Program Files/Git/bin/bash.exe")
+    assert not dc._is_interpreter("powershell.exe")
+    assert not dc._is_interpreter("UnrealEditor.exe")
+    assert not dc._is_interpreter("")
+
+
+def test_foreign_flight_does_not_find_this_process() -> None:
+    """The scan must never report the runner's own child, or Start would refuse right after succeeding."""
+    pid, _cmd = dc.foreign_flight()
+    assert pid != __import__("os").getpid()
+
+
+def test_chain_reports_every_link_with_a_reason() -> None:
+    """A dashboard that says 'no data' is useless; one that says WHICH link is down is a diagnosis."""
+    c = dc.chain(8801, records=3, ws_clients=2)
+    names = [l["name"] for l in c["links"]]
+    assert names == ["Unreal", "Flight", "Backend", "Camera"], names
+    for link in c["links"]:
+        assert isinstance(link["ok"], bool)
+        assert link["detail"], f"{link['name']} gave no reason"
+    assert c["dashboard"].endswith(":8801/app/map/index.html")
+    backend = next(l for l in c["links"] if l["name"] == "Backend")
+    assert "3 record(s)" in backend["detail"] and ":8801" in backend["detail"]
+
+
+def test_status_names_the_port_it_will_launch_against() -> None:
+    """A flight streaming to one port while another page is watched looks exactly like a dead pipeline."""
+    dc.set_serve_port(8801)
+    try:
+        assert dc.RUNNER.status()["serve_port"] == 8801
+    finally:
+        dc.set_serve_port(8781)

@@ -27,7 +27,7 @@ from __future__ import annotations
 
 import json
 import os
-import tempfile
+import time
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -101,23 +101,53 @@ def write_live_view(out_dir: Path, rgb, detections: Sequence[Any], *, frame_idx:
         }, indent=1))
         return True
     except Exception as exc:                                 # noqa: BLE001
+        # ONE bad frame must not cost the camera for the rest of the flight. The message is printed once
+        # so the log does not fill with it, but every later frame is still attempted: the common causes
+        # (a file lock, a momentarily odd frame) are transient, and a panel that goes dark and stays dark
+        # for a whole sortie is worse than the error it is reporting.
         if not _WARNED:
             _WARNED = True
-            print(f"  live view disabled after an error (the flight is unaffected): "
-                  f"{type(exc).__name__}: {exc}")
+            print(f"  live view: dropped a frame ({type(exc).__name__}: {exc}). "
+                  f"Later frames will still be attempted; the flight is unaffected.")
         return False
+
+
+#: Windows holds a share lock while anything reads the file, and the dashboard polls this path once a
+#: second - per open dashboard, per server. `os.replace` onto a file somebody is mid-read of fails with
+#: PermissionError (WinError 5). It is transient by nature: the reader is done in microseconds. Retrying
+#: over a quarter of a second turns "the camera died for the rest of the flight" into a dropped frame.
+_REPLACE_TRIES = 6
+_REPLACE_BACKOFF_S = 0.04
+
+
+def _replace_with_retry(tmp: str, path: Path) -> None:
+    """Retry the rename, then give up leaving the temp file in place to be reused.
+
+    The temp path is FIXED per destination (`live_view.jpg.tmp`), not unique per frame, specifically so a
+    failure needs no cleanup: the next frame writes over the same file. A unique name per attempt would
+    mean deleting the leftover, and delete-shaped code in this repo has to earn an R10 allowance - which
+    is a lot of justification for a problem that a stable filename simply does not have.
+    """
+    last: Exception | None = None
+    for i in range(_REPLACE_TRIES):
+        try:
+            os.replace(tmp, path)
+            return
+        except PermissionError as exc:                   # a reader holds it; it will let go
+            last = exc
+            time.sleep(_REPLACE_BACKOFF_S * (i + 1))
+    raise last if last is not None else OSError("replace failed")
 
 
 def _atomic_write_jpeg(path: Path, im, cv2) -> None:
     """Temp file then replace: the dashboard polls this path and must never see a half-written JPEG."""
-    fd, tmp = tempfile.mkstemp(dir=str(path.parent), suffix=".jpg")
-    os.close(fd)
+    tmp = str(path) + ".tmp"
     cv2.imwrite(tmp, im, [int(cv2.IMWRITE_JPEG_QUALITY), JPEG_Q])
-    os.replace(tmp, path)
+    _replace_with_retry(tmp, path)
 
 
 def _atomic_write_text(path: Path, text: str) -> None:
-    fd, tmp = tempfile.mkstemp(dir=str(path.parent), suffix=".json")
-    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+    tmp = str(path) + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as fh:
         fh.write(text)
-    os.replace(tmp, path)
+    _replace_with_retry(tmp, path)

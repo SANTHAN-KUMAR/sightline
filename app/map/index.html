@@ -134,6 +134,29 @@
   .metric.wide{grid-column:span 3}
   .metric.half{grid-column:span 3}
 
+  /* ---- the chain: Unreal -> flight -> backend -> camera -----------------------------------------
+     A dashboard that says "no data" is useless. This says WHICH link is down, because every break while
+     building this demo presented identically as "nothing is happening": the editor in Simulate mode with
+     no pawn, a flight streaming to one port while another page was being watched, a camera file locked by
+     a second server. */
+  .chain{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:var(--s5)}
+  .lnk-row{display:flex;gap:var(--s3);align-items:flex-start;padding:var(--s3) var(--s4);
+           border-bottom:1px solid var(--line);background:var(--bg)}
+  .lnk-row:last-child{border-bottom:0}
+  .lnk-row .dot{width:7px;height:7px;border-radius:50%;flex:none;margin-top:6px;background:var(--dim-2)}
+  .lnk-row.up .dot{background:var(--ok)}
+  .lnk-row.down .dot{background:var(--human)}
+  .lnk-row .nm{font:600 12px/1.55 var(--font);width:62px;flex:none}
+  /* The detail and the hint STACK inside one flexible column. Side by side, a nowrap hint starved the
+     detail column and the reason rendered one character per line - which made the panel meant to explain
+     a failure the least readable thing on the page. */
+  .lnk-row .body{flex:1 1 auto;min-width:0}
+  .lnk-row .dt{display:block;font:400 11.5px/1.55 var(--font-2);color:var(--dim);overflow-wrap:anywhere}
+  .lnk-row.down .dt{color:var(--ink-2)}
+  .lnk-row .ht{display:block;margin-top:2px;font:500 11px/1.5 var(--font-2);color:var(--warn);
+               overflow-wrap:anywhere}
+  .whoami{font:400 11px/1.5 var(--mono);color:var(--dim-2);margin:calc(var(--s2) * -1) 0 var(--s5)}
+
   .sec{font:600 10.5px/1.4 var(--font);text-transform:uppercase;letter-spacing:.09em;color:var(--dim);
        margin:var(--s5) 0 var(--s3)}
   .sec:first-child{margin-top:0}
@@ -513,6 +536,9 @@
     <div class="pane" id="pane-recs"></div>
     <div class="pane" id="pane-layers" hidden></div>
     <div class="pane" id="pane-run" hidden>
+      <div class="sec">Connection</div>
+      <div class="chain" id="chain"></div>
+      <div class="whoami" id="whoami"></div>
       <div class="sec">Live</div>
       <div class="metrics" id="metrics"></div>
       <div class="sec">Readiness</div>
@@ -1327,6 +1353,29 @@ function renderDemos(running) {
   }
 }
 
+async function pollChain() {
+  const el = $("chain");
+  if (!el) return;
+  try {
+    const c = await (await fetch("/api/demo/chain", { cache: "no-store" })).json();
+    el.innerHTML = (c.links || []).map((l) => `
+      <div class="lnk-row ${l.ok ? "up" : "down"}">
+        <span class="dot"></span><span class="nm">${l.name}</span>
+        <span class="body">
+          <span class="dt">${l.detail}</span>
+          ${l.hint ? `<span class="ht">${l.hint}</span>` : ""}
+        </span>
+      </div>`).join("");
+    // Say which C2 this page is. Four servers were up at once while building this, and a flight streaming
+    // to one of them while another was on screen looks exactly like a dead pipeline.
+    $("whoami").textContent = `this dashboard is ${c.dashboard}`;
+  } catch {
+    el.innerHTML = '<div class="lnk-row down"><span class="dot"></span><span class="nm">Backend</span>' +
+                   '<span class="body"><span class="dt">the C2 is not answering — is the server ' +
+                   'still running?</span></span></div>';
+  }
+}
+
 async function pollPreflight() {
   const el = $("preflight");
   if (!el) return;
@@ -1395,6 +1444,7 @@ async function pollDemo() {
 $("run-stop").addEventListener("click", stopDemo);
 setInterval(pollDemo, 1500);
 setInterval(() => { if (!$("pane-run").hidden) pollPreflight(); }, 6000);
+setInterval(() => { if (!$("pane-run").hidden) pollChain(); }, 2500);
 
 const TABS = [["tab-recs", "pane-recs"], ["tab-layers", "pane-layers"], ["tab-run", "pane-run"]];
 function selectTab(id) {
@@ -1403,7 +1453,7 @@ function selectTab(id) {
     $(pane).hidden = !on;
     $(t).setAttribute("aria-selected", on ? "true" : "false");
   }
-  if (id === "tab-run") { pollDemo(); pollPreflight(); }
+  if (id === "tab-run") { pollDemo(); pollPreflight(); pollChain(); }
 }
 for (const [t] of TABS) $(t).onclick = () => selectTab(t);
 // Deep-linkable, so "?tab=run" opens the console on mission control - and so a verification run can

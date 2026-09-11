@@ -47,7 +47,7 @@ parts are not "run a detector" — they are:
         └──────────────────────────────────────────────────────────────────┘
 ```
 
-**14 independent lane packages** under `sightline/`, ~56k lines of Python, **994 tests**.
+**14 independent lane packages** under `sightline/`, ~56k lines of Python, **998 tests**.
 
 ---
 
@@ -120,7 +120,7 @@ the live demo, and what each command should print.
 ```bash
 uv sync                                    # restore the pinned environment (Python 3.11)
 uv run python tools/doctor.py              # verify the toolchain
-uv run pytest tests/ -q                    # 994 tests
+uv run pytest tests/ -q                    # 998 tests
 ```
 
 Run the command map against a demo scenario, no simulator required:

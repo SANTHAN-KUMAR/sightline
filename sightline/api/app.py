@@ -270,6 +270,13 @@ def create_app(
         ok, checks = demo_preflight(id)
         return {"ok": ok, "checks": checks}
 
+    @app.get("/api/demo/chain")
+    def demo_chain() -> dict[str, Any]:
+        """Unreal -> flight -> backend -> camera, link by link, so a break can be located not just noticed."""
+        from sightline.api.demo_control import SERVE_PORT, chain
+
+        return chain(SERVE_PORT, records=store.stats()["records"], ws_clients=hub.clients)
+
     @app.get("/api/demo/catalog")
     def demo_catalog() -> dict[str, Any]:
         return {"demos": [{k: v for k, v in d.items() if k != "cmd"} for d in DEMO_CATALOG]}

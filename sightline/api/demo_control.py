@@ -125,6 +125,51 @@ def _vehicle_check() -> tuple[bool, str]:
         return False, f"could not run the simulator check: {type(exc).__name__}: {exc}"
 
 
+#: Only a Python or uv process can BE a flight. The string "mission.live" also appears in the command
+#: line of any shell that ever grepped for it - including this session's own - and matching those blocked
+#: every demo from starting. A search for a running program has to check what the program IS.
+_INTERPRETERS = ("python.exe", "python", "pythonw.exe", "uv.exe", "uv")
+
+
+def _is_interpreter(exe: str) -> bool:
+    name = (exe or "").replace(chr(92), "/").rsplit("/", 1)[-1].strip().strip('"').lower()
+    return name in _INTERPRETERS
+
+
+def foreign_flight() -> tuple[int, str]:
+    """Is a flight already running that THIS runner did not start? Returns (pid, command) or (0, "").
+
+    "One demo at a time" was enforced per Runner, which is only true if there is one server. There were
+    four at once while building this, and a second Start would then have put two flights on one simulator
+    and one 8 GB GPU - each issuing its own velocity commands to the same aircraft. That does not look
+    like misuse when it goes wrong; it looks like a broken product.
+    """
+    me = os.getpid()
+    mine = RUNNER.pid()
+    try:
+        if sys.platform == "win32":
+            out = subprocess.run(
+                ["powershell", "-NoProfile", "-Command",
+                 "Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match "
+                 "'mission\.live' } | ForEach-Object { \"$($_.ProcessId)|$($_.Name)|$($_.CommandLine)\" }"],
+                capture_output=True, text=True, timeout=40).stdout
+            for line in out.splitlines():
+                pid_s, _, rest = line.strip().partition("|")
+                name, _, cmd = rest.partition("|")
+                if pid_s.isdigit() and int(pid_s) not in (me, mine) and _is_interpreter(name):
+                    return int(pid_s), cmd[:110]
+        else:
+            out = subprocess.run(["pgrep", "-af", "mission.live"],
+                                 capture_output=True, text=True, timeout=30).stdout
+            for line in out.splitlines():
+                pid_s, _, cmd = line.strip().partition(" ")
+                if pid_s.isdigit() and int(pid_s) not in (me, mine) and _is_interpreter(cmd.split()[0]):
+                    return int(pid_s), cmd[:110]
+    except Exception:                                         # noqa: BLE001
+        return 0, ""                                          # a probe that cannot run must not block
+    return 0, ""
+
+
 def preflight(demo_id: str) -> tuple[bool, list[dict[str, Any]]]:
     """Everything that must be true BEFORE a button starts a flight.
 
@@ -147,6 +192,13 @@ def preflight(demo_id: str) -> tuple[bool, list[dict[str, Any]]]:
     if entry.get("needs_sim"):
         ok, why = _vehicle_check()
         checks.append({"name": "Simulator", "ok": ok, "detail": why})
+        pid, cmd = foreign_flight()
+        checks.append({
+            "name": "Exclusive use", "ok": pid == 0,
+            "detail": ("nothing else is flying" if pid == 0 else
+                       f"another flight is already running (pid {pid}). Press Stop everything first - two "
+                       f"flights would command the same aircraft."),
+        })
 
     # The pad is REPORTED, never blocking: the takeover demo is the other session's lane, and a judge is
     # entitled to start it and plug a pad in afterwards.
@@ -155,6 +207,80 @@ def preflight(demo_id: str) -> tuple[bool, list[dict[str, Any]]]:
         checks.append({"name": "Gamepad", "ok": True, "detail": detail, "advisory": True})
 
     return all(c["ok"] for c in checks), checks
+
+
+#: The vehicle probe opens an RPC connection and sleeps a second to watch the clock tick, so it must not
+#: run on every dashboard poll. Five seconds is short enough that "I just pressed Play" shows up promptly
+#: and long enough that ten open tabs do not hammer the simulator.
+_VEHICLE_TTL_S = 5.0
+_vehicle_cache: tuple[float, bool, str] = (0.0, False, "not checked yet")
+_vehicle_lock = threading.Lock()
+
+
+def vehicle_status(max_age_s: float = _VEHICLE_TTL_S) -> tuple[bool, str]:
+    global _vehicle_cache
+    with _vehicle_lock:
+        t, ok, why = _vehicle_cache
+        if time.time() - t < max_age_s:
+            return ok, why
+    ok, why = _vehicle_check()
+    with _vehicle_lock:
+        _vehicle_cache = (time.time(), ok, why)
+    return ok, why
+
+
+def chain(serve_port: int, *, records: int = 0, ws_clients: int = 0) -> dict[str, Any]:
+    """The whole path, link by link: Unreal -> flight loop -> C2 -> this page.
+
+    A dashboard that says "no data" is useless; a dashboard that says WHICH link is down is a diagnosis.
+    Every break seen while building this demo was a link problem - the editor in Simulate mode so no pawn
+    existed, a flight streaming to port 8781 while the page being watched was 8800, a camera file locked
+    by a second server - and each one presented identically as "nothing is happening".
+    """
+    sim_ok, sim_why = vehicle_status()
+    running = RUNNER.running()
+
+    view_age: float | None = None
+    view_frame: int | None = None
+    view_dets: int | None = None
+    try:
+        root = REPO / "_artifacts" / "dataset"
+        cands = [d / "live_view.json" for d in root.iterdir() if d.is_dir()] if root.exists() else []
+        live = [c for c in cands if c.exists()]
+        if live:
+            newest = max(live, key=lambda c: c.stat().st_mtime)
+            view_age = round(time.time() - newest.stat().st_mtime, 1)
+            import json as _json
+
+            d = _json.loads(newest.read_text(encoding="utf-8"))
+            view_frame, view_dets = d.get("frame_idx"), len(d.get("detections") or [])
+    except Exception:                                         # noqa: BLE001
+        pass
+
+    # A frame is only THIS page's frame if this server started the flight. Two servers read the same file,
+    # so without this a dashboard that launched nothing would show another one's camera as its own.
+    fresh = view_age is not None and view_age < 15.0
+    return {
+        "links": [
+            {"name": "Unreal", "ok": sim_ok, "detail": sim_why,
+             "hint": "open the project and press Play (not Simulate)" if not sim_ok else ""},
+            {"name": "Flight", "ok": running,
+             "detail": (f"{RUNNER._id} running, frame {view_frame}" if running and view_frame is not None
+                        else "running, waiting for the first frame" if running
+                        else "nothing launched from this dashboard"),
+             "hint": "press Start on a demo below" if not running else ""},
+            {"name": "Backend", "ok": True,
+             "detail": f"C2 on :{serve_port}, {records} record(s), {ws_clients} client(s)", "hint": ""},
+            {"name": "Camera", "ok": bool(running and fresh),
+             "detail": (f"frame {view_frame}, {view_dets} detection(s), {view_age}s old" if fresh and running
+                        else f"last frame {view_age}s old - not from a flight on this dashboard" if view_age
+                        else "no frame written yet"),
+             "hint": ""},
+        ],
+        "serve_port": serve_port,
+        "running": running,
+        "dashboard": f"http://127.0.0.1:{serve_port}/app/map/index.html",
+    }
 
 
 class Runner:
@@ -172,6 +298,10 @@ class Runner:
     def running(self) -> bool:
         return self._proc is not None and self._proc.poll() is None
 
+    def pid(self) -> int:
+        """This runner's own child pid, so a foreign-flight scan does not find itself."""
+        return self._proc.pid if self._proc is not None else 0
+
     def status(self) -> dict[str, Any]:
         with self._lock:
             alive = self.running()
@@ -182,6 +312,7 @@ class Runner:
                 "seconds": round(time.time() - self._started, 1) if alive else 0.0,
                 "exit_code": None if alive or self._proc is None else self._proc.poll(),
                 "last_id": self._id,
+                "serve_port": SERVE_PORT,
                 "log": list(self._log)[-60:],
             }
 
