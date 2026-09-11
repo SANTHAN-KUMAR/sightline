@@ -35,7 +35,12 @@ from sightline.schemas import SCHEMA_VERSION
 
 __all__ = ["LiveHub", "envelope", "MESSAGE_TYPES", "MAX_MESSAGE_BYTES"]
 
-MESSAGE_TYPES: tuple[str, ...] = ("hello", "snapshot", "record", "mission", "coverage", "outbox", "pong")
+#: "control" is the F3 pilot HUD feed (`sightline/api/control_feed.py`): flight mode, stick positions, the
+#: idle-hand-back countdown and the pilot event log. It is a separate type from "mission" because it updates
+#: at a different rate for a different reason - "mission" moves when the aircraft moves, "control" moves when
+#: a HUMAN moves - and because a client that only wants the map should not have to parse stick positions.
+MESSAGE_TYPES: tuple[str, ...] = ("hello", "snapshot", "record", "mission", "coverage", "outbox", "pong",
+                                  "control")
 
 #: §5.8 keeps live-feed messages small enough for a field radio. Asserted in tests/test_api.py.
 MAX_MESSAGE_BYTES = 5120

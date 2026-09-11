@@ -57,8 +57,10 @@ if str(REPO) not in sys.path:
 
 from sightline.mission.pattern import (Scenario, SurveyPlan, body_euler_deg, build_plan,  # noqa: E402
                                        cadence_verdict, connect, grab)
-from sightline.mission.takeover import (ControlSource, ModeTransition, NullSource,  # noqa: E402
-                                        TakeoverMachine, VehicleAuthority, open_control_source)
+from sightline.mission.manual import ManualLimits, ManualPilot, OrbitAssist  # noqa: E402
+from sightline.mission.takeover import (ControlInput, ControlSource, ModeTransition,  # noqa: E402
+                                        NullSource, TakeoverMachine, VehicleAuthority,
+                                        open_control_source)
 from sightline.pipeline import (FramePipeline, StageLatency, latency_report,  # noqa: E402
                                 nadir_gimbal_quat, resolve_detector, to_geo_gimbal)
 from sightline.schemas import Intrinsics, Record, Telemetry  # noqa: E402
@@ -128,6 +130,8 @@ class C2Client:
         self.records_skipped = 0
         self.poses_pushed = 0
         self.pose_errors = 0
+        self.controls_pushed = 0
+        self.control_errors = 0
         self._pushed_version: dict[str, int] = {}
 
     @classmethod
@@ -171,6 +175,21 @@ class C2Client:
             self.pose_errors += 1
         return (time.perf_counter() - t0) * 1e3
 
+    def push_control(self, body: dict[str, Any]) -> float:
+        """The F3 pilot HUD state (`sightline/api/control_feed.py`). Same reasoning as `push_pose`.
+
+        Straight HTTP, never the durable outbox: stick positions are superseded 20 times a second, and a
+        queue that survives a link drop full of stale stick positions helps nobody. A failed push costs the
+        HUD one frame and is counted, not raised - the flight loop must never die for want of a dashboard.
+        """
+        t0 = time.perf_counter()
+        try:
+            self._http.post(self.base_url + "/api/mission/control", json=body).raise_for_status()
+            self.controls_pushed += 1
+        except Exception:
+            self.control_errors += 1
+        return (time.perf_counter() - t0) * 1e3
+
     def push_route(self, route: dict[str, Any]) -> bool:
         try:
             self._http.post(self.base_url + "/api/plan/route", json=route).raise_for_status()
@@ -181,7 +200,8 @@ class C2Client:
     def stats(self) -> dict[str, Any]:
         s = self.uploader.stats()
         s.update(records_pushed=self.records_pushed, records_skipped=self.records_skipped,
-                 poses_pushed=self.poses_pushed, pose_errors=self.pose_errors)
+                 poses_pushed=self.poses_pushed, pose_errors=self.pose_errors,
+                 controls_pushed=self.controls_pushed, control_errors=self.control_errors)
         return s
 
     def drain(self, timeout_s: float = 20.0) -> dict[str, Any]:
@@ -316,7 +336,8 @@ class LiveMission:
                                   clip_id=self.clip_id, noise_seed=args.noise_seed,
                                   incident_hours_ago=args.incident_hours_ago,
                                   water_temp_c=args.water_temp_c, domain="sim")
-        self.takeover = TakeoverMachine(deadband=args.deadband, centred_s=args.centred_s)
+        self.takeover = TakeoverMachine(deadband=args.deadband, centred_s=args.centred_s,
+                                        idle_resume_s=args.idle_resume_s)
         self.control: ControlSource = NullSource()
         #: Set by a harness to drive the takeover machine from a script instead of a device. The runner uses
         #: it verbatim; everything downstream (state machine, authority, telemetry, map) is untouched.
@@ -324,6 +345,23 @@ class LiveMission:
         self.authority: VehicleAuthority | None = None
         self.c2: C2Client | None = None
         self.probe: MapArrivalProbe | None = None
+
+        # -- the pilot (F3) ---------------------------------------------------------------------------
+        #: Velocity manual: the pad flies the aircraft through the API instead of through simple_flight's
+        #: RC channels. See `sightline/mission/manual.py` for why that is not a detail.
+        self.pilot: ManualPilot | None = None
+        self.orbit = OrbitAssist()
+        #: Free flight (demo mode 2): no waypoints are ever issued and the pattern is not flown. Can be
+        #: toggled in the air with the FREE-FLY button, which is the whole point - one demo, both modes.
+        self.free_flight = bool(args.free)
+        self.camera_feed = "rgb"
+        #: Pilot marks. They only ever ADD (guardrail R10) - a mark is a record, never an erasure.
+        self.marks: list[dict[str, Any]] = []
+        self._edge: dict[str, bool] = {}
+        self._t_pose_push = 0.0
+        self._t_control_push = 0.0
+        self._control_events: list[dict[str, Any]] = []
+        self._last_kin: Any = None
 
         self.client = None
         self.names: list[str] = []
@@ -540,23 +578,236 @@ class LiveMission:
 
     # -- takeover ----------------------------------------------------------------------------------
     def poll_takeover(self, frame_idx: int = -1) -> ModeTransition | None:
+        """One controller sample: mode machine, demo buttons, manual flight, HUD. Called at `--poll-s`.
+
+        The order matters. The mode is decided first (the pilot grabbing the sticks must not wait behind
+        anything), the demo buttons are edge-detected next, MANUAL flight is commanded after that, and only
+        then is the HUD told - so a HUD frame can never describe a mode the vehicle is not already in.
+        """
         self.takeover.frame_idx = frame_idx
-        tr = self.takeover.poll(self.control.read(time.time()))
-        if tr is None:
-            return None
-        applied = self.authority.apply(tr) if self.authority is not None else {"did": ["(no vehicle)"]}
-        if tr.to_mode == "MANUAL" and self.client is not None:
-            try:
-                self.client.cancelLastTask()
-            except Exception:
-                pass
-        row = {**tr.as_dict(), "applied": applied.get("did", []), "apply_ms": applied.get("ms", 0.0)}
-        self.mode_rows.append(row)
-        print(f"\n  >>> MODE {tr}  [{', '.join(applied.get('did', [])) or 'no vehicle action'}] "
-              f"in {applied.get('ms', 0.0):.1f} ms\n", flush=True)
+        ctl = self.control.read(time.time())
+        tr = self.takeover.poll(ctl)
+        if tr is not None:
+            applied = self.authority.apply(tr) if self.authority is not None else {"did": ["(no vehicle)"]}
+            # The RC path needs the outstanding waypoint cancelled or the mission keeps flying underneath
+            # the pilot. The velocity path cancels inside `ManualPilot` when it starts commanding.
+            if tr.to_mode == "MANUAL" and self.client is not None and self.a.manual_mode == "rc":
+                try:
+                    self.client.cancelLastTask()
+                except Exception:
+                    pass
+            row = {**tr.as_dict(), "applied": applied.get("did", []), "apply_ms": applied.get("ms", 0.0)}
+            self.mode_rows.append(row)
+            self._control_events.append({
+                "kind": "mode", "t_utc": tr.t_utc, "text": f"{tr.from_mode} -> {tr.to_mode}",
+                "detail": tr.reason})
+            print(f"\n  >>> MODE {tr}  [{', '.join(applied.get('did', [])) or 'no vehicle action'}] "
+                  f"in {applied.get('ms', 0.0):.1f} ms\n", flush=True)
+
+        self.handle_demo_buttons(ctl)
+        self.fly_manual(ctl)
+        self.publish_control(ctl)
         return tr
 
+    def _edge_press(self, name: str, down: bool) -> bool:
+        """True on the poll a button goes down, never while it is held.
+
+        At 50 Hz a held button is 50 presses. MARK would plant fifty pins and CAMERA would strobe through
+        every feed; both looked like a bug the first time and both are one line to prevent.
+        """
+        was = self._edge.get(name, False)
+        self._edge[name] = bool(down)
+        return bool(down) and not was
+
+    def handle_demo_buttons(self, ctl: "ControlInput") -> None:
+        """MARK, BOOST, ORBIT, FREE-FLY and CAMERA. None of them changes `Telemetry.mode`."""
+        if not ctl.valid:
+            return
+        if self._edge_press("mark", ctl.mark):
+            self.place_mark()
+        if self._edge_press("freefly", ctl.freefly):
+            self.free_flight = not self.free_flight
+            self._control_events.append({
+                "kind": "note", "text": ("FREE FLIGHT: go anywhere" if self.free_flight
+                                         else "SURVEY: back on the planned pattern"),
+                "detail": "pilot toggled the flight mode"})
+            print(f"\n  >>> {'FREE FLIGHT' if self.free_flight else 'SURVEY'} "
+                  f"(pilot pressed FREE-FLY)\n", flush=True)
+        if self._edge_press("camera", ctl.camera):
+            feeds = ("rgb", "segmentation", "depth")
+            self.camera_feed = feeds[(feeds.index(self.camera_feed) + 1) % len(feeds)]
+            self._control_events.append({"kind": "note", "text": f"camera -> {self.camera_feed}",
+                                         "detail": "pilot cycled the feed"})
+        if self._edge_press("orbit", ctl.orbit):
+            if self.orbit.engaged:
+                self.orbit.release()
+                self._control_events.append({"kind": "note", "text": "orbit released", "detail": ""})
+            elif self.marks:
+                m = self.marks[-1]
+                self.orbit.engage(m["east_m"], m["north_m"], time.time())
+                self._control_events.append({
+                    "kind": "note", "text": "ORBIT engaged",
+                    "detail": f"circling mark {len(self.marks)} at {self.orbit.radius_m:.0f} m"})
+            else:
+                self._control_events.append({
+                    "kind": "note", "text": "orbit needs a mark first",
+                    "detail": "press MARK over something, then ORBIT to circle it"})
+
+    def place_mark(self) -> dict[str, Any] | None:
+        """The pilot flags what they can see. It becomes a real pin on the map.
+
+        R10: a mark only ever ADDS. There is deliberately no "unmark" - a human saying "I saw something
+        here" is evidence, and the system is not allowed to erase evidence. The operator can change a
+        record's STATUS through the existing `/api/records/{id}/status` route, which is audited.
+        """
+        kin = self._last_kin
+        if kin is None:
+            return None
+        home = self.scn.home
+        north = float(home["north_m"]) + float(kin.position.x_val)
+        east = float(home["east_m"]) + float(kin.position.y_val)
+        alt = float(home["ground_asl_m"]) - float(kin.position.z_val)
+        try:
+            gp = self.client.getMultirotorState().gps_location
+            lat, lon = float(gp.latitude), float(gp.longitude)
+        except Exception:
+            lat = lon = None
+        mark = {"idx": len(self.marks) + 1, "t_utc": time.time(), "east_m": east, "north_m": north,
+                "alt_asl_m": alt, "lat": lat, "lon": lon,
+                "mode": self.takeover.mode, "frame_idx": self.takeover.frame_idx}
+        self.marks.append(mark)
+        self._control_events.append({
+            "kind": "mark", "t_utc": mark["t_utc"], "text": f"PILOT MARK #{mark['idx']}",
+            "detail": f"{east:.0f} E, {north:.0f} N at {alt:.0f} m ASL"})
+        print(f"\n  >>> MARK #{mark['idx']} at {east:.0f} E {north:.0f} N\n", flush=True)
+        return mark
+
+    def fly_manual(self, ctl: "ControlInput") -> None:
+        """Command the vehicle from the sticks while the machine is in MANUAL (velocity path only)."""
+        if self.pilot is None or not self.takeover.manual or not ctl.valid:
+            return
+        kin = self._last_kin
+        if kin is None:
+            return
+        home = self.scn.home
+        north = float(home["north_m"]) + float(kin.position.x_val)
+        east = float(home["east_m"]) + float(kin.position.y_val)
+        alt = float(home["ground_asl_m"]) - float(kin.position.z_val)
+        _, _, yaw = body_euler_deg(kin.orientation)
+        sent = self.pilot.command(ctl, east_m=east, north_m=north, alt_asl_m=alt, heading_deg=yaw)
+        clamp = sent.get("clamp") or {}
+        if clamp.get("any") and self._edge_press("clamp", True):
+            self._control_events.append({"kind": "envelope", "text": "held by the flight envelope",
+                                         "detail": "; ".join(clamp.get("reasons", [])[:2])})
+        elif not clamp.get("any"):
+            self._edge["clamp"] = False
+
+    def publish_control(self, ctl: "ControlInput") -> None:
+        """Push the HUD state, rate-limited. The flight loop polls at 50 Hz; the HUD does not need that."""
+        now = time.time()
+        if self.c2 is None:
+            return
+        due = (now - self._t_control_push) >= self.a.hud_hz_s
+        if not due and not self._control_events:
+            return
+        self._t_control_push = now
+        st = self.takeover.status()
+        body: dict[str, Any] = {
+            "mode": self.takeover.mode,
+            "sticks": st["sticks"],
+            "buttons": st["buttons"],
+            "idle_remaining_s": st["idle_remaining_s"],
+            "idle_resume_s": st["idle_resume_s"],
+            "free_flight": self.free_flight,
+            "camera": self.camera_feed,
+            "pad": {"attached": bool(ctl.valid), "source": ctl.source,
+                    "device": self.control.describe().get("device", ""),
+                    "verified": bool(self.control.describe().get("buttons_verified_against_hardware", False)),
+                    "provenance": (self.control.describe().get("pad_map") or {}).get("provenance", "none")},
+            "envelope": (self.pilot.last_clamp.as_dict() if self.pilot is not None
+                         else {"any": False, "reasons": []}),
+            "flight": {"manual_mode": self.a.manual_mode,
+                       "boost": bool(ctl.boost),
+                       "orbit": self.orbit.engaged,
+                       **({k: v for k, v in (self.pilot.last_command or {}).items()
+                           if k in ("agl_m", "speed_limit_ms")} if self.pilot is not None else {})},
+            "stats": {"seconds_by_mode": {m: round(self.takeover.seconds_in(m), 1)
+                                          for m in ("AUTO", "MANUAL", "HOLD", "RTL")},
+                      "marks": len(self.marks), "transitions": len(self.takeover.transitions),
+                      "idle_handbacks": self.takeover.idle_handbacks, "frames": self.frames,
+                      "records": len(getattr(self.pipe, "records", ()) or ())},
+            # The pilot's own pins, as GeoJSON, so the map can draw them beside the detections without
+            # either being mistaken for the other. They are NOT records: a record carries detection
+            # provenance and feeds the metrics, and "a human pointed at this" is a different claim.
+            "marks": {"type": "FeatureCollection",
+                      "features": [{"type": "Feature",
+                                    "properties": {"idx": m["idx"], "t_utc": m["t_utc"],
+                                                   "mode": m["mode"], "alt_asl_m": round(m["alt_asl_m"], 1)},
+                                    "geometry": {"type": "Point",
+                                                 "coordinates": [round(m["lon"], 6), round(m["lat"], 6)]}}
+                                   for m in self.marks[-40:] if m.get("lat") and m.get("lon")]},
+            "events": self._control_events,
+        }
+        self._control_events = []
+        self.c2.push_control(body)
+
     # -- frame sources -----------------------------------------------------------------------------
+    def _announce_pad(self) -> None:
+        """Say once, loudly, what is flying this - and whether anyone has ever pressed its buttons."""
+        d = self.control.describe()
+        pm = d.get("pad_map") or {}
+        verified = bool(d.get("buttons_verified_against_hardware", False))
+        device = d.get("device") or d.get("source", "none")
+        if self.control.name == "none":
+            line, detail = "NO CONTROLLER ATTACHED", "the mission will fly itself; nothing can take over"
+        elif verified:
+            line, detail = f"controller: {device} (measured)", f"mapping from {pm.get('slug', '?')}.json"
+        else:
+            line = f"controller: {device} - BUTTON MAPPING IS A GUESS"
+            detail = "run tools/live/pad_calibrate.py; the sticks are safe, the buttons are not verified"
+            print(f"\n  !! {line}\n     {detail}\n", flush=True)
+        self._control_events.append({"kind": "pad", "text": line, "detail": detail})
+
+    def push_pose_now(self, kin: Any, *, force: bool = False) -> None:
+        """Send the drone's position to the map, independently of whether a frame was captured.
+
+        Until this existed, `push_pose` had exactly one call site - inside `handle_frame` - so the aircraft
+        only moved on the map when the shutter fired. On a transit leg, or while a pilot hovers to look at
+        something, or any time the tilt gate rejects a frame, the drone marker simply froze, and the natural
+        reading of a frozen marker is "the software has crashed". A pose is a few hundred bytes and is
+        superseded a second later; there is no reason for it to be expensive and every reason for it to be
+        continuous.
+
+        Cheap on purpose: it reuses the kinematics the flight loop already sampled this poll (no extra RPC),
+        carries no footprint (that needs intrinsics from a real frame) and is rate-limited to `--pose-hz-s`.
+        """
+        if self.c2 is None or kin is None:
+            return
+        now = time.time()
+        if not force and (now - self._t_pose_push) < self.a.pose_hz_s:
+            return
+        self._t_pose_push = now
+        home = self.scn.home
+        north = float(home["north_m"]) + float(kin.position.x_val)
+        east = float(home["east_m"]) + float(kin.position.y_val)
+        asl = float(home["ground_asl_m"]) - float(kin.position.z_val)
+        agl = asl - self.scn.terrain.surface_asl(east, north)
+        try:
+            gp = self.client.getMultirotorState().gps_location
+            lat, lon = float(gp.latitude), float(gp.longitude)
+        except Exception:
+            return
+        o, v = kin.orientation, kin.linear_velocity
+        tel = Telemetry(
+            t_utc=now, lat=lat, lon=lon, alt_msl_m=asl, agl_m=agl,
+            q_body=(o.w_val, o.x_val, o.y_val, o.z_val), q_gimbal=NADIR_Q,
+            gimbal_is_earth_referenced=True,
+            ned_m=(kin.position.x_val, kin.position.y_val, kin.position.z_val),
+            vel_ned_ms=(v.x_val, v.y_val, v.z_val), mode=self.takeover.mode, clip_id=self.clip_id,
+            frame_idx=-1, flood_level_asl_m=self.scn.water_level_m)
+        self.c2.push_pose(tel, footprint=None,
+                          extra={"speed_ms": math.sqrt(v.x_val ** 2 + v.y_val ** 2 + v.z_val ** 2)})
+
     def capture_live(self, frame_idx: int, leg_idx: int) -> LiveFrame | None:
         """One real capture from the simulator: Scene + instance mask + the pose that produced them."""
         from tools.capture.labels import attach_truth, labels_from_mask  # noqa: PLC0415
@@ -641,6 +892,8 @@ class LiveMission:
         c.takeoffAsync(timeout_sec=20).join()
 
         frame_idx = 0
+        if self.free_flight:
+            frame_idx = self.fly_free(frame_idx)
         for leg_idx, leg in enumerate(self.plan.legs):
             if (time.time() - self.t_start) / 60.0 > a.max_minutes:
                 self.takeover.force("RTL", "time budget reached", detail=f"{a.max_minutes} min")
@@ -655,9 +908,16 @@ class LiveMission:
                 issued = False
                 shots, last_n, t_phase, last_shot_t = 0, None, time.time(), 0.0
                 while True:
-                    if time.time() - t_phase > a.leg_timeout_s:
+                    # The phase budget is AUTO time. A pilot who has taken over is not making progress
+                    # toward this waypoint and must not have the pattern advance underneath them: before
+                    # this, a judge who flew for six minutes came back to find the mission several legs
+                    # further on, having searched none of them.
+                    if self.takeover.flying_itself and time.time() - t_phase > a.leg_timeout_s:
                         print(f"    {phase}: {a.leg_timeout_s:.0f} s timeout, moving on")
                         break
+                    if not self.takeover.flying_itself:
+                        t_phase = time.time()
+
                     tr = self.poll_takeover(frame_idx)
                     if tr is not None and tr.to_mode == "RTL":
                         return
@@ -669,6 +929,13 @@ class LiveMission:
                         print(f"    AUTO-RESUME: re-planning {phase} of leg {leg_idx + 1} from the "
                               f"current pose (leg {leg_idx + 1}/{len(self.plan.legs)} kept, "
                               f"pattern NOT restarted)")
+                    # The pilot asked to go anywhere. Hand the loop over until they ask to come back.
+                    if self.free_flight:
+                        frame_idx = self.fly_free(frame_idx)
+                        issued = False
+                        t_phase = time.time()
+                        if self.takeover.mode == "RTL":
+                            return
                     if self.takeover.flying_itself and not issued:
                         c.moveToPositionAsync(
                             float(target_n - home["north_m"]), float(leg.east_m - home["east_m"]),
@@ -678,14 +945,20 @@ class LiveMission:
                         issued = True
 
                     st = c.simGetGroundTruthKinematics()
+                    self._last_kin = st
                     cur_n = float(home["north_m"]) + st.position.x_val
                     cur_e = float(home["east_m"]) + st.position.y_val
                     roll, pitch, _ = body_euler_deg(st.orientation)
                     agl = (float(home["ground_asl_m"]) - st.position.z_val) \
                         - self.scn.terrain.surface_asl(cur_e, cur_n)
+                    self.push_pose_now(st)
 
-                    if phase == "line" and self._should_shoot(shots, cur_n, last_n, last_shot_t,
-                                                              roll, pitch, agl):
+                    # Shoot on the transit leg too. §7 step 3 says every MANUAL frame runs the pipeline, and
+                    # a transit is ground the aircraft is flying over with the camera pointed at it - the
+                    # frames are as real as any other. Before this, a takeover during a transit produced no
+                    # records at all, which is the most common thing a judge would have done.
+                    if self._should_shoot(shots, cur_n, last_n, last_shot_t, roll, pitch, agl,
+                                          phase=phase):
                         fr = self.capture_live(frame_idx, leg_idx)
                         if fr is not None:
                             self.handle_frame(fr)
@@ -704,17 +977,115 @@ class LiveMission:
         c.moveToPositionAsync(0.0, 0.0, -(home_asl - float(home["ground_asl_m"])), a.speed,
                               timeout_sec=180).join()
 
+    def fly_free(self, frame_idx: int) -> int:
+        """Demo mode 2: the pilot goes anywhere. No waypoint is ever issued; the pattern is not flown.
+
+        This is a real mode, not the survey with its commands suppressed. It runs its own loop so that
+
+        * nothing is counting down a leg timeout in the background,
+        * the shutter is purely time-based (there is no along-track axis when there is no track),
+        * and the aircraft is never given a destination, so the ONLY thing moving it is the human.
+
+        It returns when the pilot presses FREE-FLY again (back to the survey), presses RTL, or the time
+        budget runs out. The takeover machine still runs underneath: a pilot who puts the pad down in free
+        flight is idle-handed-back to AUTO, which in free flight means "hold position", not "resume the
+        pattern" - there is no pattern to resume.
+        """
+        a = self.a
+        c = self.client
+        print("\n  >>> FREE FLIGHT - the pattern is parked; the pilot has the aircraft.\n"
+              "      FREE-FLY again returns to the survey, RTL always goes home.\n", flush=True)
+        self._control_events.append({"kind": "note", "text": "FREE FLIGHT engaged",
+                                     "detail": "no waypoints are being issued"})
+        last_shot_t = 0.0
+        shots = 0
+        hovering = False
+        while self.free_flight:
+            if (time.time() - self.t_start) / 60.0 > a.max_minutes:
+                self.takeover.force("RTL", "time budget reached", detail=f"{a.max_minutes} min")
+                return frame_idx
+            tr = self.poll_takeover(frame_idx)
+            if tr is not None and tr.to_mode == "RTL":
+                return frame_idx
+            self.takeover.resume_pending = False   # nothing to re-plan; free flight has no pattern
+
+            st = c.simGetGroundTruthKinematics()
+            self._last_kin = st
+            home = self.scn.home
+            cur_n = float(home["north_m"]) + st.position.x_val
+            cur_e = float(home["east_m"]) + st.position.y_val
+            roll, pitch, _ = body_euler_deg(st.orientation)
+            agl = (float(home["ground_asl_m"]) - st.position.z_val) \
+                - self.scn.terrain.surface_asl(cur_e, cur_n)
+            self.push_pose_now(st)
+
+            # Nobody is flying and nothing is commanding: hold station rather than drift.
+            if self.takeover.flying_itself and not self.orbit.engaged:
+                if not hovering:
+                    try:
+                        c.hoverAsync()
+                    except Exception:
+                        pass
+                    hovering = True
+            else:
+                hovering = False
+
+            if self.orbit.engaged:
+                self._fly_orbit(cur_e, cur_n, st)
+
+            if max(abs(roll), abs(pitch)) <= a.free_tilt_deg and \
+                    (shots == 0 or time.time() - last_shot_t >= a.manual_shutter_s):
+                fr = self.capture_live(frame_idx, -1)
+                if fr is not None:
+                    self.handle_frame(fr)
+                    frame_idx += 1
+                    shots += 1
+                    last_shot_t = time.time()
+            time.sleep(a.poll_s)
+
+        print("\n  >>> back to the SURVEY from the aircraft's current position.\n", flush=True)
+        return frame_idx
+
+    def _fly_orbit(self, east_m: float, north_m: float, kin: Any) -> None:
+        """Fly the ORBIT assist: circle the pilot's last mark with the nose pointed at it."""
+        import cosysairsim as airsim                        # noqa: PLC0415
+
+        cmd = self.orbit.command(time.time(), east_m, north_m)
+        if cmd is None:
+            return
+        vn, ve, yaw = cmd
+        try:
+            self.client.moveByVelocityZAsync(
+                float(vn), float(ve), float(kin.position.z_val), 0.25,
+                drivetrain=airsim.DrivetrainType.MaxDegreeOfFreedom,
+                yaw_mode=airsim.YawMode(False, float(yaw)))
+        except Exception:
+            pass
+
     def _should_shoot(self, shots: int, cur_n: float, last_n: float | None, last_shot_t: float,
-                      roll: float, pitch: float, agl: float) -> bool:
+                      roll: float, pitch: float, agl: float, *, phase: str = "line") -> bool:
         """The shutter rule. Identical gates to `survey.py`, plus a time cadence for MANUAL flight.
 
         §7 step 3: "Every frame in MANUAL still runs detection, geolocation and coverage." A pilot who is
         hovering to look under an eave covers no along-track distance, so a distance-only shutter would
         stop capturing exactly when the operator is looking hardest.
+
+        **The tilt gate does not apply in MANUAL.** It exists to reject frames the airframe smeared, and it
+        is calibrated for a survey that holds 8 degrees. A human banks past that constantly - which meant
+        the gate threw away frames in exact proportion to how hard the pilot was flying, so the map went
+        quiet at the moment a judge was most engaged. The camera is gimbal-stabilised, so airframe tilt does
+        not tilt the image; `--manual-tilt-deg` keeps a much looser gate (a genuinely wild attitude still
+        produces a bad frame) and the data card records both numbers.
         """
-        if max(abs(roll), abs(pitch)) > self.a.max_tilt_deg:
+        limit = self.a.manual_tilt_deg if self.takeover.manual else self.a.max_tilt_deg
+        if max(abs(roll), abs(pitch)) > limit:
             return False
         if abs(agl - self.a.alt) > self.a.alt_tol_m and self.takeover.flying_itself:
+            return False
+        # An AUTO transit is a repositioning run, not a search line: the aircraft is crossing ground it has
+        # usually already covered, and shooting it doubles the frame count for nothing. A pilot flying that
+        # same ground IS searching it, so their frames are kept.
+        if phase == "transit" and self.takeover.flying_itself and not self.a.shoot_transit:
             return False
         if shots == 0 or last_n is None:
             return True
@@ -749,8 +1120,10 @@ class LiveMission:
         try:
             if self.replay_dir is not None:
                 print(f"\nREPLAY source: {self.replay_dir} (no simulator; the LIVE loop, recorded frames)")
-                self.control = self.control_override or open_control_source(a.control)
+                self.control = self.control_override or open_control_source(
+                    a.control, require_verified=a.require_verified_pad)
                 print(f"control source: {json.dumps(self.control.describe())}")
+                self._announce_pad()
                 for fr in self.replay_frames():
                     self.poll_takeover(fr.frame_idx)
                     self.handle_frame(fr)
@@ -763,15 +1136,35 @@ class LiveMission:
                 self.cmap = self.client.simGetSegmentationColorMap()
                 grab(self.client)          # warm-up frame, discarded (first buffers are unconverted)
                 _assert_segmentation_healthy(self.names, self.cmap)
-                self.control = self.control_override or open_control_source(a.control, client=self.client)
+                self.control = self.control_override or open_control_source(
+                    a.control, client=self.client, require_verified=a.require_verified_pad)
+                # Velocity manual (the default): the pad flies the aircraft through the API, so the vehicle
+                # is never handed to simple_flight's RC channels and the pilot cannot reach its passthrough
+                # throttle or its 100 ms disarm gesture. `--manual-mode rc` restores the literal §5.2 path.
+                if a.manual_mode == "velocity":
+                    self.pilot = ManualPilot(
+                        self.client,
+                        limits=ManualLimits(max_speed_ms=a.manual_speed, boost_speed_ms=a.boost_speed,
+                                            min_agl_m=a.manual_min_agl, max_agl_m=a.manual_max_agl),
+                        terrain=self.scn.terrain, home=self.scn.home,
+                        constraints=getattr(self, "constraints", None))
                 self.authority = VehicleAuthority(
                     self.client,
+                    manual_mode=a.manual_mode,
+                    release_fn=(self.pilot.release if self.pilot is not None else None),
                     hover_fn=lambda: self.client.hoverAsync(),
                     rtl_fn=lambda: self.client.moveToPositionAsync(
                         0.0, 0.0, -(self.scn.terrain.surface_asl(
                             float(self.scn.home["east_m"]), float(self.scn.home["north_m"]))
                             + a.alt - float(self.scn.home["ground_asl_m"])), a.speed, timeout_sec=180))
-                print(f"control source: {json.dumps(self.control.describe())}")
+                # `default=str` because these are DIAGNOSTIC LINES and must never abort a flight. A
+                # describe() returning something json cannot encode (a __slots__ member_descriptor did
+                # exactly this) took down the whole mission at startup, before takeoff, from a print.
+                # Degrade to a readable string instead; the flight is what matters.
+                print(f"control source: {json.dumps(self.control.describe(), default=str)}")
+                if self.pilot is not None:
+                    print(f"manual flight : {json.dumps(self.pilot.describe(), default=str)}")
+                self._announce_pad()
                 self.fly()
         except KeyboardInterrupt:
             print("\ninterrupted by the operator")
@@ -858,7 +1251,16 @@ class LiveMission:
                          "transitions": [r for r in self.mode_rows],
                          "refusals": [{"t_utc": t, "why": w} for t, w in self.takeover.refusals],
                          "seconds_by_mode": {m: round(self.takeover.seconds_in(m), 1)
-                                             for m in ("AUTO", "MANUAL", "HOLD", "RTL")}},
+                                             for m in ("AUTO", "MANUAL", "HOLD", "RTL")},
+                         # Which manual path actually flew, so a reader can never assume the safe one was
+                         # used when `--manual-mode rc` was passed (or the other way round).
+                         "manual_mode": self.a.manual_mode,
+                         "manual_pilot": (self.pilot.describe() if self.pilot is not None else None),
+                         "idle_resume_s": self.a.idle_resume_s,
+                         "idle_handbacks": self.takeover.idle_handbacks,
+                         "tilt_gate_deg": {"auto": self.a.max_tilt_deg, "manual": self.a.manual_tilt_deg},
+                         "free_flight_ended_in": self.free_flight,
+                         "pilot_marks": list(self.marks)},
             "c2": self.c2.stats() if self.c2 is not None else None,
             "map_probe": ({"messages": self.probe.messages, "record_frames": self.probe.records_seen}
                           if self.probe is not None else None),
@@ -1065,6 +1467,39 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--alt-tol-m", type=float, default=8.0)
     p.add_argument("--manual-shutter-s", type=float, default=1.0,
                    help="in MANUAL, also shoot at least this often even if the pilot is hovering")
+
+    # -- F3: the pilot ------------------------------------------------------------------------------
+    g = p.add_argument_group("pilot (F3)")
+    g.add_argument("--idle-resume-s", type=float, default=TakeoverMachine.IDLE_RESUME_S,
+                   help="hand the mission back after this long with no pilot input. 0 disables it and "
+                        "restores the pure §5.2 behaviour, where only the RESUME button ends a takeover.")
+    g.add_argument("--manual-mode", choices=("velocity", "rc"), default="velocity",
+                   help="velocity: the pad flies the aircraft through the API, so centred sticks hold "
+                        "station and simple_flight's disarm gesture is unreachable (safe to hand a judge). "
+                        "rc: the literal §5.2 handover - enableApiControl(False) and raw RC channels.")
+    g.add_argument("--manual-speed", type=float, default=ManualLimits.max_speed_ms)
+    g.add_argument("--boost-speed", type=float, default=ManualLimits.boost_speed_ms)
+    g.add_argument("--manual-min-agl", type=float, default=ManualLimits.min_agl_m,
+                   help="the floor a pilot cannot fly below, measured against the terrain beneath them")
+    g.add_argument("--manual-max-agl", type=float, default=ManualLimits.max_agl_m)
+    g.add_argument("--manual-tilt-deg", type=float, default=35.0,
+                   help="shutter tilt gate while a HUMAN is flying. Much looser than --max-tilt-deg "
+                        "because the camera is gimbal-stabilised and a person banks past 8 deg constantly; "
+                        "a survey-tight gate here discards frames in proportion to how hard they fly.")
+    g.add_argument("--free-tilt-deg", type=float, default=35.0, help="the same gate in free flight")
+    g.add_argument("--free", action="store_true",
+                   help="start in FREE FLIGHT (demo mode 2): go anywhere, no pattern is flown. The "
+                        "FREE-FLY button toggles it in the air either way.")
+    g.add_argument("--shoot-transit", action="store_true",
+                   help="also capture on AUTO transit legs (a pilot's transit frames are always kept)")
+    g.add_argument("--require-verified-pad", action="store_true",
+                   help="refuse to fly a controller whose buttons nobody has ever pressed. The demo "
+                        "runner sets this; see tools/live/pad_calibrate.py")
+    g.add_argument("--pose-hz-s", type=float, default=0.10,
+                   help="minimum seconds between drone-position pushes to the map. Decoupled from the "
+                        "shutter, so the aircraft keeps moving on screen even when no frame is captured.")
+    g.add_argument("--hud-hz-s", type=float, default=0.10,
+                   help="minimum seconds between controller-state pushes to the judge HUD")
     p.add_argument("--poll-s", type=float, default=0.02, help="flight/takeover poll period (50 Hz)")
     p.add_argument("--leg-timeout-s", type=float, default=400.0)
     p.add_argument("--log-every", type=int, default=10)

@@ -568,10 +568,14 @@ class _FakeClient:
 
 
 def test_handover_releases_the_vehicle_on_the_same_transition():
-    """The pilot is already moving the sticks: `enableApiControl(False)` must happen now, not next loop."""
+    """The pilot is already moving the sticks: `enableApiControl(False)` must happen now, not next loop.
+
+    Pinned to `manual_mode="rc"` - the literal §5.2 handover this test was written for. The DEFAULT is now
+    "velocity", which deliberately never releases API control; `tests/test_manual_pilot.py` covers that.
+    """
     c = _FakeClient()
     m = TakeoverMachine()
-    auth = VehicleAuthority(c, hover_fn=c.hoverAsync)
+    auth = VehicleAuthority(c, hover_fn=c.hoverAsync, manual_mode="rc")
     tr = m.poll(ControlInput(t=1.0, roll=0.9, valid=True))
     out = auth.apply(tr)
     assert [n for _, n in c.calls] == ["enableApiControl(False)"]
@@ -579,9 +583,10 @@ def test_handover_releases_the_vehicle_on_the_same_transition():
 
 
 def test_handback_takes_the_vehicle_back():
+    """The RC path re-acquires the vehicle on hand-back. (The velocity path never gave it up.)"""
     c = _FakeClient()
     m = TakeoverMachine()
-    auth = VehicleAuthority(c, hover_fn=c.hoverAsync)
+    auth = VehicleAuthority(c, hover_fn=c.hoverAsync, manual_mode="rc")
     auth.apply(m.poll(ControlInput(t=1.0, roll=0.9, valid=True)))
     m.poll(ControlInput(t=2.0, valid=True))
     auth.apply(m.poll(ControlInput(t=3.5, resume=True, valid=True)))
@@ -594,7 +599,7 @@ def test_authority_survives_a_failing_rpc():
         def enableApiControl(self, on, vehicle=""):       # noqa: N802
             raise RuntimeError("rpc down")
 
-    auth = VehicleAuthority(Broken())
+    auth = VehicleAuthority(Broken(), manual_mode="rc")
     m = TakeoverMachine()
     out = auth.apply(m.poll(ControlInput(t=1.0, roll=0.9, valid=True)))
     assert out["did"] == [] and out["errors"] and m.mode == "MANUAL"

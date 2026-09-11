@@ -31,6 +31,25 @@ AUTO-RESUME is a transient, not a mode: `Telemetry.mode` is the frozen four-valu
 ("AUTO", "MANUAL", "HOLD", "RTL"), and re-planning happens while the machine is already back in AUTO.
 :attr:`TakeoverMachine.resume_pending` is True for exactly the moment the mission runner has to re-plan.
 
+The idle hand-back
+------------------
+§5.2 gives the pilot a RESUME button and nothing else. That is right for an operator who is paid to fly and
+wrong for a judge at a stand, who is handed a pad, flies for twenty seconds, then looks up to ask a
+question. Without a timer the aircraft stays in MANUAL for ever - and because MANUAL is flown by a human,
+"for ever" means it has stopped searching, and the next person to walk up gets an aircraft parked in a
+field. :attr:`TakeoverMachine.idle_resume_s` closes that: after N seconds with the sticks centred and no
+button pressed, the machine hands the mission back on its own, logs `idle hand-back` as the reason, and
+sets `resume_pending` exactly as a RESUME press would.
+
+A pad that has been **put down, unplugged or gone flat counts as idle from the first invalid poll**, because
+"nobody is holding this" is precisely the condition the timer exists to notice. That is a deliberate
+reversal of the `valid=False` rule below, which holds the mode when there is no controller: holding AUTO
+when no pad was ever attached is right; holding MANUAL after the pad someone was flying with disappears is
+how a demo aircraft ends up in a tree.
+
+RTL is never idle-resumed. It is the one mode that means "something is wrong, go home", and a timer that
+quietly cancels it would be a safety bug, not a convenience.
+
 R10 note: nothing in this module deletes a record or marks anything cleared. A mode switch changes who is
 flying, never what has been found.
 """
@@ -38,21 +57,25 @@ flying, never what has been found.
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any, Callable, Literal
+
+from sightline.mission.padmap import (PadMap, REST_TOLERANCE, XBOX360_SDL_WINDOWS,  # noqa: F401
+                                      load_pad_map, pad_slug, save_pad_map)
 
 __all__ = ["Mode", "MODES", "ControlInput", "ModeTransition", "TakeoverMachine", "ControlSource",
            "AirSimRcSource", "PygameGamepadSource", "KeyboardSource", "NullSource", "open_control_source",
-           "VehicleAuthority", "XBOX_BUTTONS"]
+           "VehicleAuthority", "XBOX_BUTTONS", "XBOX_AXES", "PadMap", "REST_TOLERANCE"]
 
 Mode = Literal["AUTO", "MANUAL", "HOLD", "RTL"]
 
 #: The frozen vocabulary from `sightline/schemas.py::FlightMode`. Kept in step by a test.
 MODES: tuple[str, ...] = ("AUTO", "MANUAL", "HOLD", "RTL")
 
-#: Xbox pad button indices as SDL2/XInput reports them through pygame. UNTESTED against a physical pad in
-#: this project (see docs/TRACKER.md); override with `PygameGamepadSource(buttons=...)`.
-XBOX_BUTTONS: dict[str, int] = {"resume": 0, "takeover": 1, "hold": 2, "rtl": 3}
+#: Back-compatible aliases. The mapping itself now lives in `sightline/mission/padmap.py`, which is the
+#: single place that knows what a button means and whether anyone has ever pressed it. These two names are
+#: kept because callers and tests import them.
+XBOX_BUTTONS: dict[str, int] = dict(XBOX360_SDL_WINDOWS.buttons)
 
 
 # --- what the pilot is doing ------------------------------------------------------------------------------
@@ -69,6 +92,14 @@ class ControlInput:
     resume: bool = False
     hold: bool = False
     rtl: bool = False
+    #: Demo buttons. They never change the FLIGHT MODE, so the four-value `Telemetry.mode` vocabulary stays
+    #: frozen; they are read by the mission runner and the HUD. `mark` in particular only ever ADDS a record
+    #: (guardrail R10), never clears one.
+    mark: bool = False
+    boost: bool = False
+    orbit: bool = False
+    freefly: bool = False
+    camera: bool = False
     #: False when no controller is attached at all - the machine must never read intent out of that.
     valid: bool = False
     source: str = "none"
@@ -77,8 +108,14 @@ class ControlInput:
         """How far the pilot has moved anything, on one 0..1 scale."""
         return max(abs(self.roll), abs(self.pitch), abs(self.yaw), abs(self.throttle - 0.5) * 2.0)
 
-    def any_button(self) -> bool:
+    def any_mode_button(self) -> bool:
+        """Only the four buttons that can change `Telemetry.mode`."""
         return bool(self.takeover or self.resume or self.hold or self.rtl)
+
+    def any_button(self) -> bool:
+        """Any button at all, including the demo ones - this is what "a human is present" means."""
+        return bool(self.any_mode_button() or self.mark or self.boost or self.orbit
+                    or self.freefly or self.camera)
 
 
 @dataclass(slots=True)
@@ -128,15 +165,37 @@ class TakeoverMachine:
     #: used to call a stick "active", and that probe measured full -1..1 travel on every axis.
     DEADBAND = 0.15
     CENTRED_S = 1.0
+    #: Seconds of "nobody is flying this" before the mission takes itself back. 12 s is long enough that a
+    #: judge lining up a shot is not interrupted and short enough that a judge who walks away does not
+    #: strand the aircraft. 0 disables the timer and restores the pure §5.2 behaviour.
+    IDLE_RESUME_S = 12.0
+    #: The modes an idle pilot is taken out of. RTL is deliberately absent - see the module docstring.
+    IDLE_MODES: tuple[str, ...] = ("MANUAL", "HOLD")
 
     def __init__(self, *, deadband: float = DEADBAND, centred_s: float = CENTRED_S,
-                 initial: Mode = "AUTO", clock: Callable[[], float] = time.time):
+                 initial: Mode = "AUTO", clock: Callable[[], float] = time.time,
+                 idle_resume_s: float = IDLE_RESUME_S, idle_modes: tuple[str, ...] = IDLE_MODES):
         if not 0.0 < deadband < 1.0:
             raise ValueError(f"deadband must be in (0, 1), got {deadband}")
         if initial not in MODES:
             raise ValueError(f"unknown mode {initial!r}; expected one of {MODES}")
+        if idle_resume_s < 0.0:
+            raise ValueError(f"idle_resume_s must be >= 0 (0 disables), got {idle_resume_s}")
+        bad = [m for m in idle_modes if m not in MODES]
+        if bad:
+            raise ValueError(f"unknown idle mode(s) {bad}; expected a subset of {MODES}")
+        if "RTL" in idle_modes:
+            raise ValueError("RTL must never be idle-resumed: it means 'something is wrong, go home', and "
+                             "a timer that cancels it is a safety bug")
         self.deadband = float(deadband)
         self.centred_s = float(centred_s)
+        self.idle_resume_s = float(idle_resume_s)
+        self.idle_modes = tuple(idle_modes)
+        #: When the pilot last did something on purpose. None means "not idle yet" has not been established.
+        self._active_since: float | None = None
+        self._idle_since: float | None = None
+        #: Idle hand-backs, counted separately from button ones so the data card can tell them apart.
+        self.idle_handbacks = 0
         self.mode: str = initial
         #: The mode the machine started in, and when the mission clock started. `seconds_in` needs both to
         #: attribute the time before the FIRST transition, which is most of a normal flight.
@@ -203,6 +262,19 @@ class TakeoverMachine:
             "controller_present": bool(li and li.valid),
             "deflection": round(li.deflection(), 3) if li else 0.0,
             "last_transition": self.transitions[-1].as_dict() if self.transitions else None,
+            # -- what the judge's HUD counts down --
+            "idle_resume_s": self.idle_resume_s,
+            "idle_modes": list(self.idle_modes),
+            "idle_s": round(self.idle_seconds(), 2),
+            "idle_remaining_s": (None if (r := self.idle_remaining()) is None else round(r, 2)),
+            "idle_handbacks": self.idle_handbacks,
+            # -- and what it draws the sticks from --
+            "sticks": ({"roll": round(li.roll, 3), "pitch": round(li.pitch, 3), "yaw": round(li.yaw, 3),
+                        "throttle": round(li.throttle, 3)} if li else
+                       {"roll": 0.0, "pitch": 0.0, "yaw": 0.0, "throttle": 0.5}),
+            "buttons": ({"takeover": li.takeover, "resume": li.resume, "hold": li.hold, "rtl": li.rtl,
+                         "mark": li.mark, "boost": li.boost, "orbit": li.orbit, "freefly": li.freefly,
+                         "camera": li.camera} if li else {}),
         }
 
     # -- transitions -------------------------------------------------------------------------------
@@ -226,6 +298,37 @@ class TakeoverMachine:
             self.t_start = when
         return self._switch(to, reason, when, detail)
 
+    # -- idle ---------------------------------------------------------------------------------------
+    def idle_seconds(self, now: float | None = None) -> float:
+        """How long the pilot has done nothing. 0 while they are actively flying."""
+        if self._idle_since is None:
+            return 0.0
+        now = self.clock() if now is None else now
+        return max(0.0, now - self._idle_since)
+
+    def idle_remaining(self, now: float | None = None) -> float | None:
+        """Seconds before the mission takes itself back, or None when that cannot happen right now.
+
+        This is what the judge's HUD counts down, so it is None - not 0 - whenever there is nothing to count:
+        the timer is off, the mode is not idle-resumable, or the pilot is flying.
+        """
+        if self.idle_resume_s <= 0.0 or self.mode not in self.idle_modes or self._idle_since is None:
+            return None
+        return max(0.0, self.idle_resume_s - self.idle_seconds(now))
+
+    def _idle_transition(self, t: float) -> ModeTransition | None:
+        """Hand the mission back because nobody is flying. Returns the transition, or None."""
+        if self.idle_resume_s <= 0.0 or self.mode not in self.idle_modes or self._idle_since is None:
+            return None
+        held = t - self._idle_since
+        if held < self.idle_resume_s:
+            return None
+        self.idle_handbacks += 1
+        tr = self._switch("AUTO", "idle hand-back", t,
+                          f"no pilot input for {held:.1f} s >= {self.idle_resume_s:.1f} s")
+        self._idle_since = None
+        return tr
+
     def poll(self, ctl: ControlInput) -> ModeTransition | None:
         """One controller sample. Returns the transition it caused, or None."""
         self.polls += 1
@@ -236,7 +339,12 @@ class TakeoverMachine:
             # No controller attached: hold whatever mode the mission is in and let `force` drive it. Reading
             # intent out of an absent device is how a demo takes itself into MANUAL and hovers for ever.
             self._centred_since = None
-            return None
+            # ... but a pad that VANISHES while a human is flying is the strongest possible statement that
+            # nobody is flying, so the idle clock runs on invalid polls too. Only the clock: no intent is
+            # ever read out of an absent device.
+            if self._idle_since is None:
+                self._idle_since = ctl.t
+            return self._idle_transition(ctl.t)
         self.polls_valid += 1
 
         defl = ctl.deflection()
@@ -245,6 +353,15 @@ class TakeoverMachine:
                 self._centred_since = ctl.t
         else:
             self._centred_since = None
+
+        # The idle clock. "Doing something on purpose" is any deflection past the deadband or any button -
+        # including a button the current mode ignores, because a judge pressing HOLD twice is still present.
+        if defl > self.deadband or ctl.any_button():
+            self._idle_since = None
+            self._active_since = ctl.t if self._active_since is None else self._active_since
+        elif self._idle_since is None:
+            self._idle_since = ctl.t
+            self._active_since = None
 
         # RTL first: always available, from every state (§7 step 3).
         if ctl.rtl:
@@ -267,7 +384,9 @@ class TakeoverMachine:
                                               f"< {self.centred_s:.1f} s"))
                 return None
             return self._switch("AUTO", "RESUME button", ctl.t, f"sticks centred {held:.2f} s")
-        return None
+
+        # Last, so that anything the pilot actually did this poll wins over the timer.
+        return self._idle_transition(ctl.t)
 
     @property
     def refusals(self) -> list[tuple[float, str]]:
@@ -352,16 +471,7 @@ class AirSimRcSource(ControlSource):
         return d
 
 
-#: MEASURED on the Xbox 360 pad attached to this machine (2026-09-11), SDL2 joystick API on Windows:
-#: axes 0-3 rest at 0.0 and are the two sticks; axes 4 and 5 rest at **-1.0** and are the triggers.
-#: The "standard" layout quoted in most tutorials (0 LX, 1 LY, 2 LT, 3 RX, 4 RY, 5 RT) is NOT what this
-#: driver reports, and believing it put `pitch` on a trigger - which rests at -1.0, reads as full stick
-#: deflection, and took the aircraft into MANUAL the instant the source was opened, with nobody touching it.
-XBOX_AXES: dict[str, int] = {"yaw": 0, "throttle": 1, "roll": 2, "pitch": 3}
-
-#: An axis resting outside this is not a self-centring stick - it is a trigger, or a broken mapping.
-REST_TOLERANCE = 0.30
-
+XBOX_AXES: dict[str, int] = dict(XBOX360_SDL_WINDOWS.axes)
 
 class PygameGamepadSource(ControlSource):
     """The pad through SDL2/XInput, which is where NAMED BUTTONS come from.
@@ -383,7 +493,8 @@ class PygameGamepadSource(ControlSource):
     buttons_verified_against_hardware = False
 
     def __init__(self, index: int = 0, *, buttons: dict[str, int] | None = None,
-                 axes: dict[str, int] | None = None, check_rest: bool = True):
+                 axes: dict[str, int] | None = None, check_rest: bool = True,
+                 pad_map: "PadMap | None" = None, repo: Any = None):
         import os                                          # noqa: PLC0415
 
         os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")
@@ -398,26 +509,44 @@ class PygameGamepadSource(ControlSource):
                                f"({pygame.joystick.get_count()} joysticks enumerated)")
         self.js = pygame.joystick.Joystick(index)
         self.js.init()
-        self.buttons = dict(buttons or XBOX_BUTTONS)
-        self.axes = dict(axes or XBOX_AXES)
         self.device = self.js.get_name()
+        self.n_axes, self.n_buttons = self.js.get_numaxes(), self.js.get_numbuttons()
+        self.n_hats = self.js.get_numhats()
+
+        # The mapping is DATA now, not a literal: a calibrated file for this device if one exists, else the
+        # shipped map, else an honest guess. `describe()` carries its provenance all the way to the HUD.
+        self.pad_map = pad_map if pad_map is not None else load_pad_map(
+            self.device, repo=repo, n_axes=self.n_axes, n_buttons=self.n_buttons, n_hats=self.n_hats)
+        if axes or buttons:                      # explicit overrides still win, for tests and odd hardware
+            self.pad_map = replace(self.pad_map,
+                                   axes={**self.pad_map.axes, **(axes or {})},
+                                   buttons={**self.pad_map.buttons, **(buttons or {})},
+                                   provenance="override", note="axes/buttons overridden by the caller")
         for _ in range(5):
             self.pygame.event.pump()
             time.sleep(0.01)
-        self.rest_axes = [round(self._axis(i), 4) for i in range(self.js.get_numaxes())]
+        self.rest_axes = [round(self._axis(i), 4) for i in range(self.n_axes)]
+        self.buttons_verified_against_hardware = self.pad_map.verified
         if check_rest:
-            self._assert_sticks_are_centred()
+            self._assert_map_is_sane()
 
-    def _assert_sticks_are_centred(self) -> None:
-        bad = {name: self.rest_axes[i] for name, i in self.axes.items()
-               if 0 <= i < len(self.rest_axes) and abs(self.rest_axes[i]) > REST_TOLERANCE}
-        if bad:
+    #: Kept as attributes because callers (and the old tests) read them.
+    @property
+    def axes(self) -> dict[str, int]:
+        return dict(self.pad_map.axes)
+
+    @property
+    def buttons(self) -> dict[str, int]:
+        return dict(self.pad_map.buttons)
+
+    def _assert_map_is_sane(self) -> None:
+        problems = self.pad_map.validate(rest_axes=tuple(self.rest_axes))
+        if problems:
             raise RuntimeError(
-                f"{self.device}: axis mapping is wrong - "
-                + ", ".join(f"{n} (axis {self.axes[n]}) rests at {v:+.2f}" for n, v in bad.items())
-                + f". An axis resting near +-1 is a TRIGGER, not a stick, and would read as a permanent "
-                  f"takeover. All axes at rest: {self.rest_axes}. "
-                  f"Pass axes={{...}} with the right indices (this machine's pad: {XBOX_AXES}).")
+                f"{self.device}: this control mapping must not be flown -\n  "
+                + "\n  ".join(problems)
+                + f"\nAll axes at rest: {self.rest_axes}. "
+                  f"Fix it in one go with:  uv run python tools/live/pad_calibrate.py")
 
     def _axis(self, i: int) -> float:
         try:
@@ -425,9 +554,16 @@ class PygameGamepadSource(ControlSource):
         except Exception:
             return 0.0
 
+    def _stick(self, name: str) -> float:
+        """One flight axis, dead-zoned and sign-corrected so positive is always the intuitive direction."""
+        i = self.pad_map.axis(name)
+        if i < 0:
+            return 0.0
+        return self.pad_map.apply_dead_zone(self._axis(i) * self.pad_map.sign(name))
+
     def _button(self, key: str) -> bool:
-        i = self.buttons.get(key, -1)
-        if i < 0 or i >= self.js.get_numbuttons():
+        i = self.pad_map.button(key)
+        if i < 0 or i >= self.n_buttons:
             return False
         try:
             return bool(self.js.get_button(i))
@@ -438,12 +574,13 @@ class PygameGamepadSource(ControlSource):
         try:
             self.pygame.event.pump()
             return ControlInput(
-                t=now, roll=self._axis(self.axes["roll"]), pitch=-self._axis(self.axes["pitch"]),
-                yaw=self._axis(self.axes["yaw"]),
-                # SDL sticks are -1..1 and centre at 0; the schema's throttle is 0..1 centred at 0.5.
-                throttle=0.5 - self._axis(self.axes["throttle"]) / 2.0,
+                t=now, roll=self._stick("roll"), pitch=self._stick("pitch"), yaw=self._stick("yaw"),
+                # Sticks are -1..1 centred at 0; the schema's throttle is 0..1 centred at 0.5.
+                throttle=0.5 + self._stick("throttle") / 2.0,
                 takeover=self._button("takeover"), resume=self._button("resume"),
                 hold=self._button("hold"), rtl=self._button("rtl"),
+                mark=self._button("mark"), boost=self._button("boost"), orbit=self._button("orbit"),
+                freefly=self._button("freefly"), camera=self._button("camera"),
                 valid=True, source=self.name)
         except Exception:
             return ControlInput(t=now, valid=False, source=self.name)
@@ -457,10 +594,13 @@ class PygameGamepadSource(ControlSource):
 
     def describe(self) -> dict[str, Any]:
         d = super().describe()
-        d.update(device=self.device, buttons=self.buttons, axes=self.axes, rest_axes=self.rest_axes,
-                 buttons_verified_against_hardware=self.buttons_verified_against_hardware,
-                 note="axes READ from this physical pad and their resting values checked; the four button "
-                      "indices have NOT been pressed on hardware")
+        d.update(device=self.device, rest_axes=self.rest_axes,
+                 buttons_verified_against_hardware=self.pad_map.verified,
+                 pad_map=self.pad_map.to_dict(),
+                 note=("mapping MEASURED on this pad by tools/live/pad_calibrate.py"
+                       if self.pad_map.verified else
+                       f"axes read and resting values checked; button indices are {self.pad_map.provenance}"
+                       f" and have NOT been pressed on hardware - run tools/live/pad_calibrate.py"))
         return d
 
 
@@ -468,7 +608,8 @@ class KeyboardSource(ControlSource):
     """No pad attached: drive the state machine from the console.
 
         T takeover   R resume   H hold   L return-to-launch
-        W/S pitch    A/D roll   Q/E yaw   SPACE centre the sticks
+        M mark       B boost    O orbit  F free-fly toggle   C cycle camera
+        W/S pitch    A/D roll   Q/E yaw  SPACE centre the sticks
 
     A key press latches the axis until SPACE, so a single keystroke is enough to cross the deadband and the
     "sticks centred ≥ 1 s" rule still means something. Windows only (`msvcrt`); on anything else it reports
@@ -477,7 +618,8 @@ class KeyboardSource(ControlSource):
 
     name = "keyboard"
     verified_against_hardware = False
-    KEYS = {"t": "takeover", "r": "resume", "h": "hold", "l": "rtl"}
+    KEYS = {"t": "takeover", "r": "resume", "h": "hold", "l": "rtl",
+            "m": "mark", "b": "boost", "o": "orbit", "f": "freefly", "c": "camera"}
     STEP = 0.6
 
     def __init__(self) -> None:
@@ -531,6 +673,9 @@ class KeyboardSource(ControlSource):
         return ControlInput(t=now, roll=self.roll, pitch=self.pitch, yaw=self.yaw, throttle=self.throttle,
                             takeover=p.get("takeover", False), resume=p.get("resume", False),
                             hold=p.get("hold", False), rtl=p.get("rtl", False),
+                            mark=p.get("mark", False), boost=p.get("boost", False),
+                            orbit=p.get("orbit", False), freefly=p.get("freefly", False),
+                            camera=p.get("camera", False),
                             valid=True, source=self.name)
 
     def describe(self) -> dict[str, Any]:
@@ -540,11 +685,18 @@ class KeyboardSource(ControlSource):
         return d
 
 
-def open_control_source(kind: str = "auto", *, client: Any = None, index: int = 0) -> ControlSource:
+def open_control_source(kind: str = "auto", *, client: Any = None, index: int = 0,
+                        pad_map: PadMap | None = None, require_verified: bool = False,
+                        repo: Any = None) -> ControlSource:
     """Pick a control source. ``auto`` prefers a real pad, then the sim's own view of it, then the keyboard.
 
     pygame comes first because it is the only source with real buttons; the AirSim RC path is second because
     it is the one that actually flies the vehicle in MANUAL, and it still gives full stick control.
+
+    ``require_verified`` refuses to open a pad whose button mapping nobody has ever pressed. It is off by
+    default - a guessed mapping still flies perfectly well on the sticks, and refusing to open would be worse
+    than opening with a warning - but the demo runner turns it on, because the one thing a judge demo cannot
+    survive is pressing RESUME and having the aircraft fly home.
     """
     if kind not in ("auto", "pygame", "airsim", "keyboard", "none"):
         raise ValueError(f"unknown control source {kind!r}")
@@ -552,7 +704,14 @@ def open_control_source(kind: str = "auto", *, client: Any = None, index: int = 
         return NullSource()
     if kind in ("auto", "pygame"):
         try:
-            return PygameGamepadSource(index)
+            src = PygameGamepadSource(index, pad_map=pad_map, repo=repo)
+            if require_verified and not src.pad_map.verified:
+                src.close()
+                raise RuntimeError(
+                    f"{src.device}: the button mapping is {src.pad_map.provenance!r}, i.e. nobody has ever "
+                    f"pressed these buttons on this pad. Refusing to open it for a demo.\n"
+                    f"Fix it in 60 seconds:  uv run python tools/live/pad_calibrate.py")
+            return src
         except Exception:
             if kind == "pygame":
                 raise
@@ -578,11 +737,24 @@ class VehicleAuthority:
     """
 
     def __init__(self, client: Any, *, vehicle: str = "", hover_fn: Callable[[], None] | None = None,
-                 rtl_fn: Callable[[], None] | None = None):
+                 rtl_fn: Callable[[], None] | None = None, manual_mode: str = "velocity",
+                 release_fn: Callable[[], None] | None = None):
+        if manual_mode not in ("velocity", "rc"):
+            raise ValueError(f"manual_mode must be 'velocity' or 'rc', got {manual_mode!r}")
         self.client = client
         self.vehicle = vehicle
         self.hover_fn = hover_fn
         self.rtl_fn = rtl_fn
+        #: ``"rc"``   - the literal §5.2 handover: `enableApiControl(False)` and SimpleFlight obeys the RC
+        #:              channels. A true RC handover, and the one that exposes the pilot to the firmware's
+        #:              passthrough throttle and its 100 ms disarm gesture.
+        #: ``"velocity"`` - API control is RETAINED and `sightline.mission.manual.ManualPilot` flies the
+        #:              sticks as a velocity command. The default, and the only one safe to hand a judge.
+        #:              See `sightline/mission/manual.py` for the firmware reading behind that sentence.
+        self.manual_mode = manual_mode
+        #: Called when the machine LEAVES manual, so the velocity pilot stops commanding before the mission
+        #: re-issues its waypoint. Without it the two fight for one frame and the aircraft lurches.
+        self.release_fn = release_fn
         self.calls: list[tuple[float, str]] = []
         self.errors: list[str] = []
 
@@ -606,12 +778,21 @@ class VehicleAuthority:
         t0 = time.perf_counter()
         did: list[str] = []
         if tr.to_mode == "MANUAL":
-            # Release FIRST and ask questions later: the pilot is already moving the sticks.
-            if self._api(False):
-                did.append("api_control=False")
+            if self.manual_mode == "rc":
+                # Release FIRST and ask questions later: the pilot is already moving the sticks.
+                if self._api(False):
+                    did.append("api_control=False")
+            else:
+                # Velocity manual: the API keeps the vehicle and ManualPilot starts commanding it on the
+                # very next poll. Nothing to hand over - which is why this path has no handover latency,
+                # where the RC one measured 394 ms (`tools/day1/gamepad_airsim.py`).
+                did.append("api_control=True (velocity manual)")
         else:
-            if tr.from_mode == "MANUAL" and self._api(True):
-                did.append("api_control=True")
+            if tr.from_mode == "MANUAL":
+                if self.release_fn is not None and self._call("release_manual", self.release_fn):
+                    did.append("manual_pilot_released")
+                if self.manual_mode == "rc" and self._api(True):
+                    did.append("api_control=True")
             if tr.to_mode == "HOLD" and self.hover_fn is not None:
                 if self._call("hover", self.hover_fn):
                     did.append("hover")

@@ -27,6 +27,7 @@
   :root{
     --bg:#12161c; --panel:#1a2029; --panel2:#222a35; --line:#2f3946; --ink:#e8edf4; --dim:#9aa8b8;
     --human:#e63946; --animal:#3d87c9; --dismissed:#7b8794; --stale:#c98f2d; --ok:#38b26a; --warn:#e0a13a;
+    --manual:#ffb545;
   }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;font:13px/1.45 system-ui,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}
@@ -109,6 +110,73 @@
   .act input{flex:1;min-width:120px}
   .err{color:#ffb3b3;font-size:11px;margin-top:5px;min-height:14px}
 
+
+  /* ---- F3 pilot HUD (sightline/api/control_feed.py) -------------------------------------------------
+     Everything here is driven by the "control" WebSocket message, which the flight loop pushes at 10 Hz.
+     The HUD is deliberately an OVERLAY on the map rather than a panel beside it: the point of the demo is
+     that a judge flies the aircraft and sees the consequences on the same picture, and a HUD in the corner
+     of the map keeps their eyes in one place. It hides itself entirely until a flight pushes control state,
+     so a replay or a static review of the map looks exactly as it did before.                          */
+  #hud{position:absolute;left:10px;bottom:56px;z-index:4;width:310px;display:none;
+       background:#0b0e13e8;border:1px solid var(--line);border-radius:10px;overflow:hidden;
+       box-shadow:0 8px 28px #0009;backdrop-filter:blur(3px)}
+  #hud.on{display:block}
+  #hud.manual{border-color:var(--manual);box-shadow:0 0 0 1px var(--manual) inset,0 8px 28px #0009}
+  .hud-top{display:flex;align-items:center;gap:9px;padding:9px 11px;background:#161c25;
+           border-bottom:1px solid var(--line)}
+  .hud-mode{font-weight:700;font-size:15px;letter-spacing:.06em}
+  .m-AUTO{color:var(--ok)} .m-MANUAL{color:var(--manual)} .m-HOLD{color:#c77dff} .m-RTL{color:var(--human)}
+  .hud-who{font-size:10.5px;color:var(--dim);line-height:1.25;flex:1}
+  .hud-who b{color:var(--ink)}
+  /* The idle-hand-back countdown. A ring rather than a number because the thing a judge needs to read at a
+     glance, from two metres away, is "how much time have I got", not a decimal.                          */
+  .ring{width:38px;height:38px;flex:none;position:relative}
+  .ring svg{transform:rotate(-90deg)}
+  .ring .bg{stroke:#2a3340} .ring .fg{stroke:var(--manual);transition:stroke-dashoffset .1s linear}
+  .ring.soon .fg{stroke:var(--warn)}
+  .ring span{position:absolute;inset:0;display:grid;place-items:center;font-size:11px;font-weight:700}
+
+  .hud-body{padding:9px 11px;display:flex;flex-direction:column;gap:9px}
+  .sticks{display:flex;gap:10px;align-items:center;justify-content:space-between}
+  .stick{width:62px;height:62px;border:1px solid var(--line);border-radius:8px;position:relative;
+         background:#0f141b}
+  .stick::before,.stick::after{content:"";position:absolute;background:#232c37}
+  .stick::before{left:50%;top:4px;bottom:4px;width:1px}
+  .stick::after{top:50%;left:4px;right:4px;height:1px}
+  .stick i{position:absolute;width:13px;height:13px;border-radius:7px;background:var(--manual);
+           margin:-6.5px 0 0 -6.5px;transition:left .06s linear,top .06s linear;box-shadow:0 0 8px #0006}
+  .stick.idle i{background:#46525f}
+  .stick label{position:absolute;bottom:-15px;left:0;right:0;text-align:center;font-size:9.5px;color:var(--dim)}
+  .stickwrap{display:flex;flex-direction:column;align-items:center;gap:2px;padding-bottom:14px}
+
+  .btns{display:flex;flex-wrap:wrap;gap:4px}
+  .btn{font-size:9.5px;letter-spacing:.04em;padding:2px 6px;border-radius:9px;border:1px solid var(--line);
+       color:#6d7b8b;background:#141a22}
+  .btn.on{background:var(--manual);border-color:var(--manual);color:#1a1206;font-weight:700}
+  .btn.warn{border-color:var(--warn);color:var(--warn)}
+
+  .envelope{font-size:10.5px;color:var(--warn);border:1px solid #5a4415;background:#2a1f08;
+            border-radius:6px;padding:4px 7px;display:none}
+  .envelope.on{display:block}
+
+  .feed{max-height:118px;overflow:auto;border-top:1px solid var(--line);padding:6px 11px 8px;
+        font-size:10.5px;line-height:1.5}
+  .feed .ev{display:flex;gap:6px;padding:1px 0}
+  .feed .t{color:#5f6b7a;flex:none;font-variant-numeric:tabular-nums}
+  .feed .k{flex:none;width:6px;border-radius:3px;background:var(--dim)}
+  .ev-mode .k{background:var(--manual)} .ev-mark .k{background:var(--human)}
+  .ev-envelope .k{background:var(--warn)} .ev-pad .k{background:#c77dff} .ev-record .k{background:var(--ok)}
+  .feed .x{color:var(--ink)} .feed .d{color:var(--dim)}
+
+  /* A takeover is the moment the demo is about, so it gets a full-width flash across the map. */
+  #takeover{position:absolute;left:0;right:0;top:0;z-index:6;pointer-events:none;text-align:center;
+            padding:8px;font-weight:700;letter-spacing:.14em;font-size:13px;opacity:0;
+            transition:opacity .25s;background:linear-gradient(#ffb54533,#ffb54500);color:var(--manual)}
+  #takeover.show{opacity:1}
+  /* Pilot marks: the judge's own pins, visually distinct from detections so nobody confuses
+     "a human said so" with "the detector said so". */
+  .mark-dot{width:15px;height:15px;border-radius:8px;background:#ffd479;border:2px solid #7a5c12;
+            box-shadow:0 0 0 3px #ffd47933}
   #banner{position:absolute;left:10px;top:10px;z-index:3;display:flex;gap:6px;align-items:center}
   #status{position:absolute;left:10px;bottom:26px;z-index:3;background:#0b0e13d9;border:1px solid var(--line);
           border-radius:5px;padding:5px 9px;font:11px ui-monospace,Consolas,monospace;white-space:pre;color:var(--dim)}
@@ -119,6 +187,37 @@
 <div id="app">
   <div id="map">
     <div id="banner"></div>
+    <div id="takeover"></div>
+    <div id="hud">
+      <div class="hud-top">
+        <div class="hud-mode m-AUTO" id="hud-mode">AUTO</div>
+        <div class="hud-who" id="hud-who"></div>
+        <div class="ring" id="hud-ring" hidden>
+          <svg width="38" height="38" viewBox="0 0 38 38">
+            <circle class="bg" cx="19" cy="19" r="16" fill="none" stroke-width="3"></circle>
+            <circle class="fg" cx="19" cy="19" r="16" fill="none" stroke-width="3"
+                    stroke-linecap="round" stroke-dasharray="100.53" stroke-dashoffset="0"></circle>
+          </svg>
+          <span id="hud-count"></span>
+        </div>
+      </div>
+      <div class="hud-body">
+        <div class="sticks">
+          <div class="stickwrap">
+            <div class="stick idle" id="stick-l"><i></i><label>throttle / yaw</label></div>
+          </div>
+          <div class="stickwrap">
+            <div class="stick idle" id="stick-r"><i></i><label>pitch / roll</label></div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:5px;align-self:flex-start">
+            <div class="btns" id="hud-btns"></div>
+            <div id="hud-flight" style="font-size:10.5px;color:var(--dim)"></div>
+          </div>
+        </div>
+        <div class="envelope" id="hud-env"></div>
+      </div>
+      <div class="feed" id="hud-feed"></div>
+    </div>
     <div id="status">starting…</div>
   </div>
   <div id="side">
@@ -152,6 +251,9 @@ const state = {
   records: new Map(), selected: null, ws: null, wsState: "connecting", outbox: null,
   coverage: null, coverageLoaded: false, covLayer: QS.get("layer") || "", cannotClear: 0,
   mission: null, domain: null, errors: [], lastSeq: 0,
+  //: The F3 pilot feed. Null until a flight pushes one, which is what keeps the HUD hidden on a map that
+  //: is only being reviewed rather than flown.
+  control: null, marks: [],
 };
 // Exposed for app/map/headless_check.mjs (and for a console poke); nothing in the page reads it back.
 window.__sightlineState = state;
@@ -262,6 +364,22 @@ function addLayers() {
   map.addLayer({ id: "acc-ring-line", type: "line", source: "rings", filter: NOT_DISMISSED,
     paint: { "line-color": CLASS_PAINT, "line-width": 1.6, "line-opacity": 0.8,
              "line-dasharray": [2, 2] } });
+
+  // Pilot marks (F3): gold, ringed, labelled with the press order. Deliberately unlike a detection pin -
+  // the demo must never let "a judge pointed at this" read as "the detector found this".
+  map.addSource("marks", { type: "geojson", data: EMPTY });
+  map.addLayer({ id: "mark-halo", type: "circle", source: "marks",
+                 paint: { "circle-radius": 13, "circle-color": "#ffd479", "circle-opacity": 0.18,
+                          "circle-stroke-color": "#ffd479", "circle-stroke-width": 1,
+                          "circle-stroke-opacity": 0.5 } });
+  map.addLayer({ id: "mark-dot", type: "circle", source: "marks",
+                 paint: { "circle-radius": 6, "circle-color": "#ffd479",
+                          "circle-stroke-color": "#5b4310", "circle-stroke-width": 2 } });
+  map.addLayer({ id: "mark-label", type: "symbol", source: "marks",
+                 layout: { "text-field": ["concat", "M", ["to-string", ["get", "idx"]]],
+                           "text-font": ["Noto Sans Regular"], "text-size": 10,
+                           "text-offset": [0, -1.5], "text-allow-overlap": true },
+                 paint: { "text-color": "#ffd479", "text-halo-color": "#0b0e13", "text-halo-width": 1.4 } });
 
   map.addSource("records", { type: "geojson", data: EMPTY });
   map.addLayer({ id: "markers-dismissed", type: "circle", source: "records", filter: IS_DISMISSED,
@@ -436,7 +554,137 @@ function connectWS() {
     else if (m.type === "mission") applyMission(m);
     else if (m.type === "coverage") loadCoverage();
     else if (m.type === "outbox") { state.outbox = m; renderChips(); }
+    else if (m.type === "control") applyControl(m);
   };
+}
+
+// --- F3 pilot HUD ---------------------------------------------------------------------------------------
+// Fed by the "control" WebSocket message (sightline/api/control_feed.py). Everything below is presentation:
+// the HUD never commands anything, and there is no control path from this page to the aircraft. A judge
+// flies with the pad; this is the window they and the room watch while they do it.
+const hud = {
+  el: document.getElementById("hud"),
+  mode: document.getElementById("hud-mode"),
+  who: document.getElementById("hud-who"),
+  ring: document.getElementById("hud-ring"),
+  count: document.getElementById("hud-count"),
+  btns: document.getElementById("hud-btns"),
+  flight: document.getElementById("hud-flight"),
+  env: document.getElementById("hud-env"),
+  feed: document.getElementById("hud-feed"),
+  stickL: document.getElementById("stick-l"),
+  stickR: document.getElementById("stick-r"),
+  flash: document.getElementById("takeover"),
+  events: [],
+  lastMode: null,
+  seq: 0,
+};
+
+const RING_LEN = 2 * Math.PI * 16;   // matches stroke-dasharray in the markup
+
+function hudStick(box, x, y) {
+  // x and y are -1..1 with +x right and +y UP, which is how a person describes a stick. The dot is placed
+  // in CSS percentages so the widget can be resized without touching this.
+  const dot = box.querySelector("i");
+  dot.style.left = `${50 + Math.max(-1, Math.min(1, x)) * 42}%`;
+  dot.style.top = `${50 - Math.max(-1, Math.min(1, y)) * 42}%`;
+  box.classList.toggle("idle", Math.hypot(x, y) < 0.06);
+}
+
+function applyControl(c) {
+  state.control = c;
+  hud.el.classList.add("on");
+  const mode = c.mode || "AUTO";
+  hud.el.classList.toggle("manual", mode === "MANUAL");
+  hud.mode.className = `hud-mode m-${mode}`;
+  hud.mode.textContent = mode;
+
+  // Who is flying, and can we trust the buttons?
+  const pad = c.pad || {};
+  const verified = pad.verified === true;
+  const padName = pad.device || pad.source || "no controller";
+  hud.who.innerHTML = pad.attached
+    ? `<b>${escapeHtml(padName)}</b><br>${verified
+        ? "mapping measured"
+        : `<span style="color:var(--warn)">buttons unverified</span>`}`
+    : `<span style="color:var(--dim)">no controller — the mission is flying itself</span>`;
+
+  // The idle-hand-back countdown. Shown only while it can actually fire, so it never sits at a frozen 0.
+  const rem = c.idle_remaining_s, total = c.idle_resume_s || 0;
+  if (rem === null || rem === undefined || total <= 0) {
+    hud.ring.hidden = true;
+  } else {
+    hud.ring.hidden = false;
+    const frac = Math.max(0, Math.min(1, rem / total));
+    hud.ring.querySelector(".fg").style.strokeDashoffset = String(RING_LEN * (1 - frac));
+    hud.ring.classList.toggle("soon", rem <= 4);
+    hud.count.textContent = String(Math.ceil(rem));
+    hud.count.title = `hands back to AUTO in ${rem.toFixed(1)} s of no input`;
+  }
+
+  const st = c.sticks || {};
+  // throttle arrives 0..1 centred at 0.5; the widget wants -1..1.
+  hudStick(hud.stickL, st.yaw ?? 0, ((st.throttle ?? 0.5) - 0.5) * 2);
+  hudStick(hud.stickR, st.roll ?? 0, st.pitch ?? 0);
+
+  const order = ["takeover", "resume", "hold", "rtl", "mark", "boost", "orbit", "freefly", "camera"];
+  const b = c.buttons || {};
+  hud.btns.innerHTML = order.filter((k) => k in b)
+    .map((k) => `<span class="btn ${b[k] ? "on" : ""}">${k}</span>`).join("")
+    || `<span class="btn warn">no buttons reported</span>`;
+
+  const f = c.flight || {}, s2 = c.stats || {};
+  const bits = [];
+  if (f.agl_m !== null && f.agl_m !== undefined) bits.push(`${fmt(f.agl_m, 0)} m AGL`);
+  if (f.boost) bits.push(`<b style="color:var(--manual)">BOOST</b>`);
+  if (f.orbit) bits.push(`<b style="color:#c77dff">ORBIT</b>`);
+  if (c.free_flight) bits.push(`<b style="color:var(--manual)">FREE FLIGHT</b>`);
+  if (f.manual_mode === "rc") bits.push(`<b style="color:var(--warn)">RC passthrough</b>`);
+  if (s2.marks) bits.push(`${s2.marks} mark${s2.marks === 1 ? "" : "s"}`);
+  const sbm = s2.seconds_by_mode || {};
+  if (sbm.MANUAL) bits.push(`${fmt(sbm.MANUAL, 0)} s flown by hand`);
+  hud.flight.innerHTML = bits.join(" · ");
+
+  const env = c.envelope || {};
+  hud.env.classList.toggle("on", !!env.any);
+  if (env.any) hud.env.textContent = (env.reasons || []).join(" · ") || "held by the flight envelope";
+
+  if (c.marks && map.getSource("marks")) map.getSource("marks").setData(c.marks);
+
+  for (const ev of (c.events || [])) {
+    if (ev.seq <= hud.seq) continue;
+    hud.seq = ev.seq;
+    hud.events.push(ev);
+  }
+  if (hud.events.length > 60) hud.events = hud.events.slice(-60);
+  hud.feed.innerHTML = hud.events.slice().reverse().map((ev) => {
+    const t = new Date((ev.t_utc || 0) * 1000).toLocaleTimeString([], { hour12: false });
+    return `<div class="ev ev-${escapeHtml(ev.kind || "note")}"><span class="k"></span>` +
+           `<span class="t">${t}</span><span class="x">${escapeHtml(ev.text || "")}` +
+           (ev.detail ? ` <span class="d">${escapeHtml(ev.detail)}</span>` : "") + `</span></div>`;
+  }).join("");
+
+  if (mode !== hud.lastMode) {
+    if (hud.lastMode !== null) flashMode(hud.lastMode, mode);
+    hud.lastMode = mode;
+    renderChips();
+  }
+}
+
+function flashMode(from, to) {
+  const text = to === "MANUAL" ? "JUDGE HAS CONTROL"
+    : (from === "MANUAL" && to === "AUTO") ? "MISSION RESUMED"
+    : to === "RTL" ? "RETURNING TO LAUNCH"
+    : to === "HOLD" ? "HOLDING POSITION" : `${from} → ${to}`;
+  hud.flash.textContent = text;
+  hud.flash.classList.add("show");
+  clearTimeout(hud._flashT);
+  hud._flashT = setTimeout(() => hud.flash.classList.remove("show"), 2200);
+}
+
+function escapeHtml(x) {
+  return String(x).replace(/[&<>"']/g, (ch) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
 }
 
 async function pollOutbox() {
@@ -470,7 +718,14 @@ function renderChips() {
     parts.push(`<span class="chip ${cl.k_is_measured ? "" : "sim"}">k ${cl.k === null ? "n/a" : fmt(cl.k, 2)} · <b>${cl.k_is_measured ? "measured" : "MODELLED"}</b></span>`);
     if (state.cannotClear) parts.push(`<span class="chip down"><b>${state.cannotClear}</b> cannot-clear areas</span>`);
   }
-  if (state.mission?.drone) parts.push(`<span class="chip">mode <b>${state.mission.drone.properties.mode}</b> · ${fmt(state.mission.drone.properties.agl_m, 0)} m AGL</span>`);
+  const cmode = state.control?.mode;
+  if (cmode) {
+    const cls = cmode === "MANUAL" ? "sim" : cmode === "AUTO" ? "live" : "";
+    parts.push(`<span class="chip ${cls}">mode <b>${cmode}</b>${state.control.free_flight ? " · FREE" : ""}</span>`);
+  } else if (state.mission?.drone) {
+    parts.push(`<span class="chip">mode <b>${state.mission.drone.properties.mode}</b></span>`);
+  }
+  if (state.mission?.drone) parts.push(`<span class="chip">${fmt(state.mission.drone.properties.agl_m, 0)} m AGL</span>`);
   if (state.domain === "sim") parts.push(`<span class="chip sim"><b>SIM</b> simulated data</span>`);
   chipsEl.innerHTML = parts.join("");
 }

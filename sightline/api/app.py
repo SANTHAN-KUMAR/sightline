@@ -70,6 +70,7 @@ from sightline.api.coverage_feed import (
     read_coverage,
     read_manifest,
 )
+from sightline.api.control_feed import ControlState
 from sightline.api.detect_fallback import DETECT_CONTRACT, DetectorPlugin, FrameMerger, StubDetector
 from sightline.api.live import LiveHub
 from sightline.api.mission_feed import ROUTE_PRODUCT, MissionState
@@ -98,6 +99,7 @@ def create_app(
     upload_store: RecordStore | None = None,
     mission: MissionState | None = None,
     coverage_dir: str | os.PathLike[str] | None = None,
+    control: "ControlState | None" = None,
     detector: DetectorPlugin | None = None,
     repo_root: str | os.PathLike[str] = REPO,
     serve_static: bool = True,
@@ -107,6 +109,7 @@ def create_app(
     repo = Path(repo_root)
     hub = LiveHub()
     mission = mission or MissionState()
+    control = control or ControlState()
     detector = detector or StubDetector()
     merger = FrameMerger()
     cloud_store = upload_store or store
@@ -132,6 +135,7 @@ def create_app(
     app.state.store = store
     app.state.hub = hub
     app.state.mission = mission
+    app.state.control = control
     app.state.outbox = outbox
     app.state.uploader = uploader
     app.state.merger = merger
@@ -150,6 +154,7 @@ def create_app(
             "live_clients": hub.clients,
             "live_seq": hub.seq,
             "detector": {"name": detector.name, "is_stub": getattr(detector, "is_stub", True)},
+            "control": {"mode": control.mode, "pad": control.pad, "free_flight": control.free_flight},
             "contracts": {"coverage": COVERAGE_PRODUCT, "sidecar": SIDECAR_CONTRACT,
                           "route": ROUTE_PRODUCT, "detect": DETECT_CONTRACT},
         }
@@ -450,6 +455,13 @@ def create_app(
             m = mission.as_geojson()
             if m["drone"] or m["plan"]:
                 await hub.send_to(ws, "mission", **m)
+            # A HUD that connects mid-flight must not sit blank until the next stick movement, so the
+            # control state joins the opening handshake - but only once a flight has actually pushed one,
+            # exactly as "mission" is only sent when there is a drone or a plan to send. A fresh server has
+            # nothing to say about a pilot, and an unconditional frame here would put an extra message in
+            # front of every client that is counting them.
+            if control.updated_utc > 0.0:
+                await hub.send_to(ws, "control", **control.snapshot())
             while True:
                 text = await ws.receive_text()
                 try:
@@ -480,6 +492,28 @@ def create_app(
         mission.update_pose(t, footprint=body.get("footprint"))
         hub.publish_threadsafe("mission", **mission.as_geojson())
         return {"ok": True}
+
+    # ---- the pilot: what the judge is doing, live (F3 HUD) --------------------------------------------
+    @app.post("/api/mission/control", include_in_schema=False)
+    def push_control(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+        """Ingress for the flight loop's controller state. Fields mirror `ControlState.update`.
+
+        `events` is a LIST the caller appends to, not a field it overwrites: the flight loop batches the
+        lines it produced since its last push, and the feed keeps every one of them.
+        """
+        events = body.pop("events", None) or []
+        control.update(**body)
+        for ev in events:
+            if isinstance(ev, dict):
+                control.event(str(ev.get("kind", "note")), str(ev.get("text", "")),
+                              detail=str(ev.get("detail", "")), t_utc=ev.get("t_utc"))
+        hub.publish_threadsafe("control", **control.snapshot())
+        return {"ok": True, "event_seq": control.snapshot()["event_seq"]}
+
+    @app.get("/api/mission/control")
+    def get_control(since_seq: int = Query(0, ge=0)) -> dict[str, Any]:
+        """The HUD's state, for a poller or a screenshot harness that is not holding a WebSocket open."""
+        return control.snapshot(since_seq=since_seq, max_events=0)
 
     # ---- headless-check report sink (mirrors app/map/serve.mjs) ---------------------------------------
     @app.post("/__report", include_in_schema=False)
