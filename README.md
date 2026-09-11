@@ -113,6 +113,10 @@ reserve runs out.
 
 ## Quick start
 
+**→ [QUICKSTART.md](QUICKSTART.md) is the runbook**: how to start the dashboard, bring up the simulator, fly
+the live demo, and what each command should print.
+
+
 ```bash
 uv sync                                    # restore the pinned environment (Python 3.11)
 uv run python tools/doctor.py              # verify the toolchain

@@ -91,6 +91,14 @@
      dismiss button live at its foot, and an operator has to be able to see and reach them. */
   .maplibregl-popup-content{max-height:calc(100vh - 90px);overflow:hidden}
   .pop{width:340px;max-height:calc(100vh - 92px);overflow-y:auto}
+  #camera{position:absolute;left:12px;bottom:44px;width:420px;z-index:6;background:#14161c;
+    border:1px solid #2a2e3a;border-radius:8px;overflow:hidden;box-shadow:0 6px 22px rgba(0,0,0,.55)}
+  #camera-head{display:flex;align-items:center;gap:8px;padding:5px 8px;background:#1b1e26;
+    font:600 10px/1.4 ui-monospace,monospace;letter-spacing:.08em;color:#cdd2dd}
+  #camera-meta{margin-left:auto;font-weight:400;color:#8a91a3;letter-spacing:0}
+  #camera-toggle{background:none;border:0;color:#8a91a3;cursor:pointer;font-size:14px;line-height:1;padding:0 2px}
+  #camera-img{display:block;width:100%;background:#000}
+  #camera.collapsed #camera-img{display:none}
   .pop img{width:100%;height:132px;object-fit:cover;display:block;border-radius:7px 7px 0 0;background:#000}
   .pop-body{padding:9px 11px 11px}
   .pop h2{margin:0 0 2px;font-size:14px;display:flex;align-items:center;gap:7px}
@@ -117,7 +125,7 @@
      that a judge flies the aircraft and sees the consequences on the same picture, and a HUD in the corner
      of the map keeps their eyes in one place. It hides itself entirely until a flight pushes control state,
      so a replay or a static review of the map looks exactly as it did before.                          */
-  #hud{position:absolute;left:10px;bottom:52px;z-index:4;width:352px;display:none;
+  #hud{position:absolute;right:12px;bottom:44px;z-index:5;width:352px;display:none;
        background:#0b0e13e8;border:1px solid var(--line);border-radius:10px;overflow:hidden;
        box-shadow:0 8px 28px #0009;backdrop-filter:blur(3px)}
   #hud.on{display:block}
@@ -225,6 +233,17 @@
         <div class="envelope" id="hud-env"></div>
       </div>
       <div class="feed" id="hud-feed"></div>
+    </div>
+    <!-- The OPERATOR VIEW. The map answers "where"; this answers "what is the drone looking at now, and
+         is the model seeing what I am seeing?" Boxes are drawn server-side by sightline.mission.liveview
+         and coloured by score, so a weak detection looks weak at a glance. -->
+    <div id="camera" hidden>
+      <div id="camera-head">
+        <span id="camera-title">CAMERA</span>
+        <span id="camera-meta"></span>
+        <button id="camera-toggle" type="button" title="hide the camera view">&minus;</button>
+      </div>
+      <img id="camera-img" alt="live camera view with detections">
     </div>
     <div id="status">starting…</div>
   </div>
@@ -611,11 +630,17 @@ function applyControl(c) {
   const pad = c.pad || {};
   const verified = pad.verified === true;
   const padName = pad.device || pad.source || "no controller";
+  // "No controller" means two completely different things depending on the mode, and saying the wrong one
+  // is worse than saying nothing: in AUTO it is the normal resting state, but in MANUAL it means the pilot
+  // has put the pad down mid-flight and the only thing that will recover the aircraft is the idle timer.
   hud.who.innerHTML = pad.attached
     ? `<b>${escapeHtml(padName)}</b><br>${verified
         ? "mapping measured"
         : `<span style="color:var(--warn)">buttons unverified</span>`}`
-    : `<span style="color:var(--dim)">no controller — the mission is flying itself</span>`;
+    : (mode === "MANUAL" || mode === "HOLD")
+      ? `<b style="color:var(--warn)">controller lost</b><br>` +
+        `<span style="color:var(--dim)">${escapeHtml(padName)} stopped reporting — handing back</span>`
+      : `<span style="color:var(--dim)">no controller — the mission is flying itself</span>`;
 
   // The idle-hand-back countdown. Shown only while it can actually fire, so it never sits at a frozen 0.
   const rem = c.idle_remaining_s, total = c.idle_resume_s || 0;
@@ -694,6 +719,36 @@ function escapeHtml(x) {
   return String(x).replace(/[&<>"']/g, (ch) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
 }
+
+// --- the operator's camera view -----------------------------------------------------------------------
+// Polls the LATEST annotated frame rather than streaming: a stream can fall behind the aircraft, and the
+// question this answers is "what is it looking at NOW". The image is cache-busted per poll because the URL
+// is constant while the bytes change every frame. 404 simply means nothing is flying, which is not an error.
+let cameraHidden = false;
+async function pollCamera() {
+  const box = document.getElementById("camera");
+  const img = document.getElementById("camera-img");
+  const meta = document.getElementById("camera-meta");
+  try {
+    const r = await fetch("/api/live/view.json", { cache: "no-store" });
+    if (!r.ok) { box.hidden = true; return; }
+    const v = await r.json();
+    box.hidden = false;
+    if (!cameraHidden) img.src = "/api/live/view.jpg?t=" + Date.now();
+    const n = (v.detections || []).length;
+    meta.textContent = `f${v.frame_idx} · ${n} det · ${Math.round(v.agl_m)} m · ${v.mode || ""}` +
+                       (v.detect_ms ? ` · ${Math.round(v.detect_ms)} ms` : "") +
+                       (v.age_s > 8 ? `  (stale ${Math.round(v.age_s)}s)` : "");
+  } catch { box.hidden = true; }
+}
+document.getElementById("camera-toggle").addEventListener("click", () => {
+  const box = document.getElementById("camera");
+  cameraHidden = !cameraHidden;
+  box.classList.toggle("collapsed", cameraHidden);
+  document.getElementById("camera-toggle").textContent = cameraHidden ? "+" : "−";
+});
+setInterval(pollCamera, 1000);
+pollCamera();
 
 async function pollOutbox() {
   try {

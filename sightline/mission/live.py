@@ -558,6 +558,17 @@ class LiveMission:
         self._pending_latency = still
 
     def write_frame(self, fr: LiveFrame, res: Any) -> None:
+        # The OPERATOR view: the frame just taken with what the model found drawn on it. The map answers
+        # "where are the survivors"; this answers "what is the drone looking at now, and is the model seeing
+        # what I am seeing?" - which is the question asked first. It never raises into the flight loop.
+        from sightline.mission.liveview import write_live_view      # noqa: PLC0415
+
+        write_live_view(self.out, fr.rgb, getattr(res, "detections", ()) or (),
+                        frame_idx=fr.frame_idx, agl_m=float(fr.telemetry.agl_m),
+                        mode=str(fr.telemetry.mode), n_records=len(getattr(res, "records", ()) or ()),
+                        detect_ms=float(getattr(getattr(res, "latency", None), "detect_ms", 0.0) or 0.0),
+                        detector=self.detector)
+
         stem = f"{self.clip_id}_{fr.frame_idx:05d}"
         if fr.rgb is not None and not self.a.no_images:
             import cv2                                      # noqa: PLC0415

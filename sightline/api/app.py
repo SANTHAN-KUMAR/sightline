@@ -249,6 +249,37 @@ def create_app(
             raise HTTPException(404, f"no thumbnail {name}")
         return FileResponse(p, headers={"Cache-Control": "public, max-age=86400"})
 
+    # ---- the operator's camera view ------------------------------------------------------------------
+    # The map says WHERE a survivor is; this says what the drone is looking at and what the model found in
+    # it. `sightline.mission.liveview` writes both files atomically per frame, so a poll can never catch a
+    # half-written JPEG. Served no-cache because the whole point is that it is the LATEST frame.
+    def _live_view(suffix: str) -> Path | None:
+        root = Path(__file__).resolve().parents[2] / "_artifacts" / "dataset"
+        if not root.exists():
+            return None
+        cands = [d / f"live_view{suffix}" for d in root.iterdir() if d.is_dir()]
+        live = [c for c in cands if c.exists()]
+        return max(live, key=lambda c: c.stat().st_mtime) if live else None
+
+    @app.get("/api/live/view.jpg")
+    def live_view_jpg() -> FileResponse:
+        p = _live_view(".jpg")
+        if p is None:
+            raise HTTPException(404, "no live view: nothing is flying, or the run wrote no frames yet")
+        return FileResponse(p, media_type="image/jpeg",
+                            headers={"Cache-Control": "no-store, max-age=0"})
+
+    @app.get("/api/live/view.json")
+    def live_view_json() -> dict[str, Any]:
+        p = _live_view(".json")
+        if p is None:
+            raise HTTPException(404, "no live view yet")
+        import json as _json
+
+        d = _json.loads(p.read_text(encoding="utf-8"))
+        d["age_s"] = round(time.time() - p.stat().st_mtime, 1)
+        return d
+
     # ---- coverage (B6's contract, read through coverage_feed.py) --------------------------------------
     def _sidecar() -> dict[str, Any] | None:
         try:
